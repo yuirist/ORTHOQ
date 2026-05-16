@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
-import 'staff_dashboard_page.dart';
-import 'patient_verification_page.dart';
-import 'doctor_requests_page.dart';
+
+import '../../models/user_model.dart';
 import 'delay_notifications_page.dart';
 import 'doctor_management_page.dart';
+import 'doctor_requests_page.dart';
+import 'patient_verification_page.dart';
+import 'staff_dashboard_page.dart';
 
 class StaffHomeScreen extends StatefulWidget {
-  const StaffHomeScreen({super.key});
+  const StaffHomeScreen({super.key, this.userProfile});
+
+  /// Profile loaded at login (safe Timestamp parsing applied).
+  final UserModel? userProfile;
 
   @override
   State<StaffHomeScreen> createState() => _StaffHomeScreenState();
@@ -15,13 +20,19 @@ class StaffHomeScreen extends StatefulWidget {
 class _StaffHomeScreenState extends State<StaffHomeScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = [
-    const StaffDashboardPage(),
-    const PatientVerificationPage(),
-    const DoctorRequestsPage(),
-    const DelayNotificationsPage(),
-    const DoctorManagementPage(),
-  ];
+  late final List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      StaffDashboardPage(userProfile: widget.userProfile),
+      const PatientVerificationPage(),
+      const DoctorRequestsPage(),
+      const DelayNotificationsPage(),
+      DoctorManagementPage(userProfile: widget.userProfile),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {

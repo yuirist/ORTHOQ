@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../utils/firestore_date_utils.dart';
+
 class DoctorModel {
   final String id;
   final String userId; // Reference to users collection
@@ -40,8 +42,9 @@ class DoctorModel {
       'email': email,
       'phoneNumber': phoneNumber,
       'isActive': isActive,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt?.toIso8601String(),
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt':
+          updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
       if (hospital != null) 'hospital': hospital,
       if (imageUrl != null) 'imageUrl': imageUrl,
       if (credentials != null && credentials!.isNotEmpty) 'credentials': credentials,
@@ -50,34 +53,6 @@ class DoctorModel {
   }
 
   factory DoctorModel.fromMap(Map<String, dynamic> map, String id) {
-    // Safely parse createdAt with fallback
-    DateTime createdAt;
-    try {
-      if (map['createdAt'] is String) {
-        createdAt = DateTime.parse(map['createdAt']);
-      } else if (map['createdAt'] is Timestamp) {
-        createdAt = (map['createdAt'] as Timestamp).toDate();
-      } else {
-        createdAt = DateTime.now();
-      }
-    } catch (e) {
-      createdAt = DateTime.now();
-    }
-
-    // Safely parse updatedAt
-    DateTime? updatedAt;
-    if (map['updatedAt'] != null) {
-      try {
-        if (map['updatedAt'] is String) {
-          updatedAt = DateTime.parse(map['updatedAt']);
-        } else if (map['updatedAt'] is Timestamp) {
-          updatedAt = (map['updatedAt'] as Timestamp).toDate();
-        }
-      } catch (e) {
-        updatedAt = null;
-      }
-    }
-
     return DoctorModel(
       id: id,
       userId: map['userId']?.toString() ?? '',
@@ -86,8 +61,8 @@ class DoctorModel {
       email: map['email']?.toString() ?? '',
       phoneNumber: map['phoneNumber']?.toString() ?? '',
       isActive: map['isActive'] is bool ? map['isActive'] as bool : (map['isActive']?.toString().toLowerCase() == 'true' || map['isActive'] == true),
-      createdAt: createdAt,
-      updatedAt: updatedAt,
+      createdAt: parseFirestoreDateTime(map['createdAt']),
+      updatedAt: parseFirestoreDateTimeNullable(map['updatedAt']),
       hospital: map['hospital']?.toString(),
       imageUrl: map['imageUrl']?.toString(),
       credentials: map['credentials']?.toString() ??

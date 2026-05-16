@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 import '../models/user_model.dart';
+import '../utils/auth_navigation.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthService? _authService;
@@ -42,12 +43,63 @@ class AuthProvider with ChangeNotifier {
   Future<void> _loadUserData(String userId) async {
     if (_authService == null) return;
     try {
-      _currentUserData = await _authService!.getUserData(userId);
+      _currentUserData = await _authService!.getLoginProfile(
+        userId, // Firebase uid
+        authEmail: _currentUser?.email,
+      );
       notifyListeners();
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('Error loading user data: $e');
+      debugPrint(stackTrace.toString());
       _currentUserData = null;
       notifyListeners();
+    }
+  }
+
+  /// Fetches Firestore profile, applies Timestamp-safe parsing, stores session.
+  ///
+  /// Returns the parsed [UserModel] or `null` if no profile document exists.
+  Future<UserModel?> applyLoginSession({required User firebaseUser}) async {
+    if (_authService == null) {
+      debugPrint('applyLoginSession: Firebase AuthService is not available');
+      return null;
+    }
+
+    _currentUser = firebaseUser;
+
+    try {
+      final profile = await _authService!.getLoginProfile(
+        firebaseUser.uid,
+        authEmail: firebaseUser.email,
+      );
+      if (profile == null) {
+        debugPrint('applyLoginSession: no users/staff profile for ${firebaseUser.uid}');
+        _currentUserData = null;
+        notifyListeners();
+        return null;
+      }
+
+      final role = normalizeRole(profile.role);
+      debugPrint(
+        'applyLoginSession: role=$role name=${profile.fullName}',
+      );
+
+      if (!isKnownClinicRole(role)) {
+        debugPrint('applyLoginSession: unsupported role "$role"');
+        _currentUserData = null;
+        notifyListeners();
+        return null;
+      }
+
+      _currentUserData = profile;
+      notifyListeners();
+      return profile;
+    } catch (e, stackTrace) {
+      debugPrint('applyLoginSession failed: $e');
+      debugPrint(stackTrace.toString());
+      _currentUserData = null;
+      notifyListeners();
+      rethrow;
     }
   }
 
@@ -65,8 +117,7 @@ class AuthProvider with ChangeNotifier {
       );
 
       if (userCredential?.user != null) {
-        _currentUser = userCredential!.user;
-        await _loadUserData(_currentUser!.uid);
+        await applyLoginSession(firebaseUser: userCredential!.user!);
       }
     } catch (e) {
       rethrow;
@@ -103,8 +154,7 @@ class AuthProvider with ChangeNotifier {
       );
 
       if (userCredential?.user != null) {
-        _currentUser = userCredential!.user;
-        await _loadUserData(_currentUser!.uid);
+        await applyLoginSession(firebaseUser: userCredential!.user!);
       }
     } catch (e) {
       rethrow;
@@ -141,4 +191,3 @@ class AuthProvider with ChangeNotifier {
     }
   }
 }
-

@@ -1,22 +1,70 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../providers/auth_provider.dart';
+import '../../utils/auth_navigation.dart';
 import 'login_screen.dart';
 
-class WelcomeScreen extends StatelessWidget {
+class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
-  static const Color _navy = Color(0xFF1A365D);
-  static const Color _titleColor = Color(0xFF0F172A);
-  static const double _backgroundOpacity = 0.55;
+  static const Color _navy = Color(0xFF1B3C68);
+  static const double _backgroundImageOpacity = 0.22;
+
+  @override
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
+}
+
+class _WelcomeScreenState extends State<WelcomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _restoreSessionIfNeeded());
+  }
+
+  Future<void> _restoreSessionIfNeeded() async {
+    if (!mounted) return;
+    final auth = context.read<AuthProvider>();
+    final user = auth.currentUser;
+    final profile = auth.currentUserData;
+    if (user == null || profile == null) return;
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) {
+          final resolved = ensureUserProfile(
+            user: user,
+            profile: profile,
+            fallbackRole: profile.role,
+          );
+          return homeScreenForRole(
+            profile.role,
+            uid: user.uid,
+            userData: resolved,
+          );
+        },
+      ),
+    );
+  }
+
+  void _openLogin(String userType) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LoginScreen(userType: userType),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: WelcomeScreen._navy,
       body: Stack(
         fit: StackFit.expand,
         children: [
           Opacity(
-            opacity: _backgroundOpacity,
+            opacity: WelcomeScreen._backgroundImageOpacity,
             child: Image.asset(
               'assets/images/hospitalkajang.jpg',
               fit: BoxFit.cover,
@@ -48,43 +96,30 @@ class WelcomeScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 19,
                           fontWeight: FontWeight.w800,
-                          color: _titleColor,
+                          color: Colors.white,
                           height: 1.35,
                           letterSpacing: 0.15,
                         ),
                       ),
                       const SizedBox(height: 48),
-                      _LoginButton(
-                        label: 'Patient Login',
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                const LoginScreen(userType: 'patient'),
-                          ),
-                        ),
+                      _WelcomeLoginButton(
+                        label: 'Patient',
+                        onPressed: () => _openLogin('patient'),
                       ),
                       const SizedBox(height: 14),
-                      _LoginButton(
-                        label: 'Doctor Login',
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                const LoginScreen(userType: 'doctor'),
-                          ),
-                        ),
+                      _WelcomeLoginButton(
+                        label: 'Doctor',
+                        onPressed: () => _openLogin('doctor'),
                       ),
                       const SizedBox(height: 14),
-                      _LoginButton(
-                        label: 'Staff / Admin Login',
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                const LoginScreen(userType: 'staff'),
-                          ),
-                        ),
+                      _WelcomeLoginButton(
+                        label: 'Staff',
+                        onPressed: () => _openLogin('staff'),
+                      ),
+                      const SizedBox(height: 14),
+                      _WelcomeLoginButton(
+                        label: 'Admin',
+                        onPressed: () => _openLogin('admin'),
                       ),
                     ],
                   ),
@@ -98,8 +133,8 @@ class WelcomeScreen extends StatelessWidget {
   }
 }
 
-class _LoginButton extends StatelessWidget {
-  const _LoginButton({
+class _WelcomeLoginButton extends StatelessWidget {
+  const _WelcomeLoginButton({
     required this.label,
     required this.onPressed,
   });
@@ -116,10 +151,12 @@ class _LoginButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: WelcomeScreen._navy,
           foregroundColor: Colors.white,
-          elevation: 0,
+          elevation: 2,
+          shadowColor: Colors.black26,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
+            side: BorderSide(color: Colors.white.withValues(alpha: 0.35)),
           ),
         ),
         child: Text(

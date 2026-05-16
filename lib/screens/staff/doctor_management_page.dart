@@ -2,8 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../../models/user_model.dart';
+
 class DoctorManagementPage extends StatefulWidget {
-  const DoctorManagementPage({super.key});
+  const DoctorManagementPage({super.key, this.userProfile});
+
+  final UserModel? userProfile;
 
   @override
   State<DoctorManagementPage> createState() => _DoctorManagementPageState();
@@ -39,10 +43,18 @@ class _DoctorManagementPageState extends State<DoctorManagementPage> {
           }
 
           final staffData = staffSnapshot.data?.data() ?? <String, dynamic>{};
-          final staffEmail = FirebaseAuth.instance.currentUser?.email ?? 'zafran@gmail.com';
-          final staffRole = (staffData['role']?.toString().trim().isNotEmpty ?? false)
-              ? staffData['role'].toString().trim()
-              : 'Clinic Assistant';
+          final staffEmail = widget.userProfile?.email.trim().isNotEmpty == true
+              ? widget.userProfile!.email.trim()
+              : FirebaseAuth.instance.currentUser?.email ?? '';
+          final staffRole = widget.userProfile?.role.trim().isNotEmpty == true
+              ? widget.userProfile!.role.trim()
+              : (staffData['role']?.toString().trim().isNotEmpty ?? false)
+                  ? staffData['role'].toString().trim()
+                  : 'Clinic Assistant';
+          final displayName =
+              widget.userProfile?.fullName.trim().isNotEmpty == true
+                  ? widget.userProfile!.fullName.trim()
+                  : staffEmail;
 
           return Padding(
             padding: const EdgeInsets.all(16),
@@ -61,13 +73,23 @@ class _DoctorManagementPageState extends State<DoctorManagementPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        staffEmail,
+                        displayName,
                         style: const TextStyle(
                           color: Color(0xFF1A365D),
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                      if (displayName != staffEmail && staffEmail.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          staffEmail,
+                          style: TextStyle(
+                            color: Colors.grey.shade700,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 4),
                       Text(
                         staffRole,

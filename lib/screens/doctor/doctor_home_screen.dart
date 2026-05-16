@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart' as app_auth;
 import '../../services/appointment_service.dart';
 import '../../models/appointment_model.dart';
@@ -8,7 +9,9 @@ import 'doctor_schedule_page.dart';
 import 'notify_staff_delay_page.dart';
 
 class DoctorHomeScreen extends StatefulWidget {
-  const DoctorHomeScreen({super.key});
+  const DoctorHomeScreen({super.key, this.userProfile});
+
+  final UserModel? userProfile;
 
   @override
   State<DoctorHomeScreen> createState() => _DoctorHomeScreenState();

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'admin_dashboard.dart';
+import 'admin_home_screen.dart';
 
 /// Standalone admin gate (not Firebase Auth). Replace with secure auth for production.
 class AdminLoginView extends StatefulWidget {
@@ -36,7 +36,9 @@ class _AdminLoginViewState extends State<AdminLoginView> {
         password == AdminLoginView.kAdminPassword) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const AdminDashboard()),
+        MaterialPageRoute(
+          builder: (context) => const AdminHomeScreen(uid: 'local-admin'),
+        ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

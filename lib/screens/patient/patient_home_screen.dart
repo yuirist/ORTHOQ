@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/appointment_service.dart';
 import '../../models/appointment_model.dart';
@@ -15,7 +16,9 @@ import 'filtered_doctors_page.dart';
 import 'medicine_scanner_export.dart';
 
 class PatientHomeScreen extends StatefulWidget {
-  const PatientHomeScreen({super.key});
+  const PatientHomeScreen({super.key, this.userProfile});
+
+  final UserModel? userProfile;
 
   @override
   State<PatientHomeScreen> createState() => _PatientHomeScreenState();

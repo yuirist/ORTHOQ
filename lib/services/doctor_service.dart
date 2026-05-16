@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import '../models/doctor_model.dart';
 
 class DoctorService {
@@ -57,8 +58,9 @@ class DoctorService {
   // Create doctor profile
   Future<String> createDoctor(DoctorModel doctor) async {
     try {
-      DocumentReference docRef =
-          await _firestore.collection('doctors').add(doctor.toMap());
+      DocumentReference docRef = await _firestore
+          .collection('doctors')
+          .add(doctor.toMap());
       return docRef.id;
     } catch (e) {
       throw 'Error creating doctor: $e';
@@ -73,9 +75,17 @@ class DoctorService {
         .orderBy('name')
         .orderBy(FieldPath.documentId)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => DoctorModel.fromMap(doc.data(), doc.id))
-            .toList());
+        .map((snapshot) {
+          final doctors = <DoctorModel>[];
+          for (final doc in snapshot.docs) {
+            try {
+              doctors.add(DoctorModel.fromMap(doc.data(), doc.id));
+            } catch (e) {
+              debugPrint('Skipping doctor ${doc.id}: $e');
+            }
+          }
+          return doctors;
+        });
   }
 
   // Get all doctors (including inactive)
@@ -84,19 +94,22 @@ class DoctorService {
         .collection('doctors')
         .orderBy('name')
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => DoctorModel.fromMap(doc.data(), doc.id))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => DoctorModel.fromMap(doc.data(), doc.id))
+              .toList(),
+        );
   }
 
   // Get doctor by ID
   Future<DoctorModel?> getDoctorById(String doctorId) async {
     try {
-      DocumentSnapshot doc =
-          await _firestore.collection('doctors').doc(doctorId).get();
+      DocumentSnapshot doc = await _firestore
+          .collection('doctors')
+          .doc(doctorId)
+          .get();
       if (doc.exists) {
-        return DoctorModel.fromMap(
-            doc.data() as Map<String, dynamic>, doc.id);
+        return DoctorModel.fromMap(doc.data() as Map<String, dynamic>, doc.id);
       }
       return null;
     } catch (e) {
@@ -114,8 +127,9 @@ class DoctorService {
           .get();
       if (snapshot.docs.isNotEmpty) {
         return DoctorModel.fromMap(
-            snapshot.docs.first.data() as Map<String, dynamic>,
-            snapshot.docs.first.id);
+          snapshot.docs.first.data() as Map<String, dynamic>,
+          snapshot.docs.first.id,
+        );
       }
       return null;
     } catch (e) {
@@ -204,9 +218,10 @@ class DoctorService {
         .where('specialization', isEqualTo: specialization)
         .orderBy('name')
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => DoctorModel.fromMap(doc.data(), doc.id))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => DoctorModel.fromMap(doc.data(), doc.id))
+              .toList(),
+        );
   }
 }
-

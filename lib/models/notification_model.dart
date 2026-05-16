@@ -1,3 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../utils/firestore_date_utils.dart';
+
 class NotificationModel {
   final String id;
   final String userId;
@@ -27,7 +31,7 @@ class NotificationModel {
       'message': message,
       'type': type,
       'isRead': isRead,
-      'createdAt': createdAt.toIso8601String(),
+      'createdAt': Timestamp.fromDate(createdAt),
       if (appointmentId != null) 'appointmentId': appointmentId,
     };
   }
@@ -35,13 +39,13 @@ class NotificationModel {
   factory NotificationModel.fromMap(Map<String, dynamic> map, String id) {
     return NotificationModel(
       id: id,
-      userId: map['userId'] ?? '',
-      title: map['title'] ?? '',
-      message: map['message'] ?? '',
-      type: map['type'] ?? '',
-      isRead: map['isRead'] ?? false,
-      createdAt: DateTime.parse(map['createdAt']),
-      appointmentId: map['appointmentId'],
+      userId: map['userId']?.toString() ?? '',
+      title: map['title']?.toString() ?? '',
+      message: map['message']?.toString() ?? '',
+      type: map['type']?.toString() ?? '',
+      isRead: map['isRead'] == true,
+      createdAt: parseFirestoreDateTime(map['createdAt']),
+      appointmentId: map['appointmentId']?.toString(),
     );
   }
 
@@ -60,19 +64,3 @@ class NotificationModel {
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -3,12 +3,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/doctor_model.dart';
+import '../../models/user_model.dart';
 import '../../services/doctor_service.dart';
 import '../../utils/staff_scope.dart';
 import 'doctor_schedule_preview_card.dart';
 
 class StaffDashboardPage extends StatefulWidget {
-  const StaffDashboardPage({super.key});
+  const StaffDashboardPage({super.key, this.userProfile});
+
+  final UserModel? userProfile;
 
   static const Color _navy = Color(0xFF1A365D);
 
@@ -77,6 +80,7 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
       ),
       body: _StaffDashboardBody(
         doctorService: _doctorService,
+        userProfile: widget.userProfile,
       ),
     );
   }
@@ -85,9 +89,11 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
 class _StaffDashboardBody extends StatelessWidget {
   const _StaffDashboardBody({
     required this.doctorService,
+    this.userProfile,
   });
 
   final DoctorService doctorService;
+  final UserModel? userProfile;
 
   @override
   Widget build(BuildContext context) {
@@ -133,14 +139,29 @@ class _StaffDashboardBody extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
-                    'Doctor Schedule Overview',
-                    style: TextStyle(
+                  Text(
+                    userProfile != null &&
+                            userProfile!.fullName.trim().isNotEmpty
+                        ? 'Welcome, ${userProfile!.fullName.trim()}'
+                        : 'Doctor Schedule Overview',
+                    style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
                       color: StaffDashboardPage._navy,
                     ),
                   ),
+                  if (userProfile != null &&
+                      userProfile!.fullName.trim().isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Doctor Schedule Overview',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: StaffDashboardPage._navy,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   Text(
                     assigned.isEmpty

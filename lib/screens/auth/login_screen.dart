@@ -1,16 +1,26 @@
 ﻿import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../utils/validation_utils.dart';
+import 'package:provider/provider.dart';
+
+import '../../providers/auth_provider.dart';
+import '../../services/auth_service.dart';
 import 'register_screen.dart';
 import 'forgot_password_page.dart';
+import '../../theme/orthoq_colors.dart';
 import '../../utils/auth_navigation.dart';
 
 class LoginScreen extends StatefulWidget {
-  final String userType; // 'patient', 'doctor', 'staff'
+  final String userType; // 'patient', 'doctor', 'staff', 'admin'
 
   const LoginScreen({super.key, required this.userType});
+
+  /// Same navy as [WelcomeScreen] (`#1B3C68`).
+  static const Color navy = OrthoqColors.navy;
+
+  bool get _isAdminPortal => userType.toLowerCase() == 'admin';
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -25,11 +35,95 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    _emailController.clear();
+    _passwordController.clear();
+    _patientIcController.clear();
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _patientIcController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _completeLogin(User user) async {
+    try {
+      print(
+        '[Role Check] Portal=${widget.userType} uid=${user.uid} — '
+        'loading Firestore profile',
+      );
+
+      final profile = await context.read<AuthProvider>().applyLoginSession(
+            firebaseUser: user,
+          );
+
+      if (profile == null) {
+        print('[Role Check] No profile document found');
+        await FirebaseAuth.instance.signOut();
+        if (mounted) {
+          final isAdminPortal = widget.userType.toLowerCase() == 'admin';
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                isAdminPortal
+                    ? 'No administrator profile found. '
+                        'Ensure users/${user.uid} exists in Firestore with role: admin.'
+                    : 'No profile found in the database. Please register first.',
+              ),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 6),
+            ),
+          );
+        }
+        return;
+      }
+
+      final role = normalizeRole(profile.role);
+      print(
+        '[Role Check] Firestore role=$role → '
+        '${roleDashboardName(role)} dashboard',
+      );
+
+      if (widget.userType.toLowerCase() == 'admin' && role != 'admin') {
+        await FirebaseAuth.instance.signOut();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Access denied. This account does not have administrator '
+                'privileges (Firestore role must be admin).',
+              ),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 6),
+            ),
+          );
+        }
+        return;
+      }
+
+      if (!mounted) return;
+      await navigateAfterLogin(
+        context: context,
+        user: user,
+        profile: profile,
+        loginPortal: widget.userType,
+      );
+    } catch (e, stackTrace) {
+      print('[Role Check] FAILED: $e');
+      print('[Role Check] Stack trace:\n$stackTrace');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Login failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _handleLogin() async {
@@ -99,83 +193,29 @@ class _LoginScreenState extends State<LoginScreen> {
         authEmail = _emailController.text.trim();
       }
 
-      final userCredential =
-          await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: authEmail,
-        password: _passwordController.text,
-      );
-
-      if (mounted && userCredential.user != null) {
-        // Get user's role from Firestore
-        try {
-          final userDoc = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(userCredential.user!.uid)
-              .get();
-
-          String userRole = 'patient';
-          if (userDoc.exists) {
-            userRole = userDoc.data()?['role']?.toString() ?? 'patient';
-          }
-
-          if (!roleMatchesLoginType(widget.userType, userRole)) {
-            await FirebaseAuth.instance.signOut();
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'This account is not registered as ${widget.userType}. '
-                    'Use the correct login option on the welcome screen.',
-                  ),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
-            return;
-          }
-
-          if (!mounted) return;
-          // Return to root; [AuthWrapper] shows the correct home when session is active.
-          Navigator.of(context).popUntil((route) => route.isFirst);
-        } catch (e) {
-          debugPrint('Error fetching user role: $e');
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Signed in, but could not load your profile. Please try again.',
-                ),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        }
-      }
-    } on FirebaseAuthException catch (e) {
-      String errorMessage = 'Login failed. Please try again.';
-      
-      // Handle specific error cases
-      if (e.code == 'user-not-found') {
-        errorMessage = 'No user found for that email.';
-      } else if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
-        errorMessage = 'Wrong password provided.';
-      } else if (e.code == 'invalid-email') {
-        errorMessage = 'The email address is invalid.';
-      } else if (e.code == 'user-disabled') {
-        errorMessage = 'This user account has been disabled.';
-      } else if (e.code == 'too-many-requests') {
-        errorMessage = 'Too many requests. Please try again later.';
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-          ),
+      final passwordSent = _passwordController.text;
+      if (widget.userType.toLowerCase() == 'admin') {
+        print(
+          '[Admin Auth Debug] Attempting Firebase sign-in — '
+          'email="$authEmail" password="$passwordSent" '
+          '(length=${passwordSent.length}, codeUnits=${passwordSent.codeUnits})',
         );
       }
+
+      final authService = AuthService();
+      final userCredential = await authService.signInWithEmailAndPassword(
+        email: authEmail,
+        password: passwordSent,
+      );
+
+      final user = userCredential?.user;
+      if (mounted && user != null) {
+        await _completeLogin(user);
+      }
     } on FirebaseException catch (e) {
+      debugPrint(
+        'LoginScreen FirebaseException: code=${e.code}, message=${e.message}',
+      );
       if (mounted) {
         final isPatientLookup = widget.userType == 'patient' &&
             (e.code == 'permission-denied' || e.code == 'unavailable');
@@ -183,19 +223,33 @@ class _LoginScreenState extends State<LoginScreen> {
           SnackBar(
             content: Text(
               isPatientLookup
-                  ? 'Unable to verify IC number. Check your connection or try again.'
-                  : 'An error occurred: ${e.message ?? e.code}',
+                  ? '[${e.code}] Unable to verify IC number. Check your connection.'
+                  : '[${e.code}] ${e.message ?? "Unknown error"}',
             ),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 6),
           ),
         );
       }
     } catch (e) {
+      debugPrint('LoginScreen error: $e');
+      if (widget.userType.toLowerCase() == 'admin' &&
+          AuthService.matchesAdminBypassCredentials(
+            _emailController.text.trim(),
+            _passwordController.text,
+          )) {
+        print(
+          '[Admin Auth Debug] Login failed after Firestore bypass attempt: $e',
+        );
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('An error occurred: ${e.toString()}'),
+            content: Text(
+              e is String ? e : '[error] ${e.toString()}',
+            ),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 6),
           ),
         );
       }
@@ -208,26 +262,36 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  String get _loginTitle {
+    switch (widget.userType.toLowerCase()) {
+      case 'staff':
+        return 'STAFF LOGIN';
+      case 'admin':
+        return 'ADMIN LOGIN';
+      default:
+        return '${widget.userType.toUpperCase()} LOGIN';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          widget.userType == 'staff'
-              ? 'STAFF / ADMIN LOGIN'
-              : '${widget.userType.toUpperCase()} LOGIN',
-        ),
-        backgroundColor: const Color(0xFF1A365D),
+        title: Text(_loginTitle),
+        backgroundColor: LoginScreen.navy,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: SizedBox(
+              width: 400,
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
                 const SizedBox(height: 40),
                 // Logo at the top
                 Container(
@@ -238,17 +302,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     fit: BoxFit.contain,
                   ),
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  widget.userType == 'staff'
-                      ? 'Staff / Admin Sign In'
-                      : 'Welcome Back',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 48),
+                const SizedBox(height: 32),
 
                 if (widget.userType == 'patient') ...[
                   TextFormField(
@@ -334,7 +388,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ElevatedButton(
                   onPressed: _isLoading ? null : _handleLogin,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1A365D),
+                    backgroundColor: LoginScreen.navy,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -360,27 +414,30 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                 ),
-                const SizedBox(height: 24),
-                
-                // Register Link (for all user types)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text("Don't have an account? "),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => RegisterScreen(userType: widget.userType),
-                          ),
-                        );
-                      },
-                      child: const Text('Register'),
-                    ),
+                if (!widget._isAdminPortal) ...[
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text("Don't have an account? "),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  RegisterScreen(userType: widget.userType),
+                            ),
+                          );
+                        },
+                        child: const Text('Register'),
+                      ),
+                    ],
+                  ),
+                ],
                   ],
                 ),
-              ],
+              ),
             ),
           ),
         ),

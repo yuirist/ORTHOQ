@@ -1,3 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../utils/firestore_date_utils.dart';
+
 class UserModel {
   final String id;
   final String fullName;
@@ -9,6 +13,7 @@ class UserModel {
   final String role; // 'patient', 'doctor', 'staff', 'admin'
   final DateTime createdAt;
   final DateTime? updatedAt;
+  final DateTime? joiningDate;
 
   // Doctor-specific fields
   final String? specialization;
@@ -27,13 +32,13 @@ class UserModel {
     required this.role,
     required this.createdAt,
     this.updatedAt,
+    this.joiningDate,
     this.specialization,
     this.doctorId,
     this.staffId,
     this.assignedDoctorIds = const [],
   });
 
-  // Convert to Map for Firestore
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -43,8 +48,9 @@ class UserModel {
       'icNumber': icNumber,
       if (homeAddress != null) 'homeAddress': homeAddress,
       'role': role,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt?.toIso8601String(),
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt':
+          updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
       if (specialization != null) 'specialization': specialization,
       if (doctorId != null) 'doctorId': doctorId,
       if (staffId != null) 'staffId': staffId,
@@ -52,21 +58,23 @@ class UserModel {
     };
   }
 
-  // Create from Firestore document
   factory UserModel.fromMap(Map<String, dynamic> map, String id) {
     return UserModel(
       id: id,
-      fullName: map['fullName'] ?? '',
-      email: map['email'] ?? '',
-      phoneNumber: map['phoneNumber'] ?? '',
+      fullName: map['fullName']?.toString() ?? '',
+      email: map['email']?.toString() ?? '',
+      phoneNumber: map['phoneNumber']?.toString() ?? '',
       icNumber: map['icNumber']?.toString(),
       homeAddress: map['homeAddress']?.toString(),
-      role: map['role'] ?? 'patient',
-      createdAt: DateTime.parse(map['createdAt']),
-      updatedAt: map['updatedAt'] != null ? DateTime.parse(map['updatedAt']) : null,
-      specialization: map['specialization'],
-      doctorId: map['doctorId'],
-      staffId: map['staffId'],
+      role: map['role']?.toString() ?? 'patient',
+      createdAt: parseFirestoreDateTime(map['createdAt']),
+      updatedAt: parseFirestoreDateTimeNullable(map['updatedAt']),
+      joiningDate: parseFirestoreDateTimeNullable(
+        map['joiningDate'] ?? map['date'],
+      ),
+      specialization: map['specialization']?.toString(),
+      doctorId: map['doctorId']?.toString(),
+      staffId: map['staffId']?.toString(),
       assignedDoctorIds: _parseAssignedDoctorIds(map['assignedDoctorIds']),
     );
   }
@@ -80,7 +88,6 @@ class UserModel {
         .toList();
   }
 
-  // Copy with method for updates
   UserModel copyWith({
     String? fullName,
     String? email,
@@ -111,19 +118,3 @@ class UserModel {
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
