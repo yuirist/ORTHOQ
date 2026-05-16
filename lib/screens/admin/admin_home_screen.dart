@@ -4,13 +4,12 @@ import 'package:flutter/material.dart';
 import '../../models/user_model.dart';
 import '../../services/admin_service.dart';
 import '../../theme/orthoq_colors.dart';
-import '../auth/register_screen.dart';
 import '../auth/welcome_screen.dart';
 import 'admin_assign_staff_page.dart';
 import 'admin_clinic_settings_page.dart';
 import 'admin_doctor_list_page.dart';
-import 'admin_edit_staff_screen.dart';
 import 'admin_staff_list_page.dart';
+
 /// Admin portal — Hospital Kajang OrthoQ administrator console.
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({
@@ -138,44 +137,38 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _DashboardHeader(displayName: _displayName),
+              const SizedBox(height: 20),
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const _SectionHeading(title: 'Clinic overview'),
-                    const SizedBox(height: 12),
-                    StreamBuilder<AdminOverviewStats>(
-                      stream: _adminService.watchOverviewStats(),
-                      builder: (context, snapshot) {
-                        if (snapshot.hasError) {
-                          return Text(
-                            'Statistics unavailable: ${snapshot.error}',
-                            style: const TextStyle(color: Colors.red),
-                          );
-                        }
-                        return _StatsRow(
-                          stats: snapshot.data ?? const AdminOverviewStats(),
-                          loading: !snapshot.hasData,
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 28),
-                    const _SectionHeading(title: 'Staff management'),
-                    const SizedBox(height: 12),
-                    _StaffManagementCard(
-                      adminService: _adminService,
-                      onAddStaff: () => _openPage(
-                        const RegisterScreen(userType: 'staff'),
-                      ),
-                      onViewAll: () => _openPage(const AdminStaffListPage()),
-                      onEditStaff: (member) => _openPage(
-                        AdminEditStaffScreen(staff: member),
-                      ),
-                    ),
-                  ],
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: const Text(
+                  'Clinic overview',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AdminHomeScreen.navy,
+                  ),
                 ),
               ),
+              const SizedBox(height: 12),
+              StreamBuilder<AdminOverviewStats>(
+                stream: _adminService.watchOverviewStats(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text(
+                        'Statistics unavailable: ${snapshot.error}',
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    );
+                  }
+                  return _ClinicOverviewRow(
+                    stats: snapshot.data ?? const AdminOverviewStats(),
+                    loading: !snapshot.hasData,
+                  );
+                },
+              ),
+              const SizedBox(height: 32),
             ],
           ),
         ),
@@ -184,7 +177,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   }
 }
 
-/// Top banner: Admin Dashboard + Hospital Kajang.
 class _DashboardHeader extends StatelessWidget {
   const _DashboardHeader({required this.displayName});
 
@@ -211,7 +203,6 @@ class _DashboardHeader extends StatelessWidget {
               color: Colors.white,
               fontSize: 26,
               fontWeight: FontWeight.bold,
-              letterSpacing: 0.3,
             ),
           ),
           const SizedBox(height: 6),
@@ -223,32 +214,12 @@ class _DashboardHeader extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Orthopaedic Outpatient Clinic · OrthoQ',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.75),
-              fontSize: 14,
-            ),
-          ),
           const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.person_outline, color: Colors.white, size: 22),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Signed in as $displayName',
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
-                  ),
-                ),
-              ],
+          Text(
+            'Signed in as $displayName',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.8),
+              fontSize: 14,
             ),
           ),
         ],
@@ -257,84 +228,56 @@ class _DashboardHeader extends StatelessWidget {
   }
 }
 
-class _SectionHeading extends StatelessWidget {
-  const _SectionHeading({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: AdminHomeScreen.navy,
-      ),
-    );
-  }
-}
-
-class _StatsRow extends StatelessWidget {
-  const _StatsRow({required this.stats, required this.loading});
+/// Full-width horizontal row of navy metric cards.
+class _ClinicOverviewRow extends StatelessWidget {
+  const _ClinicOverviewRow({required this.stats, required this.loading});
 
   final AdminOverviewStats stats;
   final bool loading;
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final cards = [
-          _StatCard(
-            label: 'Total Patients',
-            value: loading ? '—' : '${stats.totalPatients}',
-            icon: Icons.people_outline,
-            loading: loading,
-          ),
-          _StatCard(
-            label: 'Total Doctors',
-            value: loading ? '—' : '${stats.totalDoctors}',
-            icon: Icons.local_hospital_outlined,
-            loading: loading,
-          ),
-          _StatCard(
-            label: 'Total Staff',
-            value: loading ? '—' : '${stats.totalStaff}',
-            icon: Icons.badge_outlined,
-            loading: loading,
-          ),
-        ];
-
-        if (constraints.maxWidth >= 600) {
-          return IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (var i = 0; i < cards.length; i++) ...[
-                  if (i > 0) const SizedBox(width: 12),
-                  Expanded(child: cards[i]),
-                ],
-              ],
-            ),
-          );
-        }
-
-        return Column(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            for (var i = 0; i < cards.length; i++) ...[
-              if (i > 0) const SizedBox(height: 12),
-              cards[i],
-            ],
+            Expanded(
+              child: _NavyStatCard(
+                label: 'Total Patients',
+                value: loading ? '—' : '${stats.totalPatients}',
+                icon: Icons.people_outline,
+                loading: loading,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _NavyStatCard(
+                label: 'Total Doctors',
+                value: loading ? '—' : '${stats.totalDoctors}',
+                icon: Icons.local_hospital_outlined,
+                loading: loading,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _NavyStatCard(
+                label: 'Total Staff',
+                value: loading ? '—' : '${stats.totalStaff}',
+                icon: Icons.badge_outlined,
+                loading: loading,
+              ),
+            ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 }
 
-class _StatCard extends StatelessWidget {
-  const _StatCard({
+class _NavyStatCard extends StatelessWidget {
+  const _NavyStatCard({
     required this.label,
     required this.value,
     required this.icon,
@@ -348,212 +291,56 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      margin: EdgeInsets.zero,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+      decoration: BoxDecoration(
+        color: AdminHomeScreen.navy,
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: AdminHomeScreen.navy.withValues(alpha: 0.25),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: AdminHomeScreen.navy, size: 30),
-            const SizedBox(height: 12),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: Colors.white.withValues(alpha: 0.9), size: 28),
+          const SizedBox(height: 10),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Colors.white.withValues(alpha: 0.88),
+              height: 1.2,
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (loading)
+            SizedBox(
+              height: 26,
+              width: 26,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white.withValues(alpha: 0.9),
+              ),
+            )
+          else
             Text(
-              label,
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-            ),
-            const SizedBox(height: 6),
-            if (loading)
-              const SizedBox(
-                height: 28,
-                width: 28,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            else
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: AdminHomeScreen.navy,
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StaffManagementCard extends StatelessWidget {
-  const _StaffManagementCard({
-    required this.adminService,
-    required this.onAddStaff,
-    required this.onViewAll,
-    required this.onEditStaff,
-  });
-
-  final AdminService adminService;
-  final VoidCallback onAddStaff;
-  final VoidCallback onViewAll;
-  final void Function(UserModel member) onEditStaff;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      margin: EdgeInsets.zero,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: onViewAll,
-                    icon: const Icon(Icons.list, size: 20),
-                    label: const Text('View All'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AdminHomeScreen.navy,
-                      side: const BorderSide(color: AdminHomeScreen.navy),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: onAddStaff,
-                    icon: const Icon(Icons.person_add, size: 20),
-                    label: const Text('Add New Staff'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AdminHomeScreen.navy,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            const Divider(height: 1),
-            const SizedBox(height: 12),
-            StreamBuilder<List<UserModel>>(
-              stream: adminService.watchStaffMembers(),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Text(
-                    'Could not load staff: ${snapshot.error}',
-                    style: const TextStyle(color: Colors.red),
-                  );
-                }
-                if (!snapshot.hasData) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 24),
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-                final staff = snapshot.data!;
-                if (staff.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Text(
-                      'No staff registered yet. Use Add New Staff to onboard team members.',
-                      style: TextStyle(color: Colors.grey.shade600, height: 1.4),
-                    ),
-                  );
-                }
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: staff.map((member) {
-                    return _StaffListTile(
-                      member: member,
-                      onTap: () => onEditStaff(member),
-                    );
-                  }).toList(),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StaffListTile extends StatelessWidget {
-  const _StaffListTile({required this.member, required this.onTap});
-
-  final UserModel member;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final initial = member.fullName.trim().isNotEmpty
-        ? member.fullName.trim()[0].toUpperCase()
-        : '?';
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CircleAvatar(
-              radius: 22,
-              backgroundColor: AdminHomeScreen.navy.withValues(alpha: 0.1),
-              child: Text(
-                initial,
-                style: const TextStyle(
-                  color: AdminHomeScreen.navy,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
+              value,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    member.fullName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                      color: AdminHomeScreen.navy,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    member.email,
-                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-                  ),
-                  if (member.phoneNumber.isNotEmpty)
-                    Text(
-                      member.phoneNumber,
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                    ),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right, color: AdminHomeScreen.navy),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -613,27 +400,11 @@ class _AdminDrawer extends StatelessWidget {
               ],
             ),
           ),
-          _DrawerTile(
-            icon: Icons.dashboard_outlined,
-            label: 'Dashboard',
-            onTap: onDashboard,
-          ),
+          _DrawerTile(icon: Icons.dashboard_outlined, label: 'Dashboard', onTap: onDashboard),
           _DrawerTile(icon: Icons.groups, label: 'Staff List', onTap: onStaffList),
-          _DrawerTile(
-            icon: Icons.medical_services_outlined,
-            label: 'Doctors',
-            onTap: onDoctors,
-          ),
-          _DrawerTile(
-            icon: Icons.assignment_ind_outlined,
-            label: 'Assign Staff',
-            onTap: onAssignStaff,
-          ),
-          _DrawerTile(
-            icon: Icons.settings_outlined,
-            label: 'Clinic Settings',
-            onTap: onClinicSettings,
-          ),
+          _DrawerTile(icon: Icons.medical_services_outlined, label: 'Doctors', onTap: onDoctors),
+          _DrawerTile(icon: Icons.assignment_ind_outlined, label: 'Assign Staff', onTap: onAssignStaff),
+          _DrawerTile(icon: Icons.settings_outlined, label: 'Clinic Settings', onTap: onClinicSettings),
           const Spacer(),
           const Divider(height: 1),
           _DrawerTile(
