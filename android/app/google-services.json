@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "610549283518",
+    "project_id": "orthoq-8d843",
+    "storage_bucket": "orthoq-8d843.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:610549283518:android:521834574589f006b6fcef",
+        "android_client_info": {
+          "package_name": "com.mycompany.CounterApp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB4NnjjvOOiz_uyfKlKrA1FgOIkDSo7B1g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:610549283518:android:5cde67b9e8ab9744b6fcef",
+        "android_client_info": {
+          "package_name": "com.mycompany.orthoq"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB4NnjjvOOiz_uyfKlKrA1FgOIkDSo7B1g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

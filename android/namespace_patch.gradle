@@ -1,0 +1,17 @@
+// AGP 8+ namespace fix for Flutter plugins (e.g. tflite_flutter) missing android.namespace.
+// Applied from build.gradle.kts via apply(from: ...).
+
+subprojects { subproject ->
+    subproject.afterEvaluate { project ->
+        if (project.hasProperty('android')) {
+            project.android {
+                if (namespace == null || namespace.toString().trim().isEmpty()) {
+                    def g = project.group?.toString()?.trim()
+                    namespace = (g != null && !g.isEmpty() && g != 'unspecified')
+                            ? g
+                            : "com.${project.name}".replace('-', '_')
+                }
+            }
+        }
+    }
+}
