@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 
 class DoctorDetailsPage extends StatelessWidget {
   final String doctorId;
@@ -26,7 +27,7 @@ class DoctorDetailsPage extends StatelessWidget {
       backgroundColor: const Color(0xFFF7FAFC),
       appBar: AppBar(
         title: const Text('Doctor profile'),
-        backgroundColor: const Color(0xFF1A365D),
+        backgroundColor: OrthoqColors.slateNavy,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -35,7 +36,7 @@ class DoctorDetailsPage extends StatelessWidget {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
-              child: CircularProgressIndicator(color: Color(0xFF2B6CB0)),
+              child: CircularProgressIndicator(color: OrthoqColors.techBlue),
             );
           }
 
@@ -94,7 +95,7 @@ class DoctorDetailsPage extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A365D),
+                          color: OrthoqColors.slateNavy,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -152,7 +153,7 @@ class _DoctorHeaderImage extends StatelessWidget {
         child: const Icon(
           Icons.person,
           size: 120,
-          color: Color(0xFF2B6CB0),
+          color: OrthoqColors.techBlue,
         ),
       );
     }
@@ -166,7 +167,7 @@ class _DoctorHeaderImage extends StatelessWidget {
           color: const Color(0xFFE6F2FF),
           child: const Center(
             child: CircularProgressIndicator(
-              color: Color(0xFF2B6CB0),
+              color: OrthoqColors.techBlue,
               strokeWidth: 2,
             ),
           ),
@@ -178,7 +179,7 @@ class _DoctorHeaderImage extends StatelessWidget {
           child: const Icon(
             Icons.person,
             size: 120,
-            color: Color(0xFF2B6CB0),
+            color: OrthoqColors.techBlue,
           ),
         );
       },

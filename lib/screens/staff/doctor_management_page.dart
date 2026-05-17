@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 
 import '../../models/user_model.dart';
 
@@ -32,7 +33,7 @@ class _DoctorManagementPageState extends State<DoctorManagementPage> {
       backgroundColor: const Color(0xFFF7FAFC),
       appBar: AppBar(
         title: const Text('Staff Profile'),
-        backgroundColor: const Color(0xFF1A365D),
+        backgroundColor: OrthoqColors.slateNavy,
         foregroundColor: Colors.white,
       ),
       body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -75,7 +76,7 @@ class _DoctorManagementPageState extends State<DoctorManagementPage> {
                       Text(
                         displayName,
                         style: const TextStyle(
-                          color: Color(0xFF1A365D),
+                          color: OrthoqColors.slateNavy,
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
@@ -94,7 +95,7 @@ class _DoctorManagementPageState extends State<DoctorManagementPage> {
                       Text(
                         staffRole,
                         style: const TextStyle(
-                          color: Color(0xFF1A365D),
+                          color: OrthoqColors.slateNavy,
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
@@ -108,7 +109,7 @@ class _DoctorManagementPageState extends State<DoctorManagementPage> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A365D),
+                    color: OrthoqColors.slateNavy,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -175,20 +176,20 @@ class _DoctorManagementPageState extends State<DoctorManagementPage> {
                                           errorBuilder: (context, error, stackTrace) {
                                             return const Icon(
                                               Icons.medical_services_outlined,
-                                              color: Color(0xFF1A365D),
+                                              color: OrthoqColors.slateNavy,
                                             );
                                           },
                                         ),
                                       )
                                     : const Icon(
                                         Icons.medical_services_outlined,
-                                        color: Color(0xFF1A365D),
+                                        color: OrthoqColors.slateNavy,
                                       ),
                               ),
                               title: Text(
                                 'Dr. $doctorName',
                                 style: const TextStyle(
-                                  color: Color(0xFF1A365D),
+                                  color: OrthoqColors.slateNavy,
                                   fontWeight: FontWeight.w700,
                                   fontSize: 14,
                                 ),
@@ -196,7 +197,7 @@ class _DoctorManagementPageState extends State<DoctorManagementPage> {
                               subtitle: Text(
                                 specialization,
                                 style: const TextStyle(
-                                  color: Color(0xFF1A365D),
+                                  color: OrthoqColors.slateNavy,
                                   fontSize: 13,
                                 ),
                               ),

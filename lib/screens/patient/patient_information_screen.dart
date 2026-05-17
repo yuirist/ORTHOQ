@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -349,7 +350,7 @@ class _PatientInformationScreenState extends State<PatientInformationScreen> {
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: _selectedPackage == 'self_pay'
-                                ? const Color(0xFF1A365D)
+                                ? OrthoqColors.slateNavy
                                 : Colors.transparent,
                             width: 2,
                           ),
@@ -364,7 +365,7 @@ class _PatientInformationScreenState extends State<PatientInformationScreen> {
                                   _selectedPackage = value!;
                                 });
                               },
-                              activeColor: const Color(0xFF1A365D),
+                              activeColor: OrthoqColors.slateNavy,
                             ),
                             const Text(
                               'Self Pay',
@@ -393,7 +394,7 @@ class _PatientInformationScreenState extends State<PatientInformationScreen> {
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: _selectedPackage == 'insurance'
-                                ? const Color(0xFF1A365D)
+                                ? OrthoqColors.slateNavy
                                 : Colors.transparent,
                             width: 2,
                           ),
@@ -408,7 +409,7 @@ class _PatientInformationScreenState extends State<PatientInformationScreen> {
                                   _selectedPackage = value!;
                                 });
                               },
-                              activeColor: const Color(0xFF1A365D),
+                              activeColor: OrthoqColors.slateNavy,
                             ),
                             const Text(
                               'Insurance',
@@ -433,7 +434,7 @@ class _PatientInformationScreenState extends State<PatientInformationScreen> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _savePatientInformation,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1A365D),
+                    backgroundColor: OrthoqColors.slateNavy,
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

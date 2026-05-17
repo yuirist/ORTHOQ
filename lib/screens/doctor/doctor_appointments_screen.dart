@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../providers/auth_provider.dart';
@@ -20,7 +21,7 @@ class DoctorAppointmentsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(showTodayOnly ? "Today's Appointments" : 'All Appointments'),
-        backgroundColor: const Color(0xFF1A365D),
+        backgroundColor: OrthoqColors.slateNavy,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
       ),
       body: showTodayOnly

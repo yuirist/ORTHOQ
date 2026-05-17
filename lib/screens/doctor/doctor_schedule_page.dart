@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
@@ -71,10 +72,10 @@ class _DoctorSchedulePageState extends State<DoctorSchedulePage> {
               width: 72,
               margin: const EdgeInsets.only(right: 10),
               decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFF1A365D) : Colors.white,
+                color: isSelected ? OrthoqColors.slateNavy : Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isSelected ? const Color(0xFF1A365D) : Colors.grey.shade300,
+                  color: isSelected ? OrthoqColors.slateNavy : Colors.grey.shade300,
                 ),
               ),
               child: Column(
@@ -94,7 +95,7 @@ class _DoctorSchedulePageState extends State<DoctorSchedulePage> {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: isSelected ? Colors.white : const Color(0xFF1A365D),
+                      color: isSelected ? Colors.white : OrthoqColors.slateNavy,
                     ),
                   ),
                   Padding(
@@ -153,7 +154,7 @@ class _DoctorSchedulePageState extends State<DoctorSchedulePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Schedule'),
-        backgroundColor: const Color(0xFF1A365D),
+        backgroundColor: OrthoqColors.slateNavy,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
       ),
       body: Padding(
@@ -171,7 +172,7 @@ class _DoctorSchedulePageState extends State<DoctorSchedulePage> {
                 ),
                 IconButton(
                   onPressed: _pickDate,
-                  icon: const Icon(Icons.calendar_month, color: Color(0xFF1A365D)),
+                  icon: const Icon(Icons.calendar_month, color: OrthoqColors.slateNavy),
                 ),
               ],
             ),
@@ -241,7 +242,7 @@ class _DoctorSchedulePageState extends State<DoctorSchedulePage> {
                           decoration: BoxDecoration(
                             color: const Color(0xFFF0F6FF),
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0xFF1A365D).withOpacity(0.2)),
+                            border: Border.all(color: OrthoqColors.slateNavy.withOpacity(0.2)),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -250,7 +251,7 @@ class _DoctorSchedulePageState extends State<DoctorSchedulePage> {
                                 'Total Appointments: ${docs.length}',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF1A365D),
+                                  color: OrthoqColors.slateNavy,
                                 ),
                               ),
                               const SizedBox(height: 2),
@@ -277,12 +278,12 @@ class _DoctorSchedulePageState extends State<DoctorSchedulePage> {
                                 ),
                                 specialRegions:
                                     StaffCalendarSlotSettings.preClinicBufferRegions,
-                                todayHighlightColor: const Color(0xFF1A365D),
+                                todayHighlightColor: OrthoqColors.slateNavy,
                                 backgroundColor: Colors.white,
                                 cellBorderColor: Colors.grey.shade300,
                                 headerStyle: const CalendarHeaderStyle(
                                   textStyle: TextStyle(
-                                    color: Color(0xFF1A365D),
+                                    color: OrthoqColors.slateNavy,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),

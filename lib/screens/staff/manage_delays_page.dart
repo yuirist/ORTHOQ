@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/doctor_model.dart';
 import '../../services/doctor_service.dart';
@@ -125,7 +126,7 @@ class _ManageDelaysPageState extends State<ManageDelaysPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Manage Delays'),
-        backgroundColor: const Color(0xFF1A365D),
+        backgroundColor: OrthoqColors.slateNavy,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
       ),
       body: SingleChildScrollView(
@@ -251,7 +252,7 @@ class _ManageDelaysPageState extends State<ManageDelaysPage> {
               child: ElevatedButton(
                 onPressed: _isSubmitting ? null : _submitDelay,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1A365D),
+                  backgroundColor: OrthoqColors.slateNavy,
                   foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(

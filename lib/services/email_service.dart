@@ -39,7 +39,7 @@ class EmailService {
 <head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background-color:#F7FAFC;">
 <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; color: #2d3748;">
-  <div style="background-color: #1A365D; color: #ffffff; padding: 18px 22px;">
+  <div style="background-color: #1B3C68; color: #ffffff; padding: 18px 22px;">
     <h1 style="margin:0;font-size:20px;font-weight:bold;">OrthoQ - Hospital Kajang</h1>
   </div>
   <div style="padding: 24px 22px 32px 22px; background-color: #F7FAFC;">
@@ -63,7 +63,7 @@ $innerBodyHtml
       Your booking has been received and is <strong>pending review</strong>.
       Our clinic team will confirm your appointment once your referral has been checked.
     </p>
-    <h2 style="margin:0 0 12px 0;font-size:17px;color:#1A365D;">Next steps</h2>
+    <h2 style="margin:0 0 12px 0;font-size:17px;color:#1B3C68;">Next steps</h2>
     <ul style="margin:0;padding-left:20px;font-size:15px;line-height:1.65;color:#4A5568;">
       <li style="margin-bottom:8px;">Reviewing your referral letter</li>
       <li style="margin-bottom:8px;">Verifying your details against clinic records</li>
@@ -115,23 +115,23 @@ $innerBodyHtml
     </p>
     <table role="presentation" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;font-size:15px;background:#ffffff;">
       <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;width:38%;background-color:#EDF2F7;font-weight:bold;color:#1A365D;">Patient Name</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;width:38%;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Patient Name</td>
         <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;">$safeName</td>
       </tr>
       <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1A365D;">Doctor</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Doctor</td>
         <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;">$safeDoctor</td>
       </tr>
       <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1A365D;">Appointment Date</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Appointment Date</td>
         <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;">$safeDate</td>
       </tr>
       <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1A365D;">Appointment Time</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Appointment Time</td>
         <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;">$safeTime</td>
       </tr>
       <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1A365D;">Clinic</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Clinic</td>
         <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;">OrthoQ (Hospital Kajang)</td>
       </tr>
     </table>
@@ -178,19 +178,19 @@ $innerBodyHtml
     </p>
     <table role="presentation" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;font-size:15px;background:#ffffff;">
       <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;width:38%;background-color:#EDF2F7;font-weight:bold;color:#1A365D;">Doctor Name</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;width:38%;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Doctor Name</td>
         <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;">$safeDoctor</td>
       </tr>
       <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1A365D;">Specialization</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Specialization</td>
         <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;">$safeSpec</td>
       </tr>
       <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1A365D;">Date</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Date</td>
         <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;">$safeDate</td>
       </tr>
       <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1A365D;">Time</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Time</td>
         <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;">$safeTime</td>
       </tr>
     </table>
@@ -229,7 +229,7 @@ $innerBodyHtml
     final inner =
         '''
     <p style="margin:0 0 14px 0;font-size:16px;line-height:1.5;">Hi $safeName,</p>
-    <h2 style="margin:0 0 18px 0;font-size:18px;color:#1A365D;font-weight:bold;">
+    <h2 style="margin:0 0 18px 0;font-size:18px;color:#1B3C68;font-weight:bold;">
       Appointment Reschedule Notice
     </h2>
     <p style="margin:0 0 18px 0;font-size:15px;line-height:1.55;color:#4A5568;">
@@ -237,25 +237,25 @@ $innerBodyHtml
     </p>
     <table role="presentation" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;font-size:15px;background:#ffffff;">
       <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;width:38%;background-color:#EDF2F7;font-weight:bold;color:#1A365D;">Status</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;width:38%;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Status</td>
         <td style="border:1px solid #CBD5E0;padding:12px 14px;">
           <span style="font-weight:bold;color:#C53030;">RESCHEDULED</span>
         </td>
       </tr>
       <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1A365D;">Doctor</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Doctor</td>
         <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;">$safeDoctor</td>
       </tr>
       <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1A365D;">Previous Date</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Previous Date</td>
         <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#718096;text-decoration:line-through;">$safeOldDate</td>
       </tr>
       <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1A365D;">New Confirmed Date</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">New Confirmed Date</td>
         <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;"><strong>$safeNewDate</strong></td>
       </tr>
       <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1A365D;">New Confirmed Time</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">New Confirmed Time</td>
         <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;"><strong>$safeNewTime</strong></td>
       </tr>
     </table>
@@ -313,15 +313,15 @@ If this new time does not work for you, please contact the clinic assistant at H
     </p>
     <table role="presentation" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;font-size:15px;background:#ffffff;">
       <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;width:38%;background-color:#EDF2F7;font-weight:bold;color:#1A365D;">Status</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;width:38%;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Status</td>
         <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;"><strong style="color:#2F855A;">APPROVED</strong></td>
       </tr>
       <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1A365D;">New Date</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">New Date</td>
         <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;">$safeNewDate</td>
       </tr>
       <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1A365D;">New Time</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">New Time</td>
         <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;">$safeNewTime</td>
       </tr>
     </table>
@@ -378,19 +378,19 @@ If this new time does not work for you, please contact the clinic assistant at H
     </p>
     <table role="presentation" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;font-size:15px;background:#ffffff;">
       <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;width:38%;background-color:#EDF2F7;font-weight:bold;color:#1A365D;">Status</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;width:38%;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Status</td>
         <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;"><strong style="color:#2F855A;">APPROVED</strong></td>
       </tr>
       <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1A365D;">Doctor</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Doctor</td>
         <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;"><strong>Dr. $safeDoctor</strong></td>
       </tr>
       <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1A365D;">New Appointment Date</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">New Appointment Date</td>
         <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;">$safeNewDate</td>
       </tr>
       <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1A365D;">Time</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Time</td>
         <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;">$safeNewTime</td>
       </tr>
     </table>
@@ -445,15 +445,15 @@ If this new time does not work for you, please contact the clinic assistant at H
     </p>
     <table role="presentation" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;font-size:15px;background:#ffffff;">
       <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;width:38%;background-color:#EDF2F7;font-weight:bold;color:#1A365D;">Doctor</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;width:38%;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Doctor</td>
         <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;">$safeDoctor</td>
       </tr>
       <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1A365D;">Date</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Date</td>
         <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;">$safeAppointmentDate</td>
       </tr>
       <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1A365D;">Your scheduled time</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Your scheduled time</td>
         <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;"><strong>$safeOriginalTime</strong></td>
       </tr>
     </table>

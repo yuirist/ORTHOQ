@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 
 import '../../models/doctor_model.dart';
 import '../../models/user_model.dart';
@@ -13,7 +14,7 @@ class StaffDashboardPage extends StatefulWidget {
 
   final UserModel? userProfile;
 
-  static const Color _navy = Color(0xFF1A365D);
+  static const Color _navy = OrthoqColors.slateNavy;
 
   @override
   State<StaffDashboardPage> createState() => _StaffDashboardPageState();

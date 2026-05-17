@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/validation_utils.dart';
@@ -135,7 +136,7 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
         return Scaffold(
           appBar: AppBar(
             title: const Text('Profile'),
-            backgroundColor: const Color(0xFF1A365D),
+            backgroundColor: OrthoqColors.slateNavy,
             foregroundColor: Theme.of(context).colorScheme.onPrimary,
             actions: [
               if (!_isEditing)
@@ -179,7 +180,7 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
                   // Profile Picture
                   CircleAvatar(
                     radius: 50,
-                    backgroundColor: const Color(0xFF1A365D),
+                    backgroundColor: OrthoqColors.slateNavy,
                     child: Text(
                       userData?.fullName.isNotEmpty == true
                           ? userData!.fullName[0].toUpperCase()

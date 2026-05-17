@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -231,7 +232,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('${widget.userType.toUpperCase()} Registration'),
-        backgroundColor: const Color(0xFF1A365D),
+        backgroundColor: OrthoqColors.slateNavy,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
       ),
       body: SafeArea(
@@ -250,7 +251,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ? Icons.badge
                           : Icons.person_add,
                   size: 80,
-                  color: const Color(0xFF1A365D),
+                  color: OrthoqColors.slateNavy,
                 ),
                 const SizedBox(height: 24),
                 Text(
@@ -447,7 +448,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ElevatedButton(
                   onPressed: _isLoading ? null : _handleRegister,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1A365D),
+                    backgroundColor: OrthoqColors.slateNavy,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),

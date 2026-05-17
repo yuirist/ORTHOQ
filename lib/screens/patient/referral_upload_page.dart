@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:cloudinary_public/cloudinary_public.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -192,7 +193,7 @@ class _ReferralUploadPageState extends State<ReferralUploadPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Upload Referral Letter'),
-        backgroundColor: const Color(0xFF1A365D),
+        backgroundColor: OrthoqColors.slateNavy,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
       ),
       body: SafeArea(
@@ -318,7 +319,7 @@ class _ReferralUploadPageState extends State<ReferralUploadPage> {
                     ? null
                     : _uploadAndSave,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1A365D),
+                  backgroundColor: OrthoqColors.slateNavy,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -372,7 +373,7 @@ class _ReferralUploadPageState extends State<ReferralUploadPage> {
                   children: [
                     Icon(
                       Icons.info_outline,
-                      color: const Color(0xFF1A365D),
+                      color: OrthoqColors.slateNavy,
                       size: 20,
                     ),
                     const SizedBox(width: 12),

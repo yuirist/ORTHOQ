@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:intl/intl.dart';
 import '../../services/appointment_service.dart';
 import '../../models/appointment_model.dart';
@@ -111,7 +112,7 @@ class _RequestScheduleChangeScreenState extends State<RequestScheduleChangeScree
     return Scaffold(
       appBar: AppBar(
         title: const Text('Request Schedule Change'),
-        backgroundColor: const Color(0xFF1A365D),
+        backgroundColor: OrthoqColors.slateNavy,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
       ),
       body: SingleChildScrollView(
@@ -259,7 +260,7 @@ class _RequestScheduleChangeScreenState extends State<RequestScheduleChangeScree
               ElevatedButton(
                 onPressed: _isLoading ? null : _requestScheduleChange,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1A365D),
+                  backgroundColor: OrthoqColors.slateNavy,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),

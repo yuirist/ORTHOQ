@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
@@ -238,7 +239,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A365D),
+                  color: OrthoqColors.slateNavy,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -331,7 +332,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                         _buildSummaryRow(
                           'Status',
                           'Confirmed',
-                          valueColor: const Color(0xFF1A365D),
+                          valueColor: OrthoqColors.slateNavy,
                         ),
                       ],
                     ],
@@ -355,7 +356,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1A365D),
+                          backgroundColor: OrthoqColors.slateNavy,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
@@ -373,7 +374,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                     : ElevatedButton(
                         onPressed: _isSaving ? null : _confirmBooking,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1A365D),
+                          backgroundColor: OrthoqColors.slateNavy,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),

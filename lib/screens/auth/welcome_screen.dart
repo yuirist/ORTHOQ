@@ -2,6 +2,7 @@
 import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
+import '../../theme/orthoq_theme.dart';
 import '../../utils/auth_navigation.dart';
 import 'login_screen.dart';
 
@@ -9,7 +10,8 @@ class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
   static const Color _navy = Color(0xFF1B3C68);
-  static const double _backgroundImageOpacity = 0.22;
+  static const double _backgroundImageOpacity = 0.55;
+  static const double _overlayOpacity = 0.52;
 
   @override
   State<WelcomeScreen> createState() => _WelcomeScreenState();
@@ -72,6 +74,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               height: double.infinity,
             ),
           ),
+          Container(color: WelcomeScreen._navy.withValues(alpha: WelcomeScreen._overlayOpacity)),
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -148,17 +151,7 @@ class _WelcomeLoginButton extends StatelessWidget {
       width: double.infinity,
       child: ElevatedButton(
         onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: WelcomeScreen._navy,
-          foregroundColor: Colors.white,
-          elevation: 2,
-          shadowColor: Colors.black26,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: BorderSide(color: Colors.white.withValues(alpha: 0.35)),
-          ),
-        ),
+        style: OrthoqTheme.welcomePortalButton(WelcomeScreen._navy),
         child: Text(
           label,
           style: const TextStyle(

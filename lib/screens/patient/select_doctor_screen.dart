@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import '../../services/doctor_service.dart';
 import '../../models/doctor_model.dart';
 import 'patient_information_screen.dart';
@@ -102,7 +103,7 @@ class _SelectDoctorScreenState extends State<SelectDoctorScreen> {
                           _selectedCategory = category;
                         });
                       },
-                      selectedColor: const Color(0xFF1A365D),
+                      selectedColor: OrthoqColors.slateNavy,
                       labelStyle: TextStyle(
                         color: isSelected
                             ? Theme.of(context).colorScheme.onPrimary
@@ -265,7 +266,7 @@ class _DoctorCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFF1A365D),
+                color: OrthoqColors.slateNavy,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
@@ -352,7 +353,7 @@ class _DoctorCard extends StatelessWidget {
                 // Doctor Avatar with network image or default icon
                 CircleAvatar(
                   radius: 30,
-                  backgroundColor: const Color(0xFF1A365D),
+                  backgroundColor: OrthoqColors.slateNavy,
                   child: doctor.imageUrl != null && doctor.imageUrl!.isNotEmpty
                       ? ClipOval(
                           child: Image.network(
@@ -401,7 +402,7 @@ class _DoctorCard extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: onSelect,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1A365D),
+                  backgroundColor: OrthoqColors.slateNavy,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),

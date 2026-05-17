@@ -21,7 +21,8 @@ class AdminHomeScreen extends StatefulWidget {
   final String uid;
   final UserModel? userProfile;
 
-  static const Color navy = OrthoqColors.navy;
+  static const Color slateNavy = OrthoqColors.slateNavy;
+  static const Color techBlue = OrthoqColors.techBlue;
 
   @override
   State<AdminHomeScreen> createState() => _AdminHomeScreenState();
@@ -91,7 +92,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       backgroundColor: OrthoqColors.scaffoldBg,
       appBar: AppBar(
         title: const Text('Admin Dashboard'),
-        backgroundColor: AdminHomeScreen.navy,
+        backgroundColor: AdminHomeScreen.slateNavy,
         foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -125,7 +126,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         onLogout: _logout,
       ),
       body: RefreshIndicator(
-        color: AdminHomeScreen.navy,
+        color: AdminHomeScreen.slateNavy,
         onRefresh: () async {
           setState(() {});
           await Future<void>.delayed(const Duration(milliseconds: 400));
@@ -145,7 +146,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: AdminHomeScreen.navy,
+                    color: AdminHomeScreen.slateNavy,
                   ),
                 ),
               ),
@@ -188,7 +189,7 @@ class _DashboardHeader extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(24, 28, 24, 28),
       decoration: const BoxDecoration(
-        color: AdminHomeScreen.navy,
+        color: AdminHomeScreen.slateNavy,
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(20),
           bottomRight: Radius.circular(20),
@@ -294,11 +295,11 @@ class _NavyStatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
       decoration: BoxDecoration(
-        color: AdminHomeScreen.navy,
+        color: AdminHomeScreen.slateNavy,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: AdminHomeScreen.navy.withValues(alpha: 0.25),
+            color: AdminHomeScreen.slateNavy.withValues(alpha: 0.25),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -307,7 +308,7 @@ class _NavyStatCard extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: Colors.white.withValues(alpha: 0.9), size: 28),
+          Icon(icon, color: Colors.white.withValues(alpha: 0.95), size: 28),
           const SizedBox(height: 10),
           Text(
             label,
@@ -374,7 +375,7 @@ class _AdminDrawer extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           DrawerHeader(
-            decoration: const BoxDecoration(color: AdminHomeScreen.navy),
+            decoration: const BoxDecoration(color: AdminHomeScreen.slateNavy),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.end,
@@ -439,11 +440,11 @@ class _DrawerTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, color: iconColor ?? AdminHomeScreen.navy),
+      leading: Icon(icon, color: iconColor ?? AdminHomeScreen.slateNavy),
       title: Text(
         label,
         style: TextStyle(
-          color: textColor ?? AdminHomeScreen.navy,
+          color: textColor ?? AdminHomeScreen.slateNavy,
           fontWeight: FontWeight.w500,
         ),
       ),

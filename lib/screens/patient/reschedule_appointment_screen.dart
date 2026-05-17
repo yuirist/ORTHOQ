@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/appointment_model.dart';
@@ -207,7 +208,7 @@ class _RescheduleAppointmentScreenState
     return Scaffold(
       appBar: AppBar(
         title: const Text('Reschedule Appointment'),
-        backgroundColor: const Color(0xFF1A365D),
+        backgroundColor: OrthoqColors.slateNavy,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
       ),
       body: SingleChildScrollView(
@@ -356,7 +357,7 @@ class _RescheduleAppointmentScreenState
                       ? null
                       : _requestReschedule,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1A365D),
+                    backgroundColor: OrthoqColors.slateNavy,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     disabledBackgroundColor: Colors.grey.shade300,
                     shape: RoundedRectangleBorder(
@@ -465,7 +466,7 @@ class _RescheduleAppointmentScreenState
               },
               style: FilledButton.styleFrom(
                 backgroundColor: isSelected
-                    ? const Color(0xFF1A365D)
+                    ? OrthoqColors.slateNavy
                     : Colors.grey.shade100,
                 foregroundColor: isSelected
                     ? Theme.of(context).colorScheme.onPrimary
@@ -474,7 +475,7 @@ class _RescheduleAppointmentScreenState
                   borderRadius: BorderRadius.circular(8),
                   side: BorderSide(
                     color: isSelected
-                        ? const Color(0xFF1A365D)
+                        ? OrthoqColors.slateNavy
                         : Colors.grey.shade300,
                     width: isSelected ? 2 : 1,
                   ),

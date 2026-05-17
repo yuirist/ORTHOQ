@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../../services/doctor_service.dart';
@@ -196,7 +197,7 @@ class _StaffSchedulingPageState extends State<StaffSchedulingPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Schedule Appointment'),
-        backgroundColor: const Color(0xFF1A365D),
+        backgroundColor: OrthoqColors.slateNavy,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
       ),
       body: SingleChildScrollView(
@@ -206,7 +207,7 @@ class _StaffSchedulingPageState extends State<StaffSchedulingPage> {
           children: [
             // Patient Info Card
             Card(
-              color: const Color(0xFF1A365D),
+              color: OrthoqColors.slateNavy,
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -263,7 +264,7 @@ class _StaffSchedulingPageState extends State<StaffSchedulingPage> {
                         Icons.calendar_today,
                         size: 32,
                         color: _selectedDate != null
-                            ? const Color(0xFF1A365D)
+                            ? OrthoqColors.slateNavy
                             : Colors.grey,
                       ),
                       const SizedBox(width: 16),
@@ -276,7 +277,7 @@ class _StaffSchedulingPageState extends State<StaffSchedulingPage> {
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
                             color: _selectedDate != null
-                                ? const Color(0xFF1A365D)
+                                ? OrthoqColors.slateNavy
                                 : Colors.grey,
                           ),
                         ),
@@ -323,7 +324,7 @@ class _StaffSchedulingPageState extends State<StaffSchedulingPage> {
                     ? null
                     : _saveSchedule,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1A365D),
+                  backgroundColor: OrthoqColors.slateNavy,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   disabledBackgroundColor: Colors.grey.shade300,
                 ),
@@ -425,7 +426,7 @@ class _StaffSchedulingPageState extends State<StaffSchedulingPage> {
               },
               style: FilledButton.styleFrom(
                 backgroundColor: isSelected
-                    ? const Color(0xFF1A365D)
+                    ? OrthoqColors.slateNavy
                     : Colors.grey.shade100,
                 foregroundColor: isSelected
                     ? Theme.of(context).colorScheme.onPrimary
@@ -434,7 +435,7 @@ class _StaffSchedulingPageState extends State<StaffSchedulingPage> {
                   borderRadius: BorderRadius.circular(8),
                   side: BorderSide(
                     color: isSelected
-                        ? const Color(0xFF1A365D)
+                        ? OrthoqColors.slateNavy
                         : Colors.grey.shade300,
                     width: isSelected ? 2 : 1,
                   ),

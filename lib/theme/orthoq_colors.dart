@@ -1,7 +1,17 @@
 import 'package:flutter/material.dart';
 
-/// OrthoQ brand colors — use across welcome, login, and admin portals.
+/// OrthoQ professional brand palette.
 abstract final class OrthoqColors {
+  /// Primary Navy Blue — headers, buttons, active icons.
   static const Color navy = Color(0xFF1B3C68);
-  static const Color scaffoldBg = Color(0xFFF4F6F9);
+
+  /// Alias used across portals and admin screens.
+  static const Color slateNavy = navy;
+
+  /// Primary actions (same as [navy] for consistent branding).
+  static const Color techBlue = navy;
+
+  static const Color lightSlate = Color(0xFFE2E8F0);
+  static const Color white = Color(0xFFFFFFFF);
+  static const Color scaffoldBg = Color(0xFFF8FAFC);
 }

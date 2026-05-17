@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/user_model.dart';
@@ -83,7 +84,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
             Consumer<app_auth.AuthProvider>(
               builder: (context, authProvider, _) {
                 return Card(
-                  color: const Color(0xFF1A365D),
+                  color: OrthoqColors.slateNavy,
                   child: Padding(
                     padding: const EdgeInsets.all(20.0),
                     child: Column(
@@ -253,7 +254,7 @@ class _QuickActionCard extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                Icon(icon, size: 44, color: const Color(0xFF1A365D)),
+                Icon(icon, size: 44, color: OrthoqColors.slateNavy),
                 const SizedBox(height: 8),
                 Text(
                   label,

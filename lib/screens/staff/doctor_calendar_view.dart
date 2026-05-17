@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 import 'staff_appointment_calendar_mapper.dart';
@@ -25,7 +26,7 @@ class _DoctorCalendarViewState extends State<DoctorCalendarView> {
   late final CalendarController _controller;
   CalendarView _view = CalendarView.week;
 
-  static const _navy = Color(0xFF1A365D);
+  static const _navy = OrthoqColors.slateNavy;
   static const _onNavy = Color(0xFFFFFFFF);
 
   @override

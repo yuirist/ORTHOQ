@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../../models/doctor_model.dart';
 import '../../services/doctor_service.dart';
+import '../../theme/orthoq_colors.dart';
 import 'admin_edit_doctor_screen.dart';
 
 class AdminDoctorListPage extends StatelessWidget {
   const AdminDoctorListPage({super.key});
 
-  static const Color _navy = Color(0xFF1A365D);
+  static const Color _navy = OrthoqColors.slateNavy;
 
   @override
   Widget build(BuildContext context) {

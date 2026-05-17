@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:intl/intl.dart';
 import '../../services/appointment_service.dart';
 import '../../services/email_service.dart';
@@ -203,7 +204,7 @@ class _ManageAppointmentsScreenState extends State<ManageAppointmentsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Manage Appointments'),
-        backgroundColor: const Color(0xFF1A365D),
+        backgroundColor: OrthoqColors.slateNavy,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
       ),
       body: StreamBuilder<List<AppointmentModel>>(
@@ -337,7 +338,7 @@ class _AppointmentCard extends StatelessWidget {
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                             color: isNewPatient
-                                ? const Color(0xFF1A365D)
+                                ? OrthoqColors.slateNavy
                                 : const Color(0xFF166534),
                           ),
                         ),

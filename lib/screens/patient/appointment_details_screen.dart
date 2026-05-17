@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:intl/intl.dart';
 import '../../models/appointment_model.dart';
 import 'reschedule_appointment_screen.dart';
@@ -35,7 +36,7 @@ class AppointmentDetailsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Appointment Details'),
-        backgroundColor: const Color(0xFF1A365D),
+        backgroundColor: OrthoqColors.slateNavy,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
       ),
       body: SingleChildScrollView(
@@ -45,7 +46,7 @@ class AppointmentDetailsScreen extends StatelessWidget {
           children: [
             // Doctor Info Card
             Card(
-              color: const Color(0xFF1A365D),
+              color: OrthoqColors.slateNavy,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -59,7 +60,7 @@ class AppointmentDetailsScreen extends StatelessWidget {
                       child: const Icon(
                         Icons.person,
                         size: 35,
-                        color: Color(0xFF1A365D),
+                        color: OrthoqColors.slateNavy,
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -171,8 +172,8 @@ class AppointmentDetailsScreen extends StatelessWidget {
                     label: const Text('Reschedule Appointment'),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      side: const BorderSide(color: Color(0xFF1A365D)),
-                      foregroundColor: const Color(0xFF1A365D),
+                      side: const BorderSide(color: OrthoqColors.slateNavy),
+                      foregroundColor: OrthoqColors.slateNavy,
                     ),
                   ),
                 ),

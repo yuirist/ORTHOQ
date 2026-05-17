@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 
 import '../../models/doctor_model.dart';
 import '../../services/doctor_service.dart';
@@ -13,7 +14,7 @@ class AdminAssignStaffPage extends StatefulWidget {
 }
 
 class _AdminAssignStaffPageState extends State<AdminAssignStaffPage> {
-  static const Color _navy = Color(0xFF1A365D);
+  static const Color _navy = OrthoqColors.slateNavy;
   static const int _kRequiredDoctors = 3;
 
   String? _selectedStaffId;

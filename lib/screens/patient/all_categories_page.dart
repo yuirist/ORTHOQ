@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 
 import 'filtered_doctors_page.dart';
 
@@ -37,7 +38,7 @@ class AllCategoriesPage extends StatelessWidget {
       backgroundColor: const Color(0xFFF7FAFC),
       appBar: AppBar(
         title: const Text('All categories'),
-        backgroundColor: const Color(0xFF1A365D),
+        backgroundColor: OrthoqColors.slateNavy,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -68,7 +69,7 @@ class AllCategoriesPage extends StatelessWidget {
                   children: [
                     const Icon(
                       Icons.medical_services_outlined,
-                      color: Color(0xFF2B6CB0),
+                      color: OrthoqColors.techBlue,
                       size: 28,
                     ),
                     const SizedBox(width: 16),

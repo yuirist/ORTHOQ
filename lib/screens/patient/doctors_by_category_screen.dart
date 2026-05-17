@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import '../../services/doctor_service.dart';
 import '../../models/doctor_model.dart';
 
@@ -14,7 +15,7 @@ class DoctorsByCategoryScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('$category Doctors'),
-        backgroundColor: const Color(0xFF1A365D),
+        backgroundColor: OrthoqColors.slateNavy,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
       ),
       body: StreamBuilder<List<DoctorModel>>(
@@ -63,7 +64,7 @@ class DoctorsByCategoryScreen extends StatelessWidget {
                 child: ListTile(
                   leading: CircleAvatar(
                     radius: 30,
-                    backgroundColor: const Color(0xFF1A365D),
+                    backgroundColor: OrthoqColors.slateNavy,
                     child: Icon(
                       Icons.person,
                       color: Theme.of(context).colorScheme.onPrimary,

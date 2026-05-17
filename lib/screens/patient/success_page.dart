@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:intl/intl.dart';
 import 'patient_home_screen.dart';
 
@@ -28,7 +29,7 @@ class SuccessPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Booking Successful'),
-        backgroundColor: const Color(0xFF1A365D),
+        backgroundColor: OrthoqColors.slateNavy,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
         automaticallyImplyLeading: false,
       ),
@@ -60,7 +61,7 @@ class SuccessPage extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A365D),
+                  color: OrthoqColors.slateNavy,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -112,7 +113,7 @@ class SuccessPage extends StatelessWidget {
                       _buildDetailRow(
                         'Status',
                         'Pending Staff Approval',
-                        valueColor: const Color(0xFF1A365D),
+                        valueColor: OrthoqColors.slateNavy,
                       ),
                     ],
                   ),
@@ -132,7 +133,7 @@ class SuccessPage extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.info_outline,
-                      color: const Color(0xFF1A365D),
+                      color: OrthoqColors.slateNavy,
                       size: 20,
                     ),
                     const SizedBox(width: 12),
@@ -164,7 +165,7 @@ class SuccessPage extends StatelessWidget {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1A365D),
+                    backgroundColor: OrthoqColors.slateNavy,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),

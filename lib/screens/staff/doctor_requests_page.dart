@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'delay_notifications_page.dart';
@@ -87,14 +88,14 @@ class _DoctorRequestsPageState extends State<DoctorRequestsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Doctor Reschedule Requests'),
-        backgroundColor: const Color(0xFF1A365D),
+        backgroundColor: OrthoqColors.slateNavy,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
       ),
       body: Column(
         children: [
           Container(
             width: double.infinity,
-            color: const Color(0xFF1A365D),
+            color: OrthoqColors.slateNavy,
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -210,7 +211,7 @@ class _DoctorRequestsPageState extends State<DoctorRequestsPage> {
                                     children: [
                                       const Icon(
                                         Icons.notification_important,
-                                        color: Color(0xFF1A365D),
+                                        color: OrthoqColors.slateNavy,
                                       ),
                                       const SizedBox(width: 8),
                                       Expanded(
@@ -261,7 +262,7 @@ class _DoctorRequestsPageState extends State<DoctorRequestsPage> {
                                     child: ElevatedButton.icon(
                                       onPressed: () => _openBroadcastPageFromAlert(context, request.id, data),
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFF1A365D),
+                                        backgroundColor: OrthoqColors.slateNavy,
                                         foregroundColor: Theme.of(context).colorScheme.onPrimary,
                                       ),
                                       icon: const Icon(Icons.campaign),

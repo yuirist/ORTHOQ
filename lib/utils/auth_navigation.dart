@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../models/user_model.dart';
+import '../theme/orthoq_colors.dart';
 import '../screens/admin/admin_home_screen.dart';
 import '../screens/doctor/doctor_home_screen.dart';
 import '../screens/patient/patient_home_screen.dart';
@@ -187,7 +188,7 @@ Future<void> navigateAfterLogin({
           'Your account is registered as $role. '
           'Opening the ${roleDashboardName(role)} dashboard.',
         ),
-        backgroundColor: const Color(0xFF1B3C68),
+        backgroundColor: OrthoqColors.slateNavy,
         duration: const Duration(seconds: 4),
       ),
     );

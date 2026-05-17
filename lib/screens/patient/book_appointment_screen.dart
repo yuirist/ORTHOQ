@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -507,7 +508,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A365D),
+                  color: OrthoqColors.slateNavy,
                 ),
               ),
               const SizedBox(height: 12),
@@ -533,7 +534,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                     _applyBookingRecipientPrefill();
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1A365D),
+                    backgroundColor: OrthoqColors.slateNavy,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   child: Text(
@@ -584,7 +585,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                       height: 4,
                       decoration: BoxDecoration(
                         color: index <= _currentStep
-                            ? const Color(0xFF1A365D)
+                            ? OrthoqColors.slateNavy
                             : Colors.grey.shade300,
                         borderRadius: BorderRadius.circular(2),
                       ),
@@ -600,7 +601,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF1A365D),
+              color: OrthoqColors.slateNavy,
             ),
           ),
           const SizedBox(height: 8),
@@ -640,11 +641,11 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                       onPressed: _previousStep,
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: const BorderSide(color: Color(0xFF1A365D)),
+                        side: const BorderSide(color: OrthoqColors.slateNavy),
                       ),
                       child: const Text(
                         'Previous',
-                        style: TextStyle(color: Color(0xFF1A365D)),
+                        style: TextStyle(color: OrthoqColors.slateNavy),
                       ),
                     ),
                   ),
@@ -655,7 +656,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                         ? null
                         : (_canProceedToNextStep() ? _nextStep : null),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1A365D),
+                      backgroundColor: OrthoqColors.slateNavy,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                     child: (_isLoading || _isCheckingSlot || _isCheckingEligibility)
@@ -721,7 +722,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
               borderRadius: BorderRadius.circular(12),
               side: BorderSide(
                 color: _patientType == 'New'
-                    ? const Color(0xFF1A365D)
+                    ? OrthoqColors.slateNavy
                     : Colors.transparent,
                 width: 2,
               ),
@@ -747,7 +748,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                         });
                         _applyBookingRecipientPrefill();
                       },
-                      activeColor: const Color(0xFF1A365D),
+                      activeColor: OrthoqColors.slateNavy,
                     ),
                     const SizedBox(width: 16),
                     const Expanded(
@@ -786,7 +787,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
               borderRadius: BorderRadius.circular(12),
               side: BorderSide(
                 color: _patientType == 'Follow-up'
-                    ? const Color(0xFF1A365D)
+                    ? OrthoqColors.slateNavy
                     : Colors.transparent,
                 width: 2,
               ),
@@ -810,7 +811,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                           _patientType = value;
                         });
                       },
-                      activeColor: const Color(0xFF1A365D),
+                      activeColor: OrthoqColors.slateNavy,
                     ),
                     const SizedBox(width: 16),
                     const Expanded(
@@ -837,7 +838,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                             'Requires a previously approved new patient appointment.',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Color(0xFF1A365D),
+                              color: OrthoqColors.slateNavy,
                               fontStyle: FontStyle.italic,
                             ),
                           ),
@@ -863,7 +864,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
         // Wait a moment for the stream to refresh
         await Future.delayed(const Duration(milliseconds: 500));
       },
-      color: const Color(0xFF1A365D),
+      color: OrthoqColors.slateNavy,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(24.0),
@@ -897,7 +898,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                     child: Padding(
                       padding: EdgeInsets.all(32.0),
                       child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1A365D)),
+                        valueColor: AlwaysStoppedAnimation<Color>(OrthoqColors.slateNavy),
                       ),
                     ),
                   );
@@ -979,7 +980,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                             icon: const Icon(Icons.refresh),
                             label: const Text('Retry'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF1A365D),
+                              backgroundColor: OrthoqColors.slateNavy,
                               foregroundColor: Theme.of(context).colorScheme.onPrimary,
                             ),
                           ),
@@ -1139,7 +1140,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                     value: 'Self',
                     groupValue: _bookingFor,
                     onChanged: _onBookingForChanged,
-                    activeColor: const Color(0xFF1A365D),
+                    activeColor: OrthoqColors.slateNavy,
                   ),
                 ),
                 Expanded(
@@ -1152,7 +1153,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                     value: 'Others',
                     groupValue: _bookingFor,
                     onChanged: _onBookingForChanged,
-                    activeColor: const Color(0xFF1A365D),
+                    activeColor: OrthoqColors.slateNavy,
                   ),
                 ),
               ],
@@ -1280,7 +1281,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                         }
                       });
                     },
-                    activeColor: const Color(0xFF1A365D),
+                    activeColor: OrthoqColors.slateNavy,
                   ),
                 ),
                 Expanded(
@@ -1296,7 +1297,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                         }
                       });
                     },
-                    activeColor: const Color(0xFF1A365D),
+                    activeColor: OrthoqColors.slateNavy,
                   ),
                 ),
               ],
@@ -1382,7 +1383,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                       Icons.calendar_today,
                       size: 32,
                       color: _selectedDate != null
-                          ? const Color(0xFF1A365D)
+                          ? OrthoqColors.slateNavy
                           : Colors.grey,
                     ),
                     const SizedBox(width: 16),
@@ -1395,7 +1396,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
                           color: _selectedDate != null
-                              ? const Color(0xFF1A365D)
+                              ? OrthoqColors.slateNavy
                               : Colors.grey,
                         ),
                       ),
@@ -1531,7 +1532,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
               },
               style: FilledButton.styleFrom(
                 backgroundColor: isSelected
-                    ? const Color(0xFF1A365D)
+                    ? OrthoqColors.slateNavy
                     : Colors.grey.shade100,
                 foregroundColor: isSelected
                     ? Theme.of(context).colorScheme.onPrimary
@@ -1540,7 +1541,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                   borderRadius: BorderRadius.circular(8),
                   side: BorderSide(
                     color: isSelected
-                        ? const Color(0xFF1A365D)
+                        ? OrthoqColors.slateNavy
                         : Colors.grey.shade300,
                     width: isSelected ? 2 : 1,
                   ),
@@ -1582,7 +1583,7 @@ class _DoctorCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
           color: isSelected
-              ? const Color(0xFF1A365D)
+              ? OrthoqColors.slateNavy
               : Colors.grey.shade200,
           width: isSelected ? 2.5 : 1,
         ),
@@ -1600,7 +1601,7 @@ class _DoctorCard extends StatelessWidget {
                 child: CircleAvatar(
                   radius: 30,
                   backgroundColor: isSelected
-                      ? const Color(0xFF1A365D).withOpacity(0.2)
+                      ? OrthoqColors.slateNavy.withOpacity(0.2)
                       : Colors.grey.shade200,
                   child: doctor.imageUrl != null && doctor.imageUrl!.isNotEmpty
                       ? ClipOval(
@@ -1612,7 +1613,7 @@ class _DoctorCard extends StatelessWidget {
                             errorBuilder: (context, error, stackTrace) {
                               return const Icon(
                                 Icons.person,
-                                color: Color(0xFF1A365D),
+                                color: OrthoqColors.slateNavy,
                                 size: 40,
                               );
                             },
@@ -1624,7 +1625,7 @@ class _DoctorCard extends StatelessWidget {
                                 child: Center(
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1A365D)),
+                                    valueColor: AlwaysStoppedAnimation<Color>(OrthoqColors.slateNavy),
                                   ),
                                 ),
                               );
@@ -1633,7 +1634,7 @@ class _DoctorCard extends StatelessWidget {
                         )
                       : const Icon(
                           Icons.person,
-                          color: Color(0xFF1A365D),
+                          color: OrthoqColors.slateNavy,
                           size: 40,
                         ),
                 ),
@@ -1650,7 +1651,7 @@ class _DoctorCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A365D),
+                        color: OrthoqColors.slateNavy,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -1671,8 +1672,8 @@ class _DoctorCard extends StatelessWidget {
                 onPressed: onTap,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: isSelected
-                      ? const Color(0xFF1A365D)
-                      : const Color(0xFF1A365D).withOpacity(0.8),
+                      ? OrthoqColors.slateNavy
+                      : OrthoqColors.slateNavy.withOpacity(0.8),
                   foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,

@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -36,7 +37,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Reset link sent! Please check your inbox.'),
-          backgroundColor: Color(0xFF1A365D),
+          backgroundColor: OrthoqColors.slateNavy,
         ),
       );
       Navigator.pop(context);
@@ -80,7 +81,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text('Forgot Password'),
-        backgroundColor: const Color(0xFF1A365D),
+        backgroundColor: OrthoqColors.slateNavy,
         foregroundColor: Colors.white,
       ),
       body: SafeArea(
@@ -95,14 +96,14 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 Icon(
                   Icons.lock_reset,
                   size: 72,
-                  color: const Color(0xFF1A365D).withOpacity(0.9),
+                  color: OrthoqColors.slateNavy.withOpacity(0.9),
                 ),
                 const SizedBox(height: 20),
                 Text(
                   'Reset Your Password',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: const Color(0xFF1A365D),
+                        color: OrthoqColors.slateNavy,
                         fontWeight: FontWeight.w700,
                       ),
                 ),
@@ -125,7 +126,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(
-                        color: Color(0xFF1A365D),
+                        color: OrthoqColors.slateNavy,
                         width: 2,
                       ),
                     ),
@@ -145,7 +146,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 ElevatedButton(
                   onPressed: _isLoading ? null : _sendResetLink,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1A365D),
+                    backgroundColor: OrthoqColors.slateNavy,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(

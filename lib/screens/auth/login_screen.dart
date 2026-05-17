@@ -10,6 +10,7 @@ import '../../services/auth_service.dart';
 import 'register_screen.dart';
 import 'forgot_password_page.dart';
 import '../../theme/orthoq_colors.dart';
+import '../../theme/orthoq_theme.dart';
 import '../../utils/auth_navigation.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -17,7 +18,6 @@ class LoginScreen extends StatefulWidget {
 
   const LoginScreen({super.key, required this.userType});
 
-  /// Same navy as [WelcomeScreen] (`#1B3C68`).
   static const Color navy = OrthoqColors.navy;
 
   bool get _isAdminPortal => userType.toLowerCase() == 'admin';
@@ -276,10 +276,11 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: OrthoqColors.scaffoldBg,
       appBar: AppBar(
         title: Text(_loginTitle),
         backgroundColor: LoginScreen.navy,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        foregroundColor: Colors.white,
       ),
       body: SafeArea(
         child: Center(
@@ -387,30 +388,22 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Login Button
                 ElevatedButton(
                   onPressed: _isLoading ? null : _handleLogin,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: LoginScreen.navy,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
+                  style: OrthoqTheme.primaryButton,
                   child: _isLoading
-                      ? SizedBox(
+                      ? const SizedBox(
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Theme.of(context).colorScheme.onPrimary,
-                            ),
+                            color: Colors.white,
                           ),
                         )
-                      : Text(
+                      : const Text(
                           'Login',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onPrimary,
+                            color: Colors.white,
                           ),
                         ),
                 ),

@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 
@@ -25,14 +26,14 @@ class _DoctorRescheduleRequestsPageState
     return Scaffold(
       appBar: AppBar(
         title: const Text('Doctor Reschedule Requests'),
-        backgroundColor: const Color(0xFF1A365D),
+        backgroundColor: OrthoqColors.slateNavy,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
       ),
       body: Column(
         children: [
           Container(
             width: double.infinity,
-            color: const Color(0xFF1A365D),
+            color: OrthoqColors.slateNavy,
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12),

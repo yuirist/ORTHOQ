@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -106,7 +107,7 @@ class _NotifyStaffDelayPageState extends State<NotifyStaffDelayPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Notify Staff of Delay'),
-        backgroundColor: const Color(0xFF1A365D),
+        backgroundColor: OrthoqColors.slateNavy,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
       ),
       body: SingleChildScrollView(
@@ -118,7 +119,7 @@ class _NotifyStaffDelayPageState extends State<NotifyStaffDelayPage> {
               child: ListTile(
                 title: const Text('Date'),
                 subtitle: Text(DateFormat('EEEE, MMM d, y').format(_selectedDate)),
-                trailing: const Icon(Icons.calendar_month, color: Color(0xFF1A365D)),
+                trailing: const Icon(Icons.calendar_month, color: OrthoqColors.slateNavy),
                 onTap: _pickDate,
               ),
             ),
@@ -140,7 +141,7 @@ class _NotifyStaffDelayPageState extends State<NotifyStaffDelayPage> {
               child: ElevatedButton(
                 onPressed: _isSending ? null : _send,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1A365D),
+                  backgroundColor: OrthoqColors.slateNavy,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
                 child: Text(

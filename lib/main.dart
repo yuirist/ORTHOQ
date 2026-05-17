@@ -6,6 +6,7 @@ import 'screens/auth/welcome_screen.dart';
 import 'utils/auth_navigation.dart';
 
 import 'firebase_options.dart';
+import 'theme/orthoq_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,69 +43,7 @@ class OrthoQApp extends StatelessWidget {
       child: MaterialApp(
         title: 'OrthoQ',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          primaryColor: const Color(0xFF1A365D),
-          scaffoldBackgroundColor: const Color(0xFFF7FAFC),
-          colorScheme: const ColorScheme(
-            brightness: Brightness.light,
-            primary: Color(0xFF1A365D),
-            onPrimary: Color(0xFFFFFFFF),
-            secondary: Color(0xFF2B6CB0),
-            onSecondary: Color(0xFFFFFFFF),
-            error: Color(0xFFB00020),
-            onError: Color(0xFFFFFFFF),
-            surface: Color(0xFFFFFFFF),
-            onSurface: Color(0xFF1A202C),
-          ),
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Color(0xFF1A365D),
-            foregroundColor: Color(0xFFFFFFFF),
-            iconTheme: IconThemeData(color: Color(0xFFFFFFFF)),
-            titleTextStyle: TextStyle(
-              color: Color(0xFFFFFFFF),
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1A365D),
-              foregroundColor: const Color(0xFFFFFFFF),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-          bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-            selectedItemColor: Color(0xFF1A365D),
-            unselectedItemColor: Color(0xFF4A5568),
-          ),
-          textTheme: const TextTheme(
-            headlineLarge: TextStyle(color: Color(0xFF1A202C)),
-            headlineMedium: TextStyle(color: Color(0xFF1A202C)),
-            headlineSmall: TextStyle(color: Color(0xFF1A202C)),
-            bodyLarge: TextStyle(color: Color(0xFF4A5568)),
-            bodyMedium: TextStyle(color: Color(0xFF4A5568)),
-            bodySmall: TextStyle(color: Color(0xFF4A5568)),
-          ),
-          inputDecorationTheme: const InputDecorationTheme(
-            enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Color(0xFF4A5568)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Color(0xFF2B6CB0), width: 2),
-            ),
-          ),
-          cardTheme: CardThemeData(
-            color: const Color(0xFFFFFFFF),
-            elevation: 2,
-            shadowColor: const Color(0xFF1A365D).withOpacity(0.08),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          useMaterial3: true,
-        ),
+        theme: OrthoqTheme.light,
         initialRoute: '/welcome',
         routes: {
           '/welcome': (context) => const WelcomeScreen(),

@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
@@ -20,7 +21,7 @@ class MyAppointmentsScreen extends StatelessWidget {
       return Scaffold(
         appBar: AppBar(
           title: const Text('My Appointments'),
-          backgroundColor: const Color(0xFF1A365D),
+          backgroundColor: OrthoqColors.slateNavy,
           foregroundColor: Theme.of(context).colorScheme.onPrimary,
         ),
         body: const Center(
@@ -32,7 +33,7 @@ class MyAppointmentsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Appointments'),
-        backgroundColor: const Color(0xFF1A365D),
+        backgroundColor: OrthoqColors.slateNavy,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
       ),
       body: StreamBuilder<QuerySnapshot>(
@@ -46,7 +47,7 @@ class MyAppointmentsScreen extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1A365D)),
+                valueColor: AlwaysStoppedAnimation<Color>(OrthoqColors.slateNavy),
               ),
             );
           }
@@ -148,7 +149,7 @@ class MyAppointmentsScreen extends StatelessWidget {
                       icon: const Icon(Icons.refresh),
                       label: const Text('Retry'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1A365D),
+                        backgroundColor: OrthoqColors.slateNavy,
                         foregroundColor: Theme.of(context).colorScheme.onPrimary,
                       ),
                     ),
@@ -303,7 +304,7 @@ class _AppointmentCard extends StatelessWidget {
       case 'pending':
         return Theme.of(context).colorScheme.secondary;
       case 'confirmed':
-        return const Color(0xFF1A365D);
+        return OrthoqColors.slateNavy;
       case 'rescheduled':
         return Colors.orange;
       case 'cancelled':
@@ -457,8 +458,8 @@ class _AppointmentCard extends StatelessWidget {
                   icon: const Icon(Icons.description),
                   label: const Text('View Referral'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF1A365D),
-                    side: const BorderSide(color: Color(0xFF1A365D)),
+                    foregroundColor: OrthoqColors.slateNavy,
+                    side: const BorderSide(color: OrthoqColors.slateNavy),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),

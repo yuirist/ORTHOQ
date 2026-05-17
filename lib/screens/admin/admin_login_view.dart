@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 
 import 'admin_home_screen.dart';
 
@@ -55,7 +56,7 @@ class _AdminLoginViewState extends State<AdminLoginView> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Admin Login'),
-        backgroundColor: const Color(0xFF1A365D),
+        backgroundColor: OrthoqColors.slateNavy,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
       ),
       body: SafeArea(
@@ -110,7 +111,7 @@ class _AdminLoginViewState extends State<AdminLoginView> {
                 ElevatedButton(
                   onPressed: _submit,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1A365D),
+                    backgroundColor: OrthoqColors.slateNavy,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),

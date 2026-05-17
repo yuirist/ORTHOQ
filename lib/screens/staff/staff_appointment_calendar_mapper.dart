@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 import 'staff_calendar_appointment_tile.dart';
@@ -8,8 +9,8 @@ import 'staff_calendar_appointment_tile.dart';
 const int kStaffAppointmentSlotMinutes = 15;
 
 /// OrthoQ palette for staff calendar.
-const Color kStaffCalendarNavy = Color(0xFF1A365D);
-const Color kStaffCalendarConfirmed = Color(0xFF2B6CB0);
+const Color kStaffCalendarNavy = OrthoqColors.slateNavy;
+const Color kStaffCalendarConfirmed = OrthoqColors.techBlue;
 const Color kStaffCalendarPending = Color(0xFFE67E22);
 
 Color staffCalendarColorForStatus(String? status) {

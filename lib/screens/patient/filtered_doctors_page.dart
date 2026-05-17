@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 
 import 'doctor_detail_page.dart';
 
@@ -22,7 +23,7 @@ class FilteredDoctorsPage extends StatelessWidget {
       backgroundColor: const Color(0xFFF7FAFC),
       appBar: AppBar(
         title: Text(selectedCategory),
-        backgroundColor: const Color(0xFF1A365D),
+        backgroundColor: OrthoqColors.slateNavy,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -32,7 +33,7 @@ class FilteredDoctorsPage extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
               child: CircularProgressIndicator(
-                color: Color(0xFF2B6CB0),
+                color: OrthoqColors.techBlue,
               ),
             );
           }
@@ -65,7 +66,7 @@ class FilteredDoctorsPage extends StatelessWidget {
                     Icon(
                       Icons.person_off_outlined,
                       size: 64,
-                      color: Color(0xFF2B6CB0),
+                      color: OrthoqColors.techBlue,
                     ),
                     SizedBox(height: 16),
                     Text(
@@ -154,7 +155,7 @@ class FilteredDoctorsPage extends StatelessWidget {
                             );
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2B6CB0),
+                            backgroundColor: OrthoqColors.techBlue,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
@@ -196,7 +197,7 @@ class _DoctorCardAvatar extends StatelessWidget {
         child: const Icon(
           Icons.person,
           size: 32,
-          color: Color(0xFF2B6CB0),
+          color: OrthoqColors.techBlue,
         ),
       );
     }
@@ -221,7 +222,7 @@ class _DoctorCardAvatar extends StatelessWidget {
                   height: 22,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Color(0xFF2B6CB0),
+                    color: OrthoqColors.techBlue,
                   ),
                 ),
               ),
@@ -231,7 +232,7 @@ class _DoctorCardAvatar extends StatelessWidget {
             return const Icon(
               Icons.person,
               size: 32,
-              color: Color(0xFF2B6CB0),
+              color: OrthoqColors.techBlue,
             );
           },
         ),

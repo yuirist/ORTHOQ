@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 
 import '../../models/doctor_model.dart';
 import '../../services/doctor_service.dart';
@@ -125,7 +126,7 @@ class _AdminEditDoctorScreenState extends State<AdminEditDoctorScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edit Doctor'),
-        backgroundColor: const Color(0xFF1A365D),
+        backgroundColor: OrthoqColors.slateNavy,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
       ),
       body: Stack(
@@ -201,7 +202,7 @@ class _AdminEditDoctorScreenState extends State<AdminEditDoctorScreen> {
                     ElevatedButton(
                       onPressed: _saving ? null : _save,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1A365D),
+                        backgroundColor: OrthoqColors.slateNavy,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       child: Text(

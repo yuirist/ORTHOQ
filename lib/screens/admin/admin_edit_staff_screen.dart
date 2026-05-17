@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../../models/user_model.dart';
 import '../../services/admin_service.dart';
+import '../../theme/orthoq_colors.dart';
 
 class AdminEditStaffScreen extends StatefulWidget {
   const AdminEditStaffScreen({super.key, required this.staff});
 
   final UserModel staff;
 
-  static const Color _navy = Color(0xFF0D1B2A);
+  static const Color _navy = OrthoqColors.slateNavy;
 
   @override
   State<AdminEditStaffScreen> createState() => _AdminEditStaffScreenState();

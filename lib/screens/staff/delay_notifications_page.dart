@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:intl/intl.dart';
 import '../../services/email_service.dart';
 
@@ -308,7 +309,7 @@ class _DelayNotificationsPageState extends State<DelayNotificationsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Delay Notifications'),
-        backgroundColor: const Color(0xFF1A365D),
+        backgroundColor: OrthoqColors.slateNavy,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
       ),
       body: Stack(
@@ -557,7 +558,7 @@ class _DelayNotificationsPageState extends State<DelayNotificationsPage> {
                     child: ElevatedButton(
                       onPressed: _isSending ? null : _sendDelayAlerts,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1A365D),
+                        backgroundColor: OrthoqColors.slateNavy,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                       child: Text(
@@ -588,7 +589,7 @@ class _DelayNotificationsPageState extends State<DelayNotificationsPage> {
                       children: [
                         CircularProgressIndicator(
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Color(0xFF1A365D),
+                            OrthoqColors.slateNavy,
                           ),
                         ),
                         SizedBox(height: 16),

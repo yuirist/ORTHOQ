@@ -54,8 +54,6 @@ dependencies:
   # File handling
   file_picker: ^8.1.2
   image_picker: ^1.0.4
-  # Dart 3.9+ / Flutter 3.35+: tflite_flutter 0.9.x does not compile; use 0.12.x. Namespace patch: android/build.gradle.kts.
-  tflite_flutter: ^0.12.1
   cloudinary_public: ^0.23.1
 
   # Utilities
@@ -91,8 +89,6 @@ flutter:
   assets:
     - assets/images/LOGO ORTHOQ.png
     - assets/images/hospitalkajang.jpg
-    - assets/model.tflite
-    - assets/labels.txt
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

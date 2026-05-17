@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/orthoq_colors.dart';
+
 /// Admin clinic configuration (placeholder for future settings).
 class AdminClinicSettingsPage extends StatelessWidget {
   const AdminClinicSettingsPage({super.key});
 
-  static const Color _navy = Color(0xFF0D1B2A);
+  static const Color _navy = OrthoqColors.slateNavy;
 
   @override
   Widget build(BuildContext context) {

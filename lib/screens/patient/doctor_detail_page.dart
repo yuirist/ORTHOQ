@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class DoctorDetailPage extends StatelessWidget {
@@ -22,7 +23,7 @@ class DoctorDetailPage extends StatelessWidget {
       backgroundColor: const Color(0xFFF7FAFC),
       appBar: AppBar(
         title: const Text('Doctor Profile'),
-        backgroundColor: const Color(0xFF1A365D),
+        backgroundColor: OrthoqColors.slateNavy,
         foregroundColor: Colors.white,
       ),
       body: SafeArea(
@@ -92,7 +93,7 @@ class DoctorDetailPage extends StatelessWidget {
                               ? Icon(
                                   Icons.medical_services_outlined,
                                   size: 42,
-                                  color: const Color(0xFF1A365D).withOpacity(0.9),
+                                  color: OrthoqColors.slateNavy.withOpacity(0.9),
                                 )
                               : null,
                         ),
@@ -103,7 +104,7 @@ class DoctorDetailPage extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w800,
-                            color: Color(0xFF1A365D),
+                            color: OrthoqColors.slateNavy,
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -176,7 +177,7 @@ class DoctorDetailPage extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF1A365D),
+                            color: OrthoqColors.slateNavy,
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -196,7 +197,7 @@ class DoctorDetailPage extends StatelessWidget {
                                     'Days',
                                     style: TextStyle(
                                       fontWeight: FontWeight.w700,
-                                      color: Color(0xFF1A365D),
+                                      color: OrthoqColors.slateNavy,
                                     ),
                                   ),
                                 ),
@@ -206,7 +207,7 @@ class DoctorDetailPage extends StatelessWidget {
                                     'Time',
                                     style: TextStyle(
                                       fontWeight: FontWeight.w700,
-                                      color: Color(0xFF1A365D),
+                                      color: OrthoqColors.slateNavy,
                                     ),
                                   ),
                                 ),

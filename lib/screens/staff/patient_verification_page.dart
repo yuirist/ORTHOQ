@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -490,7 +491,7 @@ class _PatientVerificationPageState extends State<PatientVerificationPage> {
                     Row(
                       children: [
                         CircleAvatar(
-                          backgroundColor: const Color(0xFF1A365D),
+                          backgroundColor: OrthoqColors.slateNavy,
                           child: Text(
                             patientName.isNotEmpty
                                 ? patientName[0].toUpperCase()
@@ -531,7 +532,7 @@ class _PatientVerificationPageState extends State<PatientVerificationPage> {
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
                                     color: isNewPatient
-                                        ? const Color(0xFF1A365D)
+                                        ? OrthoqColors.slateNavy
                                         : const Color(0xFF166534),
                                   ),
                                 ),
@@ -872,7 +873,7 @@ class _PatientVerificationPageState extends State<PatientVerificationPage> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Patient Verification'),
-          backgroundColor: const Color(0xFF1A365D),
+          backgroundColor: OrthoqColors.slateNavy,
           foregroundColor: Theme.of(context).colorScheme.onPrimary,
           bottom: const TabBar(
             tabs: [

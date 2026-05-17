@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 import '../../models/doctor_model.dart';
@@ -14,7 +15,7 @@ class DoctorSchedulePreviewCard extends StatelessWidget {
 
   final DoctorModel doctor;
 
-  static const _navy = Color(0xFF1A365D);
+  static const _navy = OrthoqColors.slateNavy;
 
   @override
   Widget build(BuildContext context) {

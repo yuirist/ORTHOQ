@@ -1,8 +1,8 @@
-﻿import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
+
 import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/appointment_service.dart';
@@ -13,7 +13,6 @@ import 'patient_profile_screen.dart';
 import 'appointment_details_screen.dart';
 import 'all_categories_page.dart';
 import 'filtered_doctors_page.dart';
-import 'medicine_scanner_export.dart';
 
 class PatientHomeScreen extends StatefulWidget {
   const PatientHomeScreen({super.key, this.userProfile});
@@ -25,113 +24,45 @@ class PatientHomeScreen extends StatefulWidget {
 }
 
 class _PatientHomeScreenState extends State<PatientHomeScreen> {
-  static const int _medicineTabIndex = 2;
-
   int _selectedIndex = 0;
-  ImageSource? _medicineLaunchSource;
-  int _medicineLaunchGeneration = 0;
-
-  Future<ImageSource?> _showMedicineSourceSheet() {
-    return showDialog<ImageSource>(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          title: const Text('Medicine Scanner'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.photo_camera_outlined, color: Color(0xFF1A365D)),
-                title: const Text('Take Photo'),
-                onTap: () => Navigator.pop(ctx, ImageSource.camera),
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_library_outlined, color: Color(0xFF1A365D)),
-                title: const Text('Upload from Gallery'),
-                onTap: () => Navigator.pop(ctx, ImageSource.gallery),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _onBottomNavTap(int index) {
-    if (!kIsWeb && index == _medicineTabIndex) {
-      _showMedicineSourceSheet().then((source) {
-        if (!mounted || source == null) return;
-        setState(() {
-          _medicineLaunchSource = source;
-          _medicineLaunchGeneration++;
-          _selectedIndex = _medicineTabIndex;
-        });
-      });
-      return;
-    }
-    setState(() => _selectedIndex = index);
-  }
-
-  void _onMedicineLaunchHandled() {
-    if (_medicineLaunchSource != null) {
-      setState(() => _medicineLaunchSource = null);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: OrthoqColors.scaffoldBg,
       body: IndexedStack(
         index: _selectedIndex,
-        children: [
+        children: const [
           _HomeTab(),
-          const BookAppointmentScreen(),
-          if (!kIsWeb)
-            MedicineScannerPage(
-              key: ValueKey<int>(_medicineLaunchGeneration),
-              launchSource: _medicineLaunchSource,
-              onLaunchHandled: _onMedicineLaunchHandled,
-            ),
-          const MyAppointmentsScreen(),
-          const PatientProfileScreen(),
+          BookAppointmentScreen(),
+          MyAppointmentsScreen(),
+          PatientProfileScreen(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: _onBottomNavTap,
+        onTap: (index) => setState(() => _selectedIndex = index),
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Theme.of(context).bottomNavigationBarTheme.selectedItemColor,
         unselectedItemColor:
             Theme.of(context).bottomNavigationBarTheme.unselectedItemColor,
-        items: [
-          const BottomNavigationBarItem(
+        items: const [
+          BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             activeIcon: Icon(Icons.home),
             label: 'Home',
           ),
-          const BottomNavigationBarItem(
+          BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today_outlined),
             activeIcon: Icon(Icons.calendar_today),
             label: 'Book',
           ),
-          if (!kIsWeb)
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.center_focus_strong_outlined),
-              activeIcon: Icon(Icons.center_focus_strong),
-              label: 'Medicine Scanner',
-            ),
-          const BottomNavigationBarItem(
+          BottomNavigationBarItem(
             icon: Icon(Icons.event_note_outlined),
             activeIcon: Icon(Icons.event_note),
             label: 'Appointments',
           ),
-          const BottomNavigationBarItem(
+          BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             activeIcon: Icon(Icons.person),
             label: 'Profile',
@@ -153,6 +84,7 @@ class _HomeTab extends StatelessWidget {
     final userFullName = authProvider.currentUserData?.fullName ?? 'Patient';
 
     return Scaffold(
+      backgroundColor: OrthoqColors.scaffoldBg,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         centerTitle: true,
@@ -167,25 +99,25 @@ class _HomeTab extends StatelessWidget {
             ),
           ),
         ),
-        backgroundColor: Colors.grey.shade100,
+        backgroundColor: OrthoqColors.slateNavy,
+        foregroundColor: Colors.white,
         elevation: 0,
       ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Welcome Section
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Welcome,',
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: Colors.grey.shade800,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -194,25 +126,23 @@ class _HomeTab extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A365D),
+                      color: OrthoqColors.slateNavy,
                     ),
                   ),
                 ],
               ),
             ),
-
-            // Category Section (directly below welcome for a tight layout)
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Category',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: Colors.grey.shade900,
                     ),
                   ),
                   InkWell(
@@ -233,9 +163,9 @@ class _HomeTab extends StatelessWidget {
                       child: Text(
                         'See All',
                         style: TextStyle(
-                          color: Colors.grey.shade700,
+                          color: OrthoqColors.techBlue,
                           fontSize: 14,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -243,10 +173,7 @@ class _HomeTab extends StatelessWidget {
                 ],
               ),
             ),
-
             const SizedBox(height: 12),
-
-            // Category Buttons
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Row(
@@ -297,32 +224,30 @@ class _HomeTab extends StatelessWidget {
                 ],
               ),
             ),
-
             const SizedBox(height: 32),
-
-            // Next Visit Section
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: const Text(
+              child: Text(
                 'Next Visit',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: Colors.grey.shade900,
                 ),
               ),
             ),
-
             const SizedBox(height: 16),
-
-            // Upcoming Appointment Card
             StreamBuilder<List<AppointmentModel>>(
               stream: appointmentService.getUpcomingPatientAppointments(userId),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Padding(
                     padding: EdgeInsets.all(20.0),
-                    child: Center(child: CircularProgressIndicator()),
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: OrthoqColors.techBlue,
+                      ),
+                    ),
                   );
                 }
 
@@ -339,23 +264,23 @@ class _HomeTab extends StatelessWidget {
                   return Padding(
                     padding: const EdgeInsets.all(20.0),
                     child: Card(
-                      color: const Color(0xFF1A365D),
+                      color: OrthoqColors.slateNavy,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: Padding(
+                      child: const Padding(
                         padding: EdgeInsets.all(32.0),
                         child: Center(
                           child: Column(
                             children: [
                               Icon(Icons.calendar_today,
-                                  size: 64, color: Theme.of(context).colorScheme.onPrimary),
+                                  size: 64, color: Colors.white),
                               SizedBox(height: 16),
                               Text(
                                 'No upcoming appointments',
                                 style: TextStyle(
                                   fontSize: 18,
-                                  color: Theme.of(context).colorScheme.onPrimary,
+                                  color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -364,9 +289,7 @@ class _HomeTab extends StatelessWidget {
                                 'Book an appointment to get started',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onPrimary.withValues(alpha: 0.8),
+                                  color: Colors.white70,
                                 ),
                               ),
                             ],
@@ -377,7 +300,6 @@ class _HomeTab extends StatelessWidget {
                   );
                 }
 
-                // Show the next upcoming appointment
                 final nextAppointment = appointments.first;
 
                 return Padding(
@@ -386,7 +308,6 @@ class _HomeTab extends StatelessWidget {
                 );
               },
             ),
-
             const SizedBox(height: 32),
           ],
         ),
@@ -396,15 +317,15 @@ class _HomeTab extends StatelessWidget {
 }
 
 class _CategoryButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
   const _CategoryButton({
     required this.icon,
     required this.label,
     required this.onTap,
   });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -415,22 +336,26 @@ class _CategoryButton extends StatelessWidget {
         width: 100,
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: Colors.grey.shade200,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: OrthoqColors.lightSlate),
+          boxShadow: [
+            BoxShadow(
+              color: OrthoqColors.slateNavy.withValues(alpha: 0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
           children: [
-            Icon(
-              icon,
-              size: 32,
-              color: Theme.of(context).colorScheme.secondary,
-            ),
+            Icon(icon, size: 32, color: OrthoqColors.techBlue),
             const SizedBox(height: 8),
             Text(
               label,
               style: const TextStyle(
                 fontSize: 12,
-                color: Colors.black87,
+                color: OrthoqColors.slateNavy,
                 fontWeight: FontWeight.w500,
               ),
               textAlign: TextAlign.center,
@@ -443,32 +368,25 @@ class _CategoryButton extends StatelessWidget {
 }
 
 class _NextVisitCard extends StatelessWidget {
-  final AppointmentModel appointment;
-
   const _NextVisitCard({required this.appointment});
+
+  final AppointmentModel appointment;
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: const Color(0xFF1A365D),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      color: OrthoqColors.slateNavy,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
             Row(
               children: [
-                // Doctor Avatar
                 CircleAvatar(
                   radius: 30,
-                  backgroundColor: Theme.of(context).colorScheme.surface,
-                  child: const Icon(
-                    Icons.person,
-                    size: 30,
-                    color: Color(0xFF2B6CB0),
-                  ),
+                  backgroundColor: Colors.white,
+                  child: Icon(Icons.person, size: 30, color: OrthoqColors.techBlue),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -477,10 +395,10 @@ class _NextVisitCard extends StatelessWidget {
                     children: [
                       Text(
                         'Dr. ${appointment.doctorName}',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onPrimary,
+                          color: Colors.white,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -488,12 +406,7 @@ class _NextVisitCard extends StatelessWidget {
                         appointment.appointmentType == 'new_patient'
                             ? 'New Patient Appointment'
                             : 'Follow-Up Appointment',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onPrimary.withValues(alpha: 0.8),
-                        ),
+                        style: const TextStyle(fontSize: 14, color: Colors.white70),
                       ),
                     ],
                   ),
@@ -501,29 +414,28 @@ class _NextVisitCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 20),
-            // Date and Time Info
             Row(
               children: [
                 Expanded(
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF7FAFC),
+                      color: OrthoqColors.scaffoldBg,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        const Row(
                           children: [
-                            const Icon(Icons.calendar_today,
-                                size: 16, color: Colors.black87),
-                            const SizedBox(width: 8),
+                            Icon(Icons.calendar_today,
+                                size: 16, color: OrthoqColors.slateNavy),
+                            SizedBox(width: 8),
                             Text(
-                              DateFormat('EEEE').format(appointment.appointmentDate),
-                              style: const TextStyle(
+                              'Date',
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.black87,
+                                color: OrthoqColors.slateNavy,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -534,7 +446,7 @@ class _NextVisitCard extends StatelessWidget {
                           DateFormat('d MMMM y').format(appointment.appointmentDate),
                           style: const TextStyle(
                             fontSize: 14,
-                            color: Colors.black87,
+                            color: OrthoqColors.slateNavy,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -547,7 +459,7 @@ class _NextVisitCard extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF7FAFC),
+                      color: OrthoqColors.scaffoldBg,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
@@ -556,13 +468,13 @@ class _NextVisitCard extends StatelessWidget {
                         const Row(
                           children: [
                             Icon(Icons.access_time,
-                                size: 16, color: Colors.black87),
+                                size: 16, color: OrthoqColors.slateNavy),
                             SizedBox(width: 8),
                             Text(
                               'Time',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.black87,
+                                color: OrthoqColors.slateNavy,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -573,7 +485,7 @@ class _NextVisitCard extends StatelessWidget {
                           appointment.appointmentTime,
                           style: const TextStyle(
                             fontSize: 14,
-                            color: Colors.black87,
+                            color: OrthoqColors.slateNavy,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -584,7 +496,6 @@ class _NextVisitCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            // See Details Button
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
@@ -599,22 +510,16 @@ class _NextVisitCard extends StatelessWidget {
                   );
                 },
                 style: TextButton.styleFrom(
-                  backgroundColor: Colors.grey.shade300,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 8,
-                  ),
+                  backgroundColor: OrthoqColors.techBlue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
                 child: const Text(
                   'See Details',
-                  style: TextStyle(
-                    color: Colors.black87,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
@@ -624,4 +529,3 @@ class _NextVisitCard extends StatelessWidget {
     );
   }
 }
-
