@@ -6,6 +6,7 @@ import 'package:syncfusion_flutter_calendar/calendar.dart';
 import 'staff_appointment_calendar_mapper.dart';
 import 'staff_calendar_appointment_tile.dart';
 import 'staff_calendar_slot_settings.dart';
+import 'staff_manual_appointment_sheet.dart';
 
 /// Full-screen staff calendar for one doctor (day / week / month).
 class DoctorCalendarView extends StatefulWidget {
@@ -26,8 +27,8 @@ class _DoctorCalendarViewState extends State<DoctorCalendarView> {
   late final CalendarController _controller;
   CalendarView _view = CalendarView.week;
 
-  static const _navy = OrthoqColors.slateNavy;
-  static const _onNavy = Color(0xFFFFFFFF);
+  static const _navy = OrthoqColors.navy;
+  static const _currentTimeIndicatorColor = Color(0xFFFF5722);
 
   @override
   void initState() {
@@ -58,75 +59,116 @@ class _DoctorCalendarViewState extends State<DoctorCalendarView> {
     });
   }
 
+  void _openManualAppointmentSheet() {
+    showStaffManualAppointmentSheet(
+      context: context,
+      doctorId: widget.doctorId,
+      doctorName: widget.doctorName,
+      initialDate: _controller.displayDate,
+    );
+  }
+
+  InputDecoration _navyToolbarFieldDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(
+        color: Color(0xFFCBD5E1),
+        fontWeight: FontWeight.w500,
+      ),
+      isDense: true,
+      filled: true,
+      fillColor: _navy.withValues(alpha: 0.35),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Color(0xFF94A3B8)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Colors.white, width: 1.5),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7FAFC),
-      appBar: AppBar(
-        title: Text(
-          'Dr. ${widget.doctorName}',
-          overflow: TextOverflow.ellipsis,
+    return SafeArea(
+      bottom: false,
+      child: Scaffold(
+        backgroundColor: OrthoqColors.scaffoldBg,
+        appBar: AppBar(
+          title: Text(
+            'Dr. ${widget.doctorName}',
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          iconTheme: const IconThemeData(color: Colors.white),
+          backgroundColor: _navy,
+          foregroundColor: Colors.white,
+          elevation: 0,
         ),
-        backgroundColor: _navy,
-        foregroundColor: _onNavy,
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Material(
-            color: Colors.white,
-            elevation: 1,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: LayoutBuilder(
+        floatingActionButton: FloatingActionButton(
+          onPressed: _openManualAppointmentSheet,
+          backgroundColor: _navy,
+          foregroundColor: Colors.white,
+          tooltip: 'Add appointment',
+          child: const Icon(Icons.add),
+        ),
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ColoredBox(
+              color: _navy,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                child: LayoutBuilder(
                   builder: (context, constraints) {
                     final narrow = constraints.maxWidth < 420;
                     final dropdown = DropdownButtonFormField<CalendarView>(
                       value: _view,
-                      decoration: InputDecoration(
-                        labelText: 'View',
-                        labelStyle: const TextStyle(
-                          color: _navy,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        isDense: true,
-                        border: const OutlineInputBorder(),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
+                      dropdownColor: Colors.white,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
                       ),
+                      iconEnabledColor: Colors.white,
+                      decoration: _navyToolbarFieldDecoration('View'),
                       items: const [
                         DropdownMenuItem(
                           value: CalendarView.day,
-                          child: Text('Day'),
+                          child: Text(
+                            'Day',
+                            style: TextStyle(color: _navy),
+                          ),
                         ),
                         DropdownMenuItem(
                           value: CalendarView.week,
-                          child: Text('Week'),
+                          child: Text(
+                            'Week',
+                            style: TextStyle(color: _navy),
+                          ),
                         ),
                         DropdownMenuItem(
                           value: CalendarView.month,
-                          child: Text('Month'),
+                          child: Text(
+                            'Month',
+                            style: TextStyle(color: _navy),
+                          ),
                         ),
                       ],
                       onChanged: _onViewChanged,
                     );
-                    final todayBtn = Align(
-                      alignment:
-                          narrow ? Alignment.center : Alignment.centerRight,
-                      child: FilledButton.tonal(
-                        onPressed: _goToToday,
-                        style: FilledButton.styleFrom(
-                          minimumSize: const Size(88, 48),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          foregroundColor: _navy,
-                        ),
-                        child: const Text('Today'),
+                    final todayBtn = OutlinedButton(
+                      onPressed: _goToToday,
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(88, 44),
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.white70),
                       ),
+                      child: const Text('Today'),
                     );
                     if (narrow) {
                       return Column(
@@ -149,83 +191,83 @@ class _DoctorCalendarViewState extends State<DoctorCalendarView> {
                 ),
               ),
             ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: StreamBuilder<QuerySnapshot<Object?>>(
-                stream: FirebaseFirestore.instance
-                    .collection('appointments')
-                    .where('doctorId', isEqualTo: widget.doctorId)
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Text(
-                          'Could not load appointments.\n${snapshot.error}',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.red),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: StreamBuilder<QuerySnapshot<Object?>>(
+                  stream: FirebaseFirestore.instance
+                      .collection('appointments')
+                      .where('doctorId', isEqualTo: widget.doctorId)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            'Could not load appointments.\n${snapshot.error}',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      );
+                    }
+                    final docs = snapshot.data?.docs ?? const [];
+                    final mapped =
+                        mapFirestoreDocsToCalendarAppointments(docs);
+                    final dataSource = StaffAppointmentCalendarDataSource(
+                      mapped.appointments,
+                    );
+
+                    return SfCalendar(
+                      controller: _controller,
+                      view: _view,
+                      dataSource: dataSource,
+                      specialRegions:
+                          StaffCalendarSlotSettings.preClinicBufferRegions,
+                      showCurrentTimeIndicator: true,
+                      todayHighlightColor: _currentTimeIndicatorColor,
+                      backgroundColor: Colors.white,
+                      cellBorderColor: OrthoqColors.lightSlate,
+                      headerStyle: StaffCalendarSlotSettings.navyHeader,
+                      viewHeaderStyle: ViewHeaderStyle(
+                        backgroundColor: Colors.grey.shade50,
+                        dayTextStyle: TextStyle(
+                          color: Colors.grey.shade700,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                        ),
+                        dateTextStyle: const TextStyle(
+                          color: _navy,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
                         ),
                       ),
+                      timeSlotViewSettings:
+                          StaffCalendarSlotSettings.fullCalendar,
+                      monthViewSettings: const MonthViewSettings(
+                        appointmentDisplayMode:
+                            MonthAppointmentDisplayMode.appointment,
+                        showAgenda: true,
+                      ),
+                      appointmentTextStyle: const TextStyle(
+                        color: OrthoqColors.navy,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      appointmentBuilder: (context, details) =>
+                          staffCalendarAppointmentBuilder(
+                        context,
+                        details,
+                        mapped.metaByDocId,
+                      ),
                     );
-                  }
-                  final docs = snapshot.data?.docs ?? const [];
-                  final mapped =
-                      mapFirestoreDocsToCalendarAppointments(docs);
-                  final dataSource = StaffAppointmentCalendarDataSource(
-                    mapped.appointments,
-                  );
-
-                  return SfCalendar(
-                    controller: _controller,
-                    view: _view,
-                    dataSource: dataSource,
-                    specialRegions:
-                        StaffCalendarSlotSettings.preClinicBufferRegions,
-                    todayHighlightColor: _navy,
-                    backgroundColor: Colors.white,
-                    cellBorderColor: Colors.grey.shade300,
-                    headerStyle: const CalendarHeaderStyle(
-                      textStyle: TextStyle(
-                        color: _navy,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    viewHeaderStyle: ViewHeaderStyle(
-                      backgroundColor: Colors.grey.shade100,
-                      dayTextStyle: TextStyle(
-                        color: Colors.grey.shade800,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      dateTextStyle: const TextStyle(
-                        color: _navy,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    timeSlotViewSettings: StaffCalendarSlotSettings.fullCalendar,
-                    monthViewSettings: const MonthViewSettings(
-                      appointmentDisplayMode:
-                          MonthAppointmentDisplayMode.appointment,
-                      showAgenda: true,
-                    ),
-                    appointmentTextStyle: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    appointmentBuilder: (context, details) =>
-                        staffCalendarAppointmentBuilder(
-                      context,
-                      details,
-                      mapped.metaByDocId,
-                    ),
-                  );
-                },
+                  },
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

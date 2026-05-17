@@ -89,7 +89,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: OrthoqColors.scaffoldBg,
+      backgroundColor: OrthoqColors.adminPageBg,
       appBar: AppBar(
         title: const Text('Admin Dashboard'),
         backgroundColor: AdminHomeScreen.slateNavy,

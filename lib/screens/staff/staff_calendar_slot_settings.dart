@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 /// OrthoQ staff calendars: **clinic window 8:00 AM–12:00 PM** with **15-minute** slots.
@@ -18,6 +19,11 @@ abstract final class StaffCalendarSlotSettings {
     timeIntervalHeight: 64,
     timeFormat: 'h:mm a',
     minimumAppointmentDuration: Duration(minutes: 15),
+    timeTextStyle: TextStyle(
+      color: Color(0xFF64748B),
+      fontSize: 11,
+      fontWeight: FontWeight.w300,
+    ),
   );
 
   /// Taller rows on the full-screen calendar for readability (Note 9+).
@@ -29,6 +35,22 @@ abstract final class StaffCalendarSlotSettings {
     timeIntervalHeight: 78,
     timeFormat: 'h:mm a',
     minimumAppointmentDuration: Duration(minutes: 15),
+    timeTextStyle: TextStyle(
+      color: Color(0xFF64748B),
+      fontSize: 12,
+      fontWeight: FontWeight.w300,
+    ),
+    timeRulerSize: 58,
+  );
+
+  /// Navy calendar chrome (month/year header on full-screen staff view).
+  static const CalendarHeaderStyle navyHeader = CalendarHeaderStyle(
+    backgroundColor: OrthoqColors.navy,
+    textStyle: TextStyle(
+      color: Colors.white,
+      fontWeight: FontWeight.w600,
+      fontSize: 15,
+    ),
   );
 
   /// Shaded 7:45–8:00 daily (see class doc). Bookings use times from Firestore as-is.

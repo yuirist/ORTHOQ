@@ -1,28 +1,15 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:orthoq_app/theme/orthoq_colors.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:cloudinary_public/cloudinary_public.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
+
+import '../../services/cloudinary_service.dart';
 import '../../services/email_service.dart';
 import 'success_page.dart';
 
 class ReferralUploadPage extends StatefulWidget {
-  final String doctorId;
-  final String doctorName;
-  final String patientName;
-  final String? phoneNumber;
-  final String? email;
-  final String? icNumber;
-  final String? paymentType;
-  final String? bookingFor;
-  final String? insuranceProvider;
-  final String? gender;
-  final DateTime appointmentDate;
-  final String appointmentTime;
-  final String appointmentType;
-
   const ReferralUploadPage({
     super.key,
     required this.doctorId,
@@ -40,34 +27,39 @@ class ReferralUploadPage extends StatefulWidget {
     required this.appointmentType,
   });
 
+  final String doctorId;
+  final String doctorName;
+  final String patientName;
+  final String? phoneNumber;
+  final String? email;
+  final String? icNumber;
+  final String? paymentType;
+  final String? bookingFor;
+  final String? insuranceProvider;
+  final String? gender;
+  final DateTime appointmentDate;
+  final String appointmentTime;
+  final String appointmentType;
+
   @override
   State<ReferralUploadPage> createState() => _ReferralUploadPageState();
 }
 
 class _ReferralUploadPageState extends State<ReferralUploadPage> {
+  final CloudinaryService _cloudinaryService = CloudinaryService();
+
   PlatformFile? _selectedFile;
   bool _isUploading = false;
   String? _uploadError;
 
-  final cloudinary = CloudinaryPublic(
-    'dfz9svj5s',
-    'orthoq_app',
-    cache: false,
-  );
-
   Future<void> _pickFile() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-      );
-
-      if (result != null && result.files.single.path != null) {
-        setState(() {
-          _selectedFile = result.files.single;
-          _uploadError = null;
-        });
-      }
+      final file = await _cloudinaryService.pickReferralFile();
+      if (file == null) return;
+      setState(() {
+        _selectedFile = file;
+        _uploadError = null;
+      });
     } catch (e) {
       setState(() {
         _uploadError = 'Error picking file: $e';
@@ -76,18 +68,14 @@ class _ReferralUploadPageState extends State<ReferralUploadPage> {
   }
 
   Future<void> _uploadAndSave() async {
-    if (_selectedFile == null || _selectedFile!.path == null) {
-      setState(() {
-        _uploadError = 'Please select a file to upload';
-      });
+    if (_selectedFile == null) {
+      setState(() => _uploadError = 'Please select a file to upload');
       return;
     }
 
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      setState(() {
-        _uploadError = 'User not logged in';
-      });
+      setState(() => _uploadError = 'User not logged in');
       return;
     }
 
@@ -97,27 +85,14 @@ class _ReferralUploadPageState extends State<ReferralUploadPage> {
     });
 
     try {
-      // Upload to Cloudinary
-      CloudinaryResponse response = await cloudinary.uploadFile(
-        CloudinaryFile.fromFile(
-          _selectedFile!.path!,
-          resourceType: CloudinaryResourceType.Auto,
-        ),
-      );
+      final referralLetterUrl =
+          await _cloudinaryService.uploadReferralLetter(_selectedFile!);
 
-      if (response.secureUrl.isEmpty) {
-        throw 'Failed to get secure URL from Cloudinary';
-      }
-
-      final referralLetterUrl = response.secureUrl;
-
-      // Save booking to Firestore
       final appointmentId = const Uuid().v4();
       final appointmentRef = FirebaseFirestore.instance
           .collection('appointments')
           .doc(appointmentId);
 
-      // Normalize appointmentDate to start of day for exact date matching
       final appointmentDateNormalized = DateTime(
         widget.appointmentDate.year,
         widget.appointmentDate.month,
@@ -156,20 +131,18 @@ class _ReferralUploadPageState extends State<ReferralUploadPage> {
         await EmailService().sendBookingPendingEmail(recipient, widget.patientName);
       }
 
-      if (mounted) {
-        // Navigate to Success Page
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => SuccessPage(
-              appointmentId: appointmentId,
-              doctorName: widget.doctorName,
-              appointmentDate: widget.appointmentDate,
-              appointmentTime: widget.appointmentTime,
-            ),
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SuccessPage(
+            appointmentId: appointmentId,
+            doctorName: widget.doctorName,
+            appointmentDate: widget.appointmentDate,
+            appointmentTime: widget.appointmentTime,
           ),
-        );
-      }
+        ),
+      );
     } catch (e) {
       setState(() {
         _isUploading = false;
@@ -191,10 +164,11 @@ class _ReferralUploadPageState extends State<ReferralUploadPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: OrthoqColors.scaffoldBg,
       appBar: AppBar(
         title: const Text('Upload Referral Letter'),
-        backgroundColor: OrthoqColors.slateNavy,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        backgroundColor: OrthoqColors.navy,
+        foregroundColor: Colors.white,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -202,7 +176,6 @@ class _ReferralUploadPageState extends State<ReferralUploadPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Logo
               Container(
                 height: 100,
                 alignment: Alignment.center,
@@ -212,30 +185,25 @@ class _ReferralUploadPageState extends State<ReferralUploadPage> {
                 ),
               ),
               const SizedBox(height: 32),
-
-              // Title
               const Text(
                 'Upload Referral Letter',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
+                  color: OrthoqColors.navy,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               const Text(
-                'Please upload your referral letter (PDF or Image)',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
+                'Please upload your referral letter (PDF or image)',
+                style: TextStyle(fontSize: 16, color: Colors.grey),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
-
-              // File Selection Card
               Card(
                 elevation: 2,
+                color: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -272,7 +240,9 @@ class _ReferralUploadPageState extends State<ReferralUploadPage> {
                         if (_selectedFile != null) ...[
                           const SizedBox(height: 8),
                           Text(
-                            'File selected',
+                            _isPdfSelected
+                                ? 'PDF selected'
+                                : 'Image selected',
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.green.shade700,
@@ -285,8 +255,6 @@ class _ReferralUploadPageState extends State<ReferralUploadPage> {
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Error Message
               if (_uploadError != null)
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -312,21 +280,20 @@ class _ReferralUploadPageState extends State<ReferralUploadPage> {
                   ),
                 ),
               if (_uploadError != null) const SizedBox(height: 24),
-
-              // Upload Button
               ElevatedButton(
                 onPressed: _isUploading || _selectedFile == null
                     ? null
                     : _uploadAndSave,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: OrthoqColors.slateNavy,
+                  backgroundColor: OrthoqColors.navy,
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
                 child: _isUploading
-                    ? Row(
+                    ? const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           SizedBox(
@@ -334,9 +301,7 @@ class _ReferralUploadPageState extends State<ReferralUploadPage> {
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Theme.of(context).colorScheme.onPrimary,
-                              ),
+                              color: Colors.white,
                             ),
                           ),
                           SizedBox(width: 12),
@@ -345,45 +310,41 @@ class _ReferralUploadPageState extends State<ReferralUploadPage> {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onPrimary,
+                              color: Colors.white,
                             ),
                           ),
                         ],
                       )
-                    : Text(
+                    : const Text(
                         'Upload & Book Appointment',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onPrimary,
+                          color: Colors.white,
                         ),
                       ),
               ),
               const SizedBox(height: 16),
-
-              // Info Text
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF7FAFC).withOpacity(0.5),
+                  color: OrthoqColors.lightSlate.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Row(
+                child: const Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(
                       Icons.info_outline,
-                      color: OrthoqColors.slateNavy,
+                      color: OrthoqColors.navy,
                       size: 20,
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Accepted formats: PDF, JPG, JPEG, PNG\nMaximum file size: 10MB',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade700,
-                        ),
+                        'Accepted formats: ${CloudinaryService.referralAllowedExtensionsHint}\n'
+                        'Maximum file size: 10MB',
+                        style: TextStyle(fontSize: 12, color: Colors.black54),
                       ),
                     ),
                   ],
@@ -395,6 +356,9 @@ class _ReferralUploadPageState extends State<ReferralUploadPage> {
       ),
     );
   }
+
+  bool get _isPdfSelected {
+    final name = _selectedFile?.name.toLowerCase() ?? '';
+    return name.endsWith('.pdf');
+  }
 }
-
-

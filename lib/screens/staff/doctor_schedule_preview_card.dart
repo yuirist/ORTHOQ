@@ -129,15 +129,16 @@ class DoctorSchedulePreviewCard extends StatelessWidget {
                                 fontSize: 13,
                               ),
                             ),
-                            todayHighlightColor: _navy,
                             backgroundColor: const Color(0xFFF7FAFC),
                             headerHeight: 36,
                             showNavigationArrow: false,
                             allowViewNavigation: false,
                             timeSlotViewSettings:
                                 StaffCalendarSlotSettings.preview,
+                            showCurrentTimeIndicator: true,
+                            todayHighlightColor: const Color(0xFFFF5722),
                             appointmentTextStyle: const TextStyle(
-                              color: Colors.white,
+                              color: OrthoqColors.navy,
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
                             ),

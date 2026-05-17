@@ -25,7 +25,7 @@ class AdminStaffListPage extends StatelessWidget {
     final adminService = AdminService();
 
     return Scaffold(
-      backgroundColor: OrthoqColors.scaffoldBg,
+      backgroundColor: OrthoqColors.adminPageBg,
       appBar: AppBar(
         title: const Text('Staff List'),
         backgroundColor: _navy,

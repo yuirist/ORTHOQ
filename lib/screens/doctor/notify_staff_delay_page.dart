@@ -64,8 +64,7 @@ class _NotifyStaffDelayPageState extends State<NotifyStaffDelayPage> {
       final normalizedDate =
           DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
 
-      await FirebaseFirestore.instance.collection('reschedule_requests').add({
-        'type': 'doctor_delay',
+      await FirebaseFirestore.instance.collection('doctor_delays').add({
         'status': 'pending_staff_action',
         'sender': doctorName,
         'doctorName': doctorName,

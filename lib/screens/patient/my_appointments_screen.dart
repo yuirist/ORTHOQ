@@ -3,8 +3,8 @@ import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../models/appointment_model.dart';
+import '../../utils/referral_url_utils.dart';
 import 'reschedule_appointment_screen.dart';
 import '../../services/appointment_service.dart';
 import '../../services/doctor_service.dart';
@@ -228,33 +228,6 @@ class _AppointmentCard extends StatelessWidget {
     required this.notificationService,
   });
 
-  Future<void> _viewReferral(BuildContext context) async {
-    if (appointment.referralLetterUrl == null ||
-        appointment.referralLetterUrl!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No referral letter available for this appointment'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    final url = Uri.parse(appointment.referralLetterUrl!);
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not open referral letter link'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
   Future<void> _cancelAppointment(BuildContext context) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -308,6 +281,7 @@ class _AppointmentCard extends StatelessWidget {
       case 'rescheduled':
         return Colors.orange;
       case 'cancelled':
+      case 'rejected':
         return Colors.red;
       case 'completed':
         return Colors.green;
@@ -327,12 +301,13 @@ class _AppointmentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPast = appointment.appointmentDate.isBefore(DateTime.now());
-    final canReschedule = !isPast &&
-        appointment.status.toLowerCase() != 'cancelled' &&
-        appointment.status.toLowerCase() != 'completed';
-    final canCancel = !isPast &&
-        appointment.status.toLowerCase() != 'cancelled' &&
-        appointment.status.toLowerCase() != 'completed';
+    final isTerminal = {
+      'cancelled',
+      'rejected',
+      'completed',
+    }.contains(appointment.status.toLowerCase());
+    final canReschedule = !isPast && !isTerminal;
+    final canCancel = !isPast && !isTerminal;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -454,7 +429,10 @@ class _AppointmentCard extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: () => _viewReferral(context),
+                  onPressed: () => openReferralLetterUrl(
+                        context,
+                        appointment.referralLetterUrl,
+                      ),
                   icon: const Icon(Icons.description),
                   label: const Text('View Referral'),
                   style: OutlinedButton.styleFrom(

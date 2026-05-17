@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 import 'staff_calendar_appointment_tile.dart';
@@ -8,24 +7,9 @@ import 'staff_calendar_appointment_tile.dart';
 /// Default session length on staff calendars (matches clinic slot grid).
 const int kStaffAppointmentSlotMinutes = 15;
 
-/// OrthoQ palette for staff calendar.
-const Color kStaffCalendarNavy = OrthoqColors.slateNavy;
-const Color kStaffCalendarConfirmed = OrthoqColors.techBlue;
-const Color kStaffCalendarPending = Color(0xFFE67E22);
-
+/// Tile fill for Syncfusion month/agenda chips (custom builder uses same palette).
 Color staffCalendarColorForStatus(String? status) {
-  final s = (status ?? '').toLowerCase().trim();
-  if (s == 'confirmed' || s == 'booked') {
-    return kStaffCalendarConfirmed;
-  }
-  if (s.contains('pending')) {
-    return kStaffCalendarPending;
-  }
-  if (s == 'cancelled') return Colors.grey.shade500;
-  if (s == 'completed') return const Color(0xFF166534);
-  if (s == 'rescheduled') return const Color(0xFF6B46C1);
-  if (s == 'delayed') return const Color(0xFFC53030);
-  return kStaffCalendarNavy.withValues(alpha: 0.55);
+  return kStaffCalendarTileBackground;
 }
 
 DateTime? parseAppointmentDateOnly(dynamic value) {

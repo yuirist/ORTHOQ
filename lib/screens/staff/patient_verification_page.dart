@@ -2,14 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import '../../services/email_service.dart';
+import '../../utils/referral_url_utils.dart';
 import '../../utils/staff_scope.dart';
 import 'staff_scheduling_page.dart';
 
 class PatientVerificationPage extends StatefulWidget {
-  const PatientVerificationPage({super.key});
+  const PatientVerificationPage({
+    super.key,
+    this.onRejectionComplete,
+  });
+
+  /// Called after a successful rejection so the parent can navigate away and
+  /// show feedback on a stable Scaffold (avoids TabBarView GlobalKey crashes).
+  final void Function(String patientEmail)? onRejectionComplete;
 
   @override
   State<PatientVerificationPage> createState() =>
@@ -18,6 +25,7 @@ class PatientVerificationPage extends StatefulWidget {
 
 class _PatientVerificationPageState extends State<PatientVerificationPage> {
   final Set<String> _processingRescheduleRequestIds = <String>{};
+  bool _loadingDialogOpen = false;
 
   Future<void> _approveAppointment(
     BuildContext context,
@@ -52,82 +60,250 @@ class _PatientVerificationPageState extends State<PatientVerificationPage> {
     }
   }
 
-  Future<void> _rejectAppointment(
-    BuildContext context,
-    String appointmentId,
-  ) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Reject Appointment'),
-        content: const Text(
-          'Are you sure you want to reject this appointment?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Reject', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      try {
-        await FirebaseFirestore.instance
-            .collection('appointments')
-            .doc(appointmentId)
-            .update({
-              'status': 'cancelled',
-              'updatedAt': DateTime.now().toIso8601String(),
-            });
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Appointment rejected'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        }
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-          );
-        }
-      }
+  Future<String?> _resolvePatientEmail({
+    required Map<String, dynamic> appointmentData,
+    required String patientId,
+  }) async {
+    final fromAppointment = appointmentData['email']?.toString().trim();
+    if (fromAppointment != null && fromAppointment.isNotEmpty) {
+      return fromAppointment;
     }
-  }
 
-  Future<void> _viewReferral(BuildContext context, String referralUrl) async {
+    if (patientId.isEmpty) return null;
+
     try {
-      final uri = Uri.parse(referralUrl);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Could not open referral link'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(patientId)
+          .get();
+      final fromUser = userDoc.data()?['email']?.toString().trim();
+      if (fromUser != null && fromUser.isNotEmpty) {
+        return fromUser;
       }
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error opening referral: $e'),
-            backgroundColor: Colors.red,
+      debugPrint('Could not load patient email from users/$patientId: $e');
+    }
+    return null;
+  }
+
+  void _showBlockingLoading() {
+    if (!mounted || _loadingDialogOpen) return;
+    _loadingDialogOpen = true;
+    showDialog<void>(
+      context: context,
+      useRootNavigator: true,
+      barrierDismissible: false,
+      builder: (_) => const PopScope(
+        canPop: false,
+        child: Center(
+          child: CircularProgressIndicator(color: OrthoqColors.navy),
+        ),
+      ),
+    );
+  }
+
+  void _dismissBlockingLoading() {
+    if (!mounted || !_loadingDialogOpen) return;
+    final navigator = Navigator.of(context, rootNavigator: true);
+    if (navigator.canPop()) {
+      navigator.pop();
+    }
+    _loadingDialogOpen = false;
+  }
+
+  void _showSnackBarOnPage(String message, {required bool isError}) {
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            message,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        );
+          backgroundColor: isError ? Colors.red : OrthoqColors.navy,
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: isError ? 5 : 4),
+        ),
+      );
+    });
+  }
+
+  /// Returns rejection reason, or `null` if cancelled.
+  Future<String?> _promptRejectionReason() async {
+    final reasonController = TextEditingController();
+    String? reason;
+
+    try {
+      final result = await showDialog<String>(
+        context: context,
+        useRootNavigator: true,
+        barrierDismissible: false,
+        builder: (dialogContext) {
+          return AlertDialog(
+            title: const Text(
+              'Reject Appointment',
+              style: TextStyle(color: OrthoqColors.navy),
+            ),
+            content: SingleChildScrollView(
+              child: TextField(
+                controller: reasonController,
+                maxLines: 3,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                  labelText: 'Reason for Rejection',
+                  hintText: 'Enter the reason sent to the patient…',
+                  alignLabelWithHint: true,
+                  border: OutlineInputBorder(),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: OrthoqColors.navy,
+                      width: 2,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () =>
+                    Navigator.of(dialogContext, rootNavigator: true).pop(),
+                style: TextButton.styleFrom(
+                  foregroundColor: OrthoqColors.navy,
+                ),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final value = reasonController.text.trim();
+                  if (value.isEmpty) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please enter a reason for rejection'),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                    return;
+                  }
+                  Navigator.of(dialogContext, rootNavigator: true)
+                      .pop(value);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: OrthoqColors.navy,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Send Rejection'),
+              ),
+            ],
+          );
+        },
+      );
+      reason = result?.trim();
+    } finally {
+      reasonController.dispose();
+    }
+
+    if (reason != null && reason.isEmpty) return null;
+    return reason;
+  }
+
+  Future<void> _rejectAppointment({
+    required String appointmentId,
+    required String patientId,
+    required String patientName,
+    required Map<String, dynamic> appointmentData,
+  }) async {
+    if (!mounted) return;
+
+    // Step 1: Rejection reason dialog (closes when user taps Send Rejection)
+    final reason = await _promptRejectionReason();
+    if (reason == null || reason.isEmpty) return;
+    if (!mounted) return;
+
+    // a) Loading indicator (root overlay — dismissed explicitly once)
+    _showBlockingLoading();
+
+    String? patientEmail;
+    try {
+      patientEmail = await _resolvePatientEmail(
+        appointmentData: appointmentData,
+        patientId: patientId,
+      );
+
+      if (patientEmail == null || patientEmail.isEmpty) {
+        throw 'No email address found for this patient. Cannot send rejection notice.';
       }
+
+      final appointmentDateLabel =
+          _formatAppointmentDateLabel(appointmentData);
+      final appointmentTimeLabel =
+          _formatAppointmentTimeLabel(appointmentData);
+      final doctorLabel = _formatDoctorLabel(
+        appointmentData['doctorName']?.toString() ?? '',
+      );
+
+      // b) Send email
+      final emailSent = await EmailService().sendAppointmentRejectionEmail(
+        patientEmail: patientEmail,
+        patientName: patientName,
+        rejectionReason: reason,
+        appointmentDate: appointmentDateLabel,
+        appointmentTime: appointmentTimeLabel,
+        doctorName: doctorLabel,
+      );
+
+      if (!emailSent) {
+        throw 'Rejection email could not be sent. Check EmailService configuration.';
+      }
+
+      // c) Update Firestore
+      await FirebaseFirestore.instance
+          .collection('appointments')
+          .doc(appointmentId)
+          .update({
+            'status': 'rejected',
+            'rejectionReason': reason,
+            'rejectedAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
+            'referralVerified': false,
+          });
+
+      if (!mounted) return;
+
+      // d) Dismiss root loading dialog (single pop)
+      _dismissBlockingLoading();
+
+      if (!mounted) return;
+
+      final emailForMessage = patientEmail;
+
+      // e) Return to verification list via parent (IndexedStack tab)
+      if (widget.onRejectionComplete != null) {
+        widget.onRejectionComplete!(emailForMessage);
+      } else {
+        // f) SnackBar after navigation frame settles
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            _showSnackBarOnPage(
+              'Successfully sent rejection email to $emailForMessage.',
+              isError: false,
+            );
+          });
+        });
+      }
+    } catch (e) {
+      _dismissBlockingLoading();
+      if (!mounted) return;
+      _showSnackBarOnPage(
+        'Could not reject appointment: $e',
+        isError: true,
+      );
     }
   }
 
@@ -142,6 +318,588 @@ class _PatientVerificationPageState extends State<PatientVerificationPage> {
       return value;
     }
     return null;
+  }
+
+  String _formatDoctorLabel(String doctorName) {
+    final trimmed = doctorName.trim();
+    if (trimmed.isEmpty) return 'Unknown Doctor';
+    if (trimmed.toLowerCase().startsWith('dr')) return trimmed;
+    return 'Dr. $trimmed';
+  }
+
+  String _formatAppointmentDateLabel(Map<String, dynamic> data) {
+    final date = _parseDate(data['appointmentDate']);
+    if (date == null) return 'Not yet scheduled';
+    return DateFormat('EEEE, d MMMM y').format(date);
+  }
+
+  String _formatAppointmentTimeLabel(Map<String, dynamic> data) {
+    final time = data['appointmentTime']?.toString().trim();
+    if (time == null || time.isEmpty) return 'Not yet scheduled';
+    return time;
+  }
+
+  static const TextStyle _fieldLabelStyle = TextStyle(
+    fontSize: 11,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.75,
+    color: Color(0xFF64748B),
+  );
+
+  static const TextStyle _fieldValueStyle = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: OrthoqColors.navy,
+    height: 1.35,
+  );
+
+  Widget _buildInfoField({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: OrthoqColors.navy),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label.toUpperCase(), style: _fieldLabelStyle),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: _fieldValueStyle,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  static const TextStyle _sectionHeaderStyle = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.bold,
+    color: OrthoqColors.navy,
+    letterSpacing: 0.2,
+  );
+
+  Widget _buildScheduleComparisonBox({
+    required String label,
+    required String dateText,
+    required String timeText,
+    required bool isRequested,
+  }) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isRequested ? Colors.white : OrthoqColors.scaffoldBg,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isRequested ? OrthoqColors.navy : OrthoqColors.lightSlate,
+            width: isRequested ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label.toUpperCase(), style: _fieldLabelStyle),
+            const SizedBox(height: 8),
+            Text(
+              dateText,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: _fieldValueStyle,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              timeText,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: isRequested ? OrthoqColors.navy : Colors.grey.shade700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRescheduleRequestCard({
+    required BuildContext context,
+    required String patientName,
+    required String patientTypeLabel,
+    required bool isNewPatient,
+    required String icNumber,
+    required String emailDisplay,
+    required String doctorLabel,
+    required DateTime? oldDate,
+    required String oldTime,
+    required DateTime? newDate,
+    required String newTime,
+    required bool isProcessing,
+    required VoidCallback onApprove,
+    required VoidCallback onDecline,
+  }) {
+    final oldDateLabel = oldDate != null
+        ? DateFormat('EEE, MMM d, y').format(oldDate)
+        : 'N/A';
+    final newDateLabel = newDate != null
+        ? DateFormat('EEE, MMM d, y').format(newDate)
+        : 'N/A';
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 2,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              patientName,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: OrthoqColors.navy,
+                height: 1.2,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                _buildStatusChip(
+                  label: patientTypeLabel,
+                  background: isNewPatient
+                      ? const Color(0xFFDCEEFF)
+                      : const Color(0xFFDCFCE7),
+                  foreground: isNewPatient
+                      ? OrthoqColors.navy
+                      : const Color(0xFF166534),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDCEEFF),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.badge_outlined,
+                        size: 14,
+                        color: OrthoqColors.navy,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        icNumber,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: OrthoqColors.navy,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _buildInfoField(
+              icon: Icons.email_outlined,
+              label: 'Email',
+              value: emailDisplay,
+            ),
+            const SizedBox(height: 16),
+            const Text('Doctor & Appointment', style: _sectionHeaderStyle),
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.local_hospital_outlined,
+                  size: 18,
+                  color: OrthoqColors.navy,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('ASSIGNED DOCTOR', style: _fieldLabelStyle),
+                      const SizedBox(height: 4),
+                      Text(
+                        doctorLabel,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: _fieldValueStyle,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            const Text('Schedule change', style: _sectionHeaderStyle),
+            const SizedBox(height: 10),
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildScheduleComparisonBox(
+                    label: 'Current (Old)',
+                    dateText: oldDateLabel,
+                    timeText: oldTime,
+                    isRequested: false,
+                  ),
+                  const SizedBox(width: 10),
+                  _buildScheduleComparisonBox(
+                    label: 'Requested (New)',
+                    dateText: newDateLabel,
+                    timeText: newTime,
+                    isRequested: true,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: isProcessing ? null : onApprove,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: isProcessing
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text('Approve'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: isProcessing ? null : onDecline,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: isProcessing
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text('Decline'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusChip({
+    required String label,
+    required Color background,
+    required Color foreground,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.3,
+          color: foreground,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVerificationCard(
+    BuildContext context, {
+    required String patientName,
+    required String icNumber,
+    required String emailDisplay,
+    required bool isNewPatient,
+    required String patientTypeLabel,
+    required String doctorLabel,
+    required String appointmentDateLabel,
+    required String appointmentTimeLabel,
+    required bool hasScheduledSlot,
+    required DateTime? createdAt,
+    required String? referralUrl,
+    required VoidCallback onReject,
+    required VoidCallback onApprove,
+    required VoidCallback? onViewReferral,
+  }) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 2,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Spacer(),
+                _buildStatusChip(
+                  label: patientTypeLabel,
+                  background: isNewPatient
+                      ? const Color(0xFFDCEEFF)
+                      : const Color(0xFFDCFCE7),
+                  foreground: isNewPatient
+                      ? OrthoqColors.navy
+                      : const Color(0xFF166534),
+                ),
+                const SizedBox(width: 6),
+                _buildStatusChip(
+                  label: 'Pending',
+                  background: Colors.orange.shade100,
+                  foreground: Colors.orange.shade900,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        patientName,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: OrthoqColors.navy,
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildInfoField(
+                        icon: Icons.badge_outlined,
+                        label: 'IC Number',
+                        value: icNumber,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildInfoField(
+                        icon: Icons.email_outlined,
+                        label: 'Email',
+                        value: emailDisplay,
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.local_hospital_outlined,
+                            size: 18,
+                            color: OrthoqColors.navy,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('DOCTOR', style: _fieldLabelStyle),
+                                const SizedBox(height: 4),
+                                Text(
+                                  doctorLabel,
+                                  style: _fieldValueStyle,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: OrthoqColors.scaffoldBg,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: OrthoqColors.lightSlate),
+              ),
+              child: hasScheduledSlot
+                  ? Row(
+                      children: [
+                        const Icon(
+                          Icons.event_outlined,
+                          size: 18,
+                          color: OrthoqColors.navy,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'REQUESTED',
+                                style: _fieldLabelStyle,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '$appointmentDateLabel · $appointmentTimeLabel',
+                                style: _fieldValueStyle,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    )
+                  : Align(
+                      alignment: Alignment.centerLeft,
+                      child: _buildStatusChip(
+                        label: 'Not yet scheduled',
+                        background: const Color(0xFFDCEEFF),
+                        foreground: OrthoqColors.navy,
+                      ),
+                    ),
+            ),
+            if (createdAt != null) ...[
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Icon(
+                    Icons.access_time,
+                    size: 15,
+                    color: Colors.grey.shade600,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Submitted ${DateFormat('MMM dd, yyyy · HH:mm').format(createdAt)}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                if (onViewReferral != null) ...[
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: onViewReferral,
+                      icon: const Icon(Icons.description_outlined, size: 18),
+                      label: const Text('View Referral'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: OrthoqColors.navy,
+                        side: const BorderSide(color: OrthoqColors.navy),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: onReject,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.red),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text('Reject'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: onApprove,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text('Approve'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _respondToRescheduleRequest({
@@ -472,6 +1230,10 @@ class _PatientVerificationPageState extends State<PatientVerificationPage> {
             final doctorName =
                 data['doctorName']?.toString() ?? 'Unknown Doctor';
             final icNumber = data['icNumber']?.toString() ?? 'N/A';
+            final patientEmail = data['email']?.toString().trim();
+            final emailDisplay = (patientEmail != null && patientEmail.isNotEmpty)
+                ? patientEmail
+                : 'Not provided';
             final patientTypeRaw = data['patientType']?.toString() ?? '';
             final isNewPatient = patientTypeRaw.toLowerCase().contains('new');
             final patientTypeLabel = isNewPatient ? 'New Patient' : 'Follow-up';
@@ -479,185 +1241,45 @@ class _PatientVerificationPageState extends State<PatientVerificationPage> {
             final appointmentId = appointmentDoc.id;
             final patientId = data['patientId']?.toString() ?? '';
             final createdAt = _parseDate(data['createdAt']);
+            final doctorLabel = _formatDoctorLabel(doctorName);
+            final appointmentDateLabel = _formatAppointmentDateLabel(data);
+            final appointmentTimeLabel = _formatAppointmentTimeLabel(data);
+            final hasScheduledSlot = appointmentDateLabel != 'Not yet scheduled' ||
+                appointmentTimeLabel != 'Not yet scheduled';
 
-            return Card(
-              margin: const EdgeInsets.only(bottom: 16),
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          backgroundColor: OrthoqColors.slateNavy,
-                          child: Text(
-                            patientName.isNotEmpty
-                                ? patientName[0].toUpperCase()
-                                : '?',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onPrimary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                patientName,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isNewPatient
-                                      ? const Color(0xFFDCEEFF)
-                                      : const Color(0xFFDCFCE7),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Text(
-                                  patientTypeLabel,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: isNewPatient
-                                        ? OrthoqColors.slateNavy
-                                        : const Color(0xFF166534),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'IC Number: $icNumber',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey.shade700,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Dr. $doctorName',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.shade100,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            'Pending',
-                            style: TextStyle(
-                              color: Colors.orange.shade900,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Divider(color: Colors.grey.shade300),
-                    const SizedBox(height: 12),
-                    if (createdAt != null)
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.access_time,
-                            size: 16,
-                            color: Colors.grey.shade600,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Submitted: ${DateFormat('MMM dd, yyyy HH:mm').format(createdAt)}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        if (referralUrl != null && referralUrl.isNotEmpty)
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () =>
-                                  _viewReferral(context, referralUrl),
-                              icon: const Icon(Icons.description, size: 18),
-                              label: const Text('View Referral'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Theme.of(
-                                  context,
-                                ).colorScheme.secondary,
-                                side: BorderSide(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.secondary,
-                                ),
-                              ),
-                            ),
-                          ),
-                        if (referralUrl != null && referralUrl.isNotEmpty)
-                          const SizedBox(width: 8),
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () =>
-                                _rejectAppointment(context, appointmentId),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.red,
-                              side: const BorderSide(color: Colors.red),
-                            ),
-                            child: const Text('Reject'),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () => _approveAppointment(
-                              context,
-                              appointmentId,
-                              patientId,
-                              patientName,
-                              data['doctorId']?.toString() ?? '',
-                              doctorName,
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              foregroundColor: Theme.of(
-                                context,
-                              ).colorScheme.onPrimary,
-                            ),
-                            child: const Text('Approve'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+            return KeyedSubtree(
+              key: ValueKey<String>('verification_$appointmentId'),
+              child: _buildVerificationCard(
+              context,
+              patientName: patientName,
+              icNumber: icNumber,
+              emailDisplay: emailDisplay,
+              isNewPatient: isNewPatient,
+              patientTypeLabel: patientTypeLabel,
+              doctorLabel: doctorLabel,
+              appointmentDateLabel: appointmentDateLabel,
+              appointmentTimeLabel: appointmentTimeLabel,
+              hasScheduledSlot: hasScheduledSlot,
+              createdAt: createdAt,
+              referralUrl: referralUrl,
+              onReject: () => _rejectAppointment(
+                appointmentId: appointmentId,
+                patientId: patientId,
+                patientName: patientName,
+                appointmentData: data,
               ),
+              onApprove: () => _approveAppointment(
+                context,
+                appointmentId,
+                patientId,
+                patientName,
+                data['doctorId']?.toString() ?? '',
+                doctorName,
+              ),
+              onViewReferral: referralUrl != null && referralUrl.isNotEmpty
+                  ? () => openReferralLetterUrl(context, referralUrl)
+                  : null,
+            ),
             );
           },
         );
@@ -738,125 +1360,92 @@ class _PatientVerificationPageState extends State<PatientVerificationPage> {
           itemBuilder: (context, index) {
             final doc = requests[index];
             final data = doc.data() as Map<String, dynamic>;
-            final patientName =
-                data['patientName']?.toString() ?? 'Unknown Patient';
-            final oldDate = _parseDate(data['oldDate']);
-            final oldTime = data['oldTime']?.toString() ?? 'N/A';
-            final newDate = _parseDate(data['requestedDate']);
-            final newTime = data['requestedTime']?.toString() ?? 'N/A';
+            final appointmentId = data['appointmentId']?.toString().trim() ?? '';
             final isProcessing = _processingRescheduleRequestIds.contains(
               doc.id,
             );
 
-            return Card(
-              margin: const EdgeInsets.only(bottom: 16),
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      patientName,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Current (Old): ${oldDate != null ? DateFormat('EEE, MMM d, y').format(oldDate) : 'N/A'} at $oldTime',
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Requested (New): ${newDate != null ? DateFormat('EEE, MMM d, y').format(newDate) : 'N/A'} at $newTime',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: isProcessing
-                                ? null
-                                : () => _respondToRescheduleRequest(
-                                    context: context,
-                                    requestId: doc.id,
-                                    requestData: data,
-                                    isAccepted: true,
-                                  ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              foregroundColor: Theme.of(
-                                context,
-                              ).colorScheme.onPrimary,
-                            ),
-                            child: isProcessing
-                                ? SizedBox(
-                                    height: 18,
-                                    width: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Theme.of(context).colorScheme.onPrimary,
-                                      ),
-                                    ),
-                                  )
-                                : const Text('Approve'),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: isProcessing
-                                ? null
-                                : () => _respondToRescheduleRequest(
-                                    context: context,
-                                    requestId: doc.id,
-                                    requestData: data,
-                                    isAccepted: false,
-                                  ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Theme.of(
-                                context,
-                              ).colorScheme.onPrimary,
-                            ),
-                            child: isProcessing
-                                ? SizedBox(
-                                    height: 18,
-                                    width: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Theme.of(context).colorScheme.onPrimary,
-                                      ),
-                                    ),
-                                  )
-                                : const Text('Decline'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+            Widget buildCard(Map<String, dynamic>? aptData) {
+              return _buildRescheduleRequestCard(
+                context: context,
+                patientName: data['patientName']?.toString() ??
+                    aptData?['patientName']?.toString() ??
+                    'Unknown Patient',
+                patientTypeLabel: () {
+                  final raw = data['patientType']?.toString() ??
+                      aptData?['patientType']?.toString() ??
+                      '';
+                  return raw.toLowerCase().contains('new')
+                      ? 'New Patient'
+                      : 'Follow-up';
+                }(),
+                isNewPatient: () {
+                  final raw = data['patientType']?.toString() ??
+                      aptData?['patientType']?.toString() ??
+                      '';
+                  return raw.toLowerCase().contains('new');
+                }(),
+                icNumber: data['icNumber']?.toString() ??
+                    aptData?['icNumber']?.toString() ??
+                    'N/A',
+                emailDisplay: () {
+                  final emailRaw = data['patientEmail']?.toString().trim() ??
+                      data['email']?.toString().trim() ??
+                      aptData?['email']?.toString().trim();
+                  return (emailRaw != null && emailRaw.isNotEmpty)
+                      ? emailRaw
+                      : 'Not provided';
+                }(),
+                doctorLabel: _formatDoctorLabel(
+                  data['doctorName']?.toString() ??
+                      aptData?['doctorName']?.toString() ??
+                      '',
                 ),
-              ),
+                oldDate: _parseDate(data['oldDate']),
+                oldTime: data['oldTime']?.toString() ?? 'N/A',
+                newDate: _parseDate(data['requestedDate']),
+                newTime: data['requestedTime']?.toString() ?? 'N/A',
+                isProcessing: isProcessing,
+                onApprove: () => _respondToRescheduleRequest(
+                  context: context,
+                  requestId: doc.id,
+                  requestData: data,
+                  isAccepted: true,
+                ),
+                onDecline: () => _respondToRescheduleRequest(
+                  context: context,
+                  requestId: doc.id,
+                  requestData: data,
+                  isAccepted: false,
+                ),
+              );
+            }
+
+            if (appointmentId.isEmpty) {
+              return buildCard(null);
+            }
+
+            return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+              future: FirebaseFirestore.instance
+                  .collection('appointments')
+                  .doc(appointmentId)
+                  .get(),
+              builder: (context, aptSnap) {
+                if (aptSnap.connectionState == ConnectionState.waiting) {
+                  return const Card(
+                    margin: EdgeInsets.only(bottom: 16),
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: OrthoqColors.navy,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+                return buildCard(aptSnap.data?.data());
+              },
             );
           },
         );
@@ -868,25 +1457,49 @@ class _PatientVerificationPageState extends State<PatientVerificationPage> {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Patient Verification'),
-          backgroundColor: OrthoqColors.slateNavy,
-          foregroundColor: Theme.of(context).colorScheme.onPrimary,
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Pending Verification'),
-              Tab(text: 'Reschedule Requests'),
+    return SafeArea(
+      bottom: false,
+      child: DefaultTabController(
+        key: const PageStorageKey<String>('patient_verification_tabs'),
+        length: 2,
+        child: Scaffold(
+          backgroundColor: OrthoqColors.scaffoldBg,
+          appBar: AppBar(
+            title: const Text(
+              'Patient Verification',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            backgroundColor: OrthoqColors.navy,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            automaticallyImplyLeading: false,
+            centerTitle: false,
+            bottom: const TabBar(
+              indicatorColor: Colors.white,
+              indicatorWeight: 3,
+              labelColor: Colors.white,
+              unselectedLabelColor: Color(0xFF94A3B8),
+              labelStyle: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+              tabs: [
+                Tab(text: 'Pending Verification'),
+                Tab(text: 'Reschedule Requests'),
+              ],
+            ),
+          ),
+          body: TabBarView(
+            key: const ValueKey<String>('patient_verification_tab_view'),
+            children: [
+              _buildPendingAppointmentsTab(),
+              _buildRescheduleRequestsTab(),
             ],
           ),
-        ),
-        body: TabBarView(
-          children: [
-            _buildPendingAppointmentsTab(),
-            _buildRescheduleRequestsTab(),
-          ],
         ),
       ),
     );

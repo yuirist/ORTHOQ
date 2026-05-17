@@ -480,6 +480,80 @@ If this new time does not work for you, please contact the clinic assistant at H
     );
   }
 
+  /// Notifies a patient that their pending appointment was rejected by clinic staff.
+  Future<bool> sendAppointmentRejectionEmail({
+    required String patientEmail,
+    required String patientName,
+    required String rejectionReason,
+    required String appointmentDate,
+    required String appointmentTime,
+    required String doctorName,
+  }) async {
+    const subject = 'Appointment Status: Rejected';
+    final safeName = _escapeHtml(patientName);
+    final safeReason = _escapeHtml(rejectionReason);
+    final safeDate = _escapeHtml(appointmentDate);
+    final safeTime = _escapeHtml(appointmentTime);
+    final doctorLabel = doctorName.trim().toLowerCase().startsWith('dr')
+        ? doctorName.trim()
+        : 'Dr. ${doctorName.trim()}';
+    final safeDoctor = _escapeHtml(doctorLabel);
+
+    final inner =
+        '''
+    <p style="margin:0 0 16px 0;font-size:16px;line-height:1.5;">Hi $safeName,</p>
+    <p style="margin:0 0 20px 0;font-size:15px;line-height:1.55;">
+      We regret to inform you that your appointment request at
+      <strong>OrthoQ (Hospital Kajang)</strong> has been <strong style="color:#C53030;">rejected</strong>.
+      The details below refer to the request that was declined.
+    </p>
+    <h2 style="margin:0 0 12px 0;font-size:17px;color:#1B3C68;">Appointment details</h2>
+    <table role="presentation" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;font-size:15px;background:#ffffff;margin-bottom:20px;">
+      <tr>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;width:38%;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Date</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;">$safeDate</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Time</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;">$safeTime</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Doctor</td>
+        <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;">$safeDoctor</td>
+      </tr>
+    </table>
+    <h2 style="margin:0 0 12px 0;font-size:17px;color:#1B3C68;">Reason for rejection</h2>
+    <p style="margin:0 0 20px 0;font-size:15px;line-height:1.6;color:#2d3748;padding:14px;background:#ffffff;border:1px solid #CBD5E0;border-radius:8px;">
+      $safeReason
+    </p>
+    <p style="margin:0 0 12px 0;font-size:15px;line-height:1.55;color:#2d3748;">
+      <strong>Please log back into the OrthoQ app to schedule a new appointment.</strong>
+    </p>
+    <p style="margin:0;font-size:14px;line-height:1.55;color:#4A5568;">
+      If you have questions, please contact the clinic.
+    </p>''';
+
+    final html = _htmlDocument(inner);
+    final plain =
+        'Hi $patientName,\n\n'
+        'Your appointment request at OrthoQ (Hospital Kajang) has been rejected.\n\n'
+        'Appointment details:\n'
+        'Date: $appointmentDate\n'
+        'Time: $appointmentTime\n'
+        'Doctor: $doctorLabel\n\n'
+        'Reason for rejection:\n$rejectionReason\n\n'
+        'Please log back into the OrthoQ app to schedule a new appointment.\n\n'
+        'If you have questions, please contact the clinic.\n';
+
+    return _sendOrLog(
+      to: patientEmail,
+      subject: subject,
+      html: html,
+      plainText: plain,
+      contextLabel: 'sendAppointmentRejectionEmail',
+    );
+  }
+
   Future<bool> _sendOrLog({
     required String to,
     required String subject,

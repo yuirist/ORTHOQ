@@ -13,5 +13,10 @@ abstract final class OrthoqColors {
 
   static const Color lightSlate = Color(0xFFE2E8F0);
   static const Color white = Color(0xFFFFFFFF);
+
+  /// Light gray for patient portals and general screens.
   static const Color scaffoldBg = Color(0xFFF8FAFC);
+
+  /// Admin dashboard and staff list — pure white for contrast with navy cards.
+  static const Color adminPageBg = white;
 }
