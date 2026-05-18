@@ -45,6 +45,7 @@ dependencies:
   # UI and Navigation
   flutter_svg: ^2.0.10+1
   intl: ^0.20.2
+  fl_chart: ^0.70.2
   syncfusion_flutter_calendar: ^29.2.11
   cached_network_image: ^3.3.1
 
