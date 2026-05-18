@@ -2,12 +2,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:intl/intl.dart';
+import '../../models/doctor_model.dart';
+import '../../services/doctor_delay_notification_service.dart';
+import '../../services/doctor_service.dart';
 import '../../services/email_service.dart';
 
 class DelayNotificationsPage extends StatefulWidget {
   final String? initialDoctor;
+  final String? initialDoctorId;
   final DateTime? initialDate;
   final String? initialMessage;
+
+  /// When set, marks the delay alert completed after a successful broadcast.
+  final String? delayRequestId;
 
   /// Pop this route after send only when opened via [Navigator.push], not as a staff tab.
   final bool popOnSuccess;
@@ -15,8 +22,10 @@ class DelayNotificationsPage extends StatefulWidget {
   const DelayNotificationsPage({
     super.key,
     this.initialDoctor,
+    this.initialDoctorId,
     this.initialDate,
     this.initialMessage,
+    this.delayRequestId,
     this.popOnSuccess = false,
   });
 
@@ -25,18 +34,20 @@ class DelayNotificationsPage extends StatefulWidget {
 }
 
 class _DelayNotificationsPageState extends State<DelayNotificationsPage> {
-  static const List<String> _doctorValues = [
-    'Jamal Bin Kassim',
-    'Siti Maimunah Binti Ahmad',
-    'Halim Bin Tongkol',
-  ];
-
+  final DoctorService _doctorService = DoctorService();
   final TextEditingController _delayMessageController = TextEditingController();
   final Set<String> _selectedAppointmentIds = {};
 
-  String? _selectedDoctor;
+  String? _selectedDoctorId;
+  String? _selectedDoctorName;
   DateTime _selectedDate = DateTime.now();
   bool _isSending = false;
+
+  String get _emailDoctorName {
+    final name = _selectedDoctorName?.trim() ?? '';
+    if (name.isEmpty) return 'Doctor';
+    return name.toLowerCase().startsWith('dr') ? name : 'Dr. $name';
+  }
 
   String? _extractDelayMinutes(String text) {
     final match = RegExp(
@@ -53,12 +64,15 @@ class _DelayNotificationsPageState extends State<DelayNotificationsPage> {
   }
 
   void _applyAutoMessageTemplate({String? sourceMessage}) {
-    final doctorName = _selectedDoctor;
+    final doctorName = _selectedDoctorName;
     if (doctorName == null || doctorName.trim().isEmpty) return;
     final extractedMinutes =
         sourceMessage != null ? _extractDelayMinutes(sourceMessage) : null;
+    final forTemplate = doctorName.toLowerCase().startsWith('dr')
+        ? doctorName
+        : 'Dr. $doctorName';
     _delayMessageController.text = _buildFormalDelayMessage(
-      doctorName,
+      forTemplate,
       minutes: extractedMinutes,
     );
   }
@@ -84,9 +98,26 @@ class _DelayNotificationsPageState extends State<DelayNotificationsPage> {
   @override
   void initState() {
     super.initState();
-    _selectedDoctor = widget.initialDoctor;
+    _selectedDoctorId = widget.initialDoctorId;
+    final rawDoctor = widget.initialDoctor?.trim();
+    if (rawDoctor != null && rawDoctor.isNotEmpty) {
+      _selectedDoctorName = rawDoctor.toLowerCase().startsWith('dr.')
+          ? rawDoctor.substring(3).trim()
+          : rawDoctor;
+    }
     _selectedDate = widget.initialDate ?? DateTime.now();
     _applyAutoMessageTemplate(sourceMessage: widget.initialMessage?.trim());
+    _resolveInitialDoctor();
+  }
+
+  Future<void> _resolveInitialDoctor() async {
+    final id = widget.initialDoctorId?.trim();
+    if (id == null || id.isEmpty) return;
+    final doctor = await _doctorService.getDoctorById(id);
+    if (!mounted) return;
+    if (doctor != null) {
+      setState(() => _selectedDoctorName = doctor.name);
+    }
   }
 
   @override
@@ -117,16 +148,23 @@ class _DelayNotificationsPageState extends State<DelayNotificationsPage> {
       _startOfDay(date).add(const Duration(days: 1));
 
   Stream<QuerySnapshot> _appointmentsStream() {
-    final selectedDoctor = _selectedDoctor;
-    if (selectedDoctor == null) {
+    if (_selectedDoctorId == null &&
+        (_selectedDoctorName == null || _selectedDoctorName!.isEmpty)) {
       return const Stream.empty();
     }
     final start = _startOfDay(_selectedDate);
     final end = _endOfDay(_selectedDate);
-    return FirebaseFirestore.instance
+    var query = FirebaseFirestore.instance
         .collection('appointments')
-        .where('doctorName', isEqualTo: selectedDoctor)
-        .where('status', isEqualTo: 'confirmed')
+        .where('status', isEqualTo: 'confirmed');
+
+    if (_selectedDoctorId != null && _selectedDoctorId!.isNotEmpty) {
+      query = query.where('doctorId', isEqualTo: _selectedDoctorId);
+    } else {
+      query = query.where('doctorName', isEqualTo: _selectedDoctorName);
+    }
+
+    return query
         .where(
           'appointmentDate',
           isGreaterThanOrEqualTo: Timestamp.fromDate(start),
@@ -136,13 +174,19 @@ class _DelayNotificationsPageState extends State<DelayNotificationsPage> {
   }
 
   Future<QuerySnapshot> _appointmentsQuery() async {
-    final selectedDoctor = _selectedDoctor;
     final start = _startOfDay(_selectedDate);
     final end = _endOfDay(_selectedDate);
-    return FirebaseFirestore.instance
+    var query = FirebaseFirestore.instance
         .collection('appointments')
-        .where('doctorName', isEqualTo: selectedDoctor)
-        .where('status', isEqualTo: 'confirmed')
+        .where('status', isEqualTo: 'confirmed');
+
+    if (_selectedDoctorId != null && _selectedDoctorId!.isNotEmpty) {
+      query = query.where('doctorId', isEqualTo: _selectedDoctorId);
+    } else {
+      query = query.where('doctorName', isEqualTo: _selectedDoctorName);
+    }
+
+    return query
         .where(
           'appointmentDate',
           isGreaterThanOrEqualTo: Timestamp.fromDate(start),
@@ -185,7 +229,8 @@ class _DelayNotificationsPageState extends State<DelayNotificationsPage> {
   }
 
   Future<void> _sendDelayAlerts() async {
-    if (_selectedDoctor == null) {
+    if (_selectedDoctorId == null &&
+        (_selectedDoctorName == null || _selectedDoctorName!.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select a doctor.'),
@@ -235,7 +280,7 @@ class _DelayNotificationsPageState extends State<DelayNotificationsPage> {
       }
 
       final delayMessage = _delayMessageController.text.trim();
-      final doctorName = _selectedDoctor!;
+      final doctorName = _emailDoctorName;
 
       for (final doc in docs) {
         final data = doc.data() as Map<String, dynamic>;
@@ -274,6 +319,19 @@ class _DelayNotificationsPageState extends State<DelayNotificationsPage> {
         );
         return;
       }
+
+      final requestId = widget.delayRequestId?.trim();
+      if (requestId != null && requestId.isNotEmpty) {
+        await FirebaseFirestore.instance
+            .collection(DoctorDelayNotificationService.collection)
+            .doc(requestId)
+            .set({
+          'status': 'completed',
+          'completedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      }
+
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -332,29 +390,44 @@ class _DelayNotificationsPageState extends State<DelayNotificationsPage> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        DropdownButtonFormField<String>(
-                          value: _selectedDoctor,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            hintText: 'Select doctor',
-                          ),
-                          items: _doctorValues
-                              .map(
-                                (doctor) => DropdownMenuItem<String>(
-                                  value: doctor,
-                                  child: Text('Dr. $doctor'),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: _isSending
-                              ? null
-                              : (value) {
-                                  setState(() {
-                                    _selectedDoctor = value;
-                                    _selectedAppointmentIds.clear();
-                                  });
-                                  _applyAutoMessageTemplate();
-                                },
+                        StreamBuilder<List<DoctorModel>>(
+                          stream: _doctorService.getActiveDoctors(),
+                          builder: (context, doctorsSnap) {
+                            final doctors = doctorsSnap.data ?? [];
+                            return DropdownButtonFormField<String>(
+                              value: _selectedDoctorId,
+                              decoration: const InputDecoration(
+                                border: OutlineInputBorder(),
+                                hintText: 'Select doctor',
+                              ),
+                              items: doctors
+                                  .map(
+                                    (doctor) => DropdownMenuItem<String>(
+                                      value: doctor.id,
+                                      child: Text(
+                                        doctor.name.trim().toLowerCase().startsWith('dr')
+                                            ? doctor.name.trim()
+                                            : 'Dr. ${doctor.name.trim()}',
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: _isSending
+                                  ? null
+                                  : (value) {
+                                      setState(() {
+                                        _selectedDoctorId = value;
+                                        final match = doctors
+                                            .where((d) => d.id == value);
+                                        _selectedDoctorName = match.isEmpty
+                                            ? null
+                                            : match.first.name;
+                                        _selectedAppointmentIds.clear();
+                                      });
+                                      _applyAutoMessageTemplate();
+                                    },
+                            );
+                          },
                         ),
                         const SizedBox(height: 12),
                         const Text(
@@ -401,7 +474,9 @@ class _DelayNotificationsPageState extends State<DelayNotificationsPage> {
                 StreamBuilder<QuerySnapshot>(
                   stream: _appointmentsStream(),
                   builder: (context, snapshot) {
-                    if (_selectedDoctor == null) {
+                    if (_selectedDoctorId == null &&
+                        (_selectedDoctorName == null ||
+                            _selectedDoctorName!.isEmpty)) {
                       return Center(
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16),

@@ -3,6 +3,7 @@ import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../../models/doctor_model.dart';
+import '../../services/doctor_delay_notification_service.dart';
 import '../../services/doctor_service.dart';
 import 'delay_notifications_page.dart';
 
@@ -25,27 +26,58 @@ class _DoctorRequestsPageState extends State<DoctorRequestsPage> {
   }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> _delayAlertsStream() {
-    var query = FirebaseFirestore.instance
-        .collection('doctor_delays')
-        .where('status', isEqualTo: 'pending_staff_action');
-
-    final doctorId = _selectedDoctorId;
-    if (doctorId != null && doctorId.isNotEmpty) {
-      query = query.where('doctorId', isEqualTo: doctorId);
+    if (_selectedDoctorId == null || _selectedDoctorId!.isEmpty) {
+      return DoctorDelayNotificationService.getPendingDoctorDelaysStream();
     }
 
-    return query.orderBy('createdAt', descending: true).snapshots();
+    return FirebaseFirestore.instance
+        .collection(DoctorDelayNotificationService.collection)
+        .where('status', isEqualTo: DoctorDelayNotificationService.pendingStatus)
+        .where('doctorId', isEqualTo: _selectedDoctorId)
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+  }
+
+  DoctorModel? _findDoctorForAlert(
+    List<DoctorModel> doctors,
+    Map<String, dynamic> data,
+  ) {
+    final delayDoctorId = data['doctorId']?.toString().trim() ?? '';
+    if (delayDoctorId.isNotEmpty) {
+      for (final doctor in doctors) {
+        if (doctor.id == delayDoctorId || doctor.userId == delayDoctorId) {
+          return doctor;
+        }
+      }
+    }
+    final name = (data['doctorName'] ?? data['sender'])?.toString().trim() ?? '';
+    if (name.isEmpty) return null;
+    final normalized = name.toLowerCase();
+    for (final doctor in doctors) {
+      if (doctor.name.trim().toLowerCase() == normalized) return doctor;
+    }
+    return null;
+  }
+
+  String _displayDoctorName(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return 'Unknown Doctor';
+    return trimmed.toLowerCase().startsWith('dr') ? trimmed : 'Dr. $trimmed';
   }
 
   Future<void> _openBroadcastPageFromAlert(
     BuildContext context,
     String requestId,
     Map<String, dynamic> requestData,
+    List<DoctorModel> doctors,
   ) async {
-    final doctorName =
-        requestData['sender']?.toString().trim().isNotEmpty == true
-            ? requestData['sender'].toString().trim()
-            : requestData['doctorName']?.toString().trim() ?? '';
+    final matchedDoctor = _findDoctorForAlert(doctors, requestData);
+    final doctorName = matchedDoctor?.name ??
+        requestData['sender']?.toString().trim() ??
+        requestData['doctorName']?.toString().trim() ??
+        '';
+    final doctorId = matchedDoctor?.id ??
+        requestData['doctorId']?.toString().trim();
     final message = requestData['message']?.toString().trim() ?? '';
     final dateValue = requestData['date'];
 
@@ -66,44 +98,57 @@ class _DoctorRequestsPageState extends State<DoctorRequestsPage> {
       return;
     }
 
-    try {
-      await FirebaseFirestore.instance
-          .collection('doctor_delays')
-          .doc(requestId)
-          .set({
-        'status': 'completed',
-        'completedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DelayNotificationsPage(
+          initialDoctor: _displayDoctorName(doctorName),
+          initialDoctorId: doctorId,
+          initialDate: selectedDate,
+          initialMessage: message,
+          delayRequestId: requestId,
+          popOnSuccess: true,
+        ),
+      ),
+    );
+  }
 
-      if (!context.mounted) return;
-
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => DelayNotificationsPage(
-            initialDoctor: doctorName,
-            initialDate: selectedDate,
-            initialMessage: message,
-            popOnSuccess: true,
+  Widget _buildDoctorAvatar(DoctorModel? doctor) {
+    const size = 56.0;
+    final imageUrl = doctor?.imageUrl?.trim();
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      return ClipOval(
+        child: Image.network(
+          imageUrl,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Container(
+            width: size,
+            height: size,
+            color: OrthoqColors.navy,
+            alignment: Alignment.center,
+            child: const Icon(
+              Icons.medical_services,
+              color: Colors.white,
+              size: 28,
+            ),
           ),
         ),
       );
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Broadcast failed: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
     }
+    return const CircleAvatar(
+      radius: 28,
+      backgroundColor: OrthoqColors.navy,
+      child: Icon(Icons.medical_services, color: Colors.white, size: 28),
+    );
   }
 
   Widget _buildDelayAlertCard(
     BuildContext context, {
     required String requestId,
     required Map<String, dynamic> data,
+    required List<DoctorModel> doctors,
   }) {
     DateTime? delayDate;
     final rawDate = data['date'];
@@ -112,127 +157,169 @@ class _DoctorRequestsPageState extends State<DoctorRequestsPage> {
     } else if (rawDate is String) {
       delayDate = DateTime.tryParse(rawDate);
     }
-    final sender = data['sender']?.toString() ??
+    final matchedDoctor = _findDoctorForAlert(doctors, data);
+    final sender = matchedDoctor?.name ??
+        data['sender']?.toString() ??
         data['doctorName']?.toString() ??
         'Unknown Doctor';
+    final displayName = _displayDoctorName(sender);
     final message = data['message']?.toString() ?? '';
     final status = data['status']?.toString() ?? 'pending_staff_action';
+    final dateLabel = delayDate != null
+        ? DateFormat('EEE, MMM d, y').format(delayDate)
+        : 'N/A';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
-      color: const Color(0xFFE8F0FF),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: Colors.white,
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
-                  Icons.notification_important,
-                  color: OrthoqColors.navy,
-                  size: 22,
-                ),
-                const SizedBox(width: 8),
-                const Expanded(
-                  child: Text(
-                    'Doctor Delay Alert',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: OrthoqColors.navy,
-                    ),
+                _buildDoctorAvatar(matchedDoctor),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Doctor Delay Alert',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade600,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        displayName,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: OrthoqColors.navy,
+                          height: 1.2,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 8),
-                Flexible(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade100,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    status,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange.shade900,
                     ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.schedule,
+                  size: 20,
+                  color: OrthoqColors.navy,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: RichText(
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    text: TextSpan(
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade800,
+                        height: 1.35,
+                      ),
+                      children: [
+                        const TextSpan(
+                          text: 'Affected Date: ',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        TextSpan(text: dateLabel),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.chat_bubble_outline,
+                  size: 20,
+                  color: OrthoqColors.navy,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.orange.shade100,
-                      borderRadius: BorderRadius.circular(20),
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: OrthoqColors.lightSlate),
                     ),
                     child: Text(
-                      status,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
+                      message.isNotEmpty ? message : 'No message provided',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade800,
+                        height: 1.4,
                       ),
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    'Doctor:',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: OrthoqColors.navy,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    'Dr. $sender',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: OrthoqColors.navy,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Date: ${delayDate != null ? DateFormat('EEE, MMM d, y').format(delayDate) : 'N/A'}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 8),
-            Container(
+            const SizedBox(height: 18),
+            SizedBox(
               width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: OrthoqColors.lightSlate),
-              ),
-              child: Text(
-                message.isNotEmpty ? message : 'No message provided',
-                maxLines: 4,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.center,
               child: ElevatedButton.icon(
-                onPressed: () =>
-                    _openBroadcastPageFromAlert(context, requestId, data),
+                onPressed: () => _openBroadcastPageFromAlert(
+                  context,
+                  requestId,
+                  data,
+                  doctors,
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: OrthoqColors.navy,
                   foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 icon: const Icon(Icons.campaign),
-                label: const Text('Broadcast to Patients'),
+                label: const Text(
+                  'Broadcast to Patients',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
               ),
             ),
           ],
@@ -306,9 +393,14 @@ class _DoctorRequestsPageState extends State<DoctorRequestsPage> {
             ),
           ),
           Expanded(
-            child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream: _delayAlertsStream(),
-              builder: (context, snapshot) {
+            child: StreamBuilder<List<DoctorModel>>(
+              stream: _doctorService.getActiveDoctors(),
+              builder: (context, doctorsSnap) {
+                final doctors = doctorsSnap.data ?? const <DoctorModel>[];
+
+                return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                  stream: _delayAlertsStream(),
+                  builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
                     child: CircularProgressIndicator(color: OrthoqColors.navy),
@@ -366,7 +458,10 @@ class _DoctorRequestsPageState extends State<DoctorRequestsPage> {
                       context,
                       requestId: request.id,
                       data: request.data(),
+                      doctors: doctors,
                     );
+                  },
+                );
                   },
                 );
               },
