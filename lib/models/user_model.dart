@@ -22,6 +22,9 @@ class UserModel {
   /// Doctor document IDs this staff member may work with (set by admin; max 3).
   final List<String> assignedDoctorIds;
 
+  /// Patient profile photo URL (Firebase Storage).
+  final String? profileImageUrl;
+
   UserModel({
     required this.id,
     required this.fullName,
@@ -37,6 +40,7 @@ class UserModel {
     this.doctorId,
     this.staffId,
     this.assignedDoctorIds = const [],
+    this.profileImageUrl,
   });
 
   Map<String, dynamic> toMap() {
@@ -55,6 +59,8 @@ class UserModel {
       if (doctorId != null) 'doctorId': doctorId,
       if (staffId != null) 'staffId': staffId,
       if (assignedDoctorIds.isNotEmpty) 'assignedDoctorIds': assignedDoctorIds,
+      if (profileImageUrl != null && profileImageUrl!.isNotEmpty)
+        'profileImageUrl': profileImageUrl,
     };
   }
 
@@ -76,6 +82,7 @@ class UserModel {
       doctorId: map['doctorId']?.toString(),
       staffId: map['staffId']?.toString(),
       assignedDoctorIds: _parseAssignedDoctorIds(map['assignedDoctorIds']),
+      profileImageUrl: map['profileImageUrl']?.toString(),
     );
   }
 
@@ -100,6 +107,7 @@ class UserModel {
     String? doctorId,
     String? staffId,
     List<String>? assignedDoctorIds,
+    String? profileImageUrl,
   }) {
     return UserModel(
       id: id,
@@ -115,6 +123,7 @@ class UserModel {
       doctorId: doctorId ?? this.doctorId,
       staffId: staffId ?? this.staffId,
       assignedDoctorIds: assignedDoctorIds ?? this.assignedDoctorIds,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
     );
   }
 }

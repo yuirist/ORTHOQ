@@ -4,6 +4,7 @@ import '../../models/doctor_model.dart';
 import '../../services/doctor_service.dart';
 import '../../theme/orthoq_colors.dart';
 import '../../theme/orthoq_widgets.dart';
+import '../../widgets/doctor_avatar.dart';
 import 'add_doctor_screen.dart';
 import 'admin_edit_doctor_screen.dart';
 
@@ -84,17 +85,11 @@ class AdminDoctorListPage extends StatelessWidget {
                     child: Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            CircleAvatar(
+                            DoctorAvatar(
+                              imageUrl: d.imageUrl,
                               radius: 26,
                               backgroundColor: Colors.grey.shade200,
-                              backgroundImage: (d.imageUrl != null &&
-                                      d.imageUrl!.isNotEmpty)
-                                  ? NetworkImage(d.imageUrl!)
-                                  : null,
-                              child: (d.imageUrl == null || d.imageUrl!.isEmpty)
-                                  ? Icon(Icons.person,
-                                      color: Colors.grey.shade600)
-                                  : null,
+                              iconColor: Colors.grey.shade600,
                             ),
                             const SizedBox(width: 12),
                             Expanded(

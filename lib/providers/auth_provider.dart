@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
+import '../services/storage_service.dart';
 import '../models/user_model.dart';
 import '../utils/auth_navigation.dart';
 
@@ -185,5 +186,43 @@ class AuthProvider with ChangeNotifier {
     } catch (e) {
       rethrow;
     }
+  }
+
+  /// Uploads a new profile photo and saves the download URL to Firestore.
+  Future<void> updateProfileImage({required String filePath}) async {
+    if (_currentUser == null || _authService == null) {
+      throw 'You must be signed in to update your profile photo.';
+    }
+
+    final storage = StorageService();
+    final downloadUrl = await storage.uploadProfilePhoto(
+      userId: _currentUser!.uid,
+      filePath: filePath,
+    );
+
+    await _authService!.updateUserProfile(
+      userId: _currentUser!.uid,
+      profileImageUrl: downloadUrl,
+    );
+    await _loadUserData(_currentUser!.uid);
+  }
+
+  /// Uploads profile photo from bytes when file path is unavailable.
+  Future<void> updateProfileImageBytes({required List<int> bytes}) async {
+    if (_currentUser == null || _authService == null) {
+      throw 'You must be signed in to update your profile photo.';
+    }
+
+    final storage = StorageService();
+    final downloadUrl = await storage.uploadProfilePhotoBytes(
+      userId: _currentUser!.uid,
+      bytes: bytes,
+    );
+
+    await _authService!.updateUserProfile(
+      userId: _currentUser!.uid,
+      profileImageUrl: downloadUrl,
+    );
+    await _loadUserData(_currentUser!.uid);
   }
 }

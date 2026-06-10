@@ -1,4 +1,8 @@
+import 'dart:io';
+
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:orthoq_app/theme/orthoq_colors.dart';
 
 import '../../services/doctor_service.dart';
@@ -15,38 +19,56 @@ class _AddDoctorScreenState extends State<AddDoctorScreen> {
   final _nameController = TextEditingController();
   final _specializationController = TextEditingController();
   final _credentialsController = TextEditingController();
-  final _imageUrlController = TextEditingController();
-
+  final _imagePicker = ImagePicker();
   final DoctorService _doctorService = DoctorService();
 
+  File? _selectedImage;
   bool _submitting = false;
-
-  void _onImageUrlChanged() {
-    if (mounted) setState(() {});
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _imageUrlController.addListener(_onImageUrlChanged);
-  }
+  String _loadingMessage = 'Saving doctor…';
 
   @override
   void dispose() {
-    _imageUrlController.removeListener(_onImageUrlChanged);
     _nameController.dispose();
     _specializationController.dispose();
     _credentialsController.dispose();
-    _imageUrlController.dispose();
     super.dispose();
   }
 
-  static bool _looksLikeHttpUrl(String raw) {
-    final s = raw.trim();
-    if (s.isEmpty) return false;
-    final u = Uri.tryParse(s);
-    if (u == null || !u.hasScheme || u.host.isEmpty) return false;
-    return u.isScheme('https') || u.isScheme('http');
+  /// Opens gallery so admin can pick a doctor photo.
+  Future<void> _pickImage() async {
+    if (_submitting) return;
+
+    try {
+      final picked = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 85,
+      );
+
+      if (picked == null || !mounted) return;
+
+      setState(() => _selectedImage = File(picked.path));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not open gallery: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// Uploads the selected file to Firebase Storage under `doctors/`.
+  Future<String> _uploadDoctorImage(File imageFile) async {
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final storageRef =
+        FirebaseStorage.instance.ref().child('doctors').child(fileName);
+
+    final uploadTask = storageRef.putFile(imageFile);
+    final snapshot = await uploadTask;
+    return snapshot.ref.getDownloadURL();
   }
 
   Future<void> _submit() async {
@@ -56,15 +78,30 @@ class _AddDoctorScreenState extends State<AddDoctorScreen> {
     await Future<void>.delayed(const Duration(milliseconds: 80));
 
     if (!mounted) return;
-    setState(() => _submitting = true);
+    setState(() {
+      _submitting = true;
+      _loadingMessage = _selectedImage != null
+          ? 'Uploading photo…'
+          : 'Saving doctor…';
+    });
+
     try {
-      final trimmedUrl = DoctorService.normalizeDoctorImageUrl(_imageUrlController.text);
+      String? downloadUrl;
+
+      if (_selectedImage != null) {
+        downloadUrl = await _uploadDoctorImage(_selectedImage!);
+        if (mounted) {
+          setState(() => _loadingMessage = 'Saving doctor…');
+        }
+      }
+
       await _doctorService.addDoctorFromAdmin(
         name: _nameController.text,
         specialization: _specializationController.text,
         credentials: _credentialsController.text,
-        imageUrl: trimmedUrl.isEmpty ? null : trimmedUrl,
+        imageUrl: downloadUrl,
       );
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -80,38 +117,27 @@ class _AddDoctorScreenState extends State<AddDoctorScreen> {
         );
       }
     } finally {
-      if (mounted) setState(() => _submitting = false);
+      if (mounted) {
+        setState(() {
+          _submitting = false;
+          _loadingMessage = 'Saving doctor…';
+        });
+      }
     }
   }
 
   Widget _imagePreview() {
-    final url = DoctorService.normalizeDoctorImageUrl(_imageUrlController.text);
-    if (!_looksLikeHttpUrl(url)) {
-      return _previewPlaceholder();
+    if (_selectedImage != null) {
+      return Image.file(
+        _selectedImage!,
+        height: 160,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _previewPlaceholder(),
+      );
     }
-    return Image.network(
-      url,
-      height: 160,
-      width: double.infinity,
-      fit: BoxFit.contain,
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) return child;
-        return SizedBox(
-          height: 160,
-          child: Center(
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              value: loadingProgress.expectedTotalBytes != null &&
-                      loadingProgress.expectedTotalBytes! > 0
-                  ? loadingProgress.cumulativeBytesLoaded /
-                      loadingProgress.expectedTotalBytes!
-                  : null,
-            ),
-          ),
-        );
-      },
-      errorBuilder: (context, error, stackTrace) => _previewPlaceholder(),
-    );
+
+    return _previewPlaceholder();
   }
 
   Widget _previewPlaceholder() {
@@ -120,10 +146,23 @@ class _AddDoctorScreenState extends State<AddDoctorScreen> {
       width: double.infinity,
       child: ColoredBox(
         color: Colors.grey.shade200,
-        child: Icon(
-          Icons.image_outlined,
-          size: 56,
-          color: Colors.grey.shade500,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.add_a_photo_outlined,
+              size: 56,
+              color: Colors.grey.shade500,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tap to select photo',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -148,8 +187,13 @@ class _AddDoctorScreenState extends State<AddDoctorScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'Paste a Cloudinary image URL for the doctor photo. A preview appears below when the link looks valid.',
-                      style: TextStyle(fontSize: 13, color: Colors.grey.shade700, height: 1.35),
+                      'Tap the preview below to upload a doctor photo from your device. '
+                      'The image will be stored securely in Firebase Storage.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade700,
+                        height: 1.35,
+                      ),
                     ),
                     const SizedBox(height: 20),
                     TextFormField(
@@ -160,8 +204,9 @@ class _AddDoctorScreenState extends State<AddDoctorScreen> {
                         prefixIcon: Icon(Icons.badge_outlined),
                         border: OutlineInputBorder(),
                       ),
-                      validator: (v) =>
-                          v == null || v.trim().isEmpty ? 'Please enter the doctor name' : null,
+                      validator: (v) => v == null || v.trim().isEmpty
+                          ? 'Please enter the doctor name'
+                          : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -171,8 +216,9 @@ class _AddDoctorScreenState extends State<AddDoctorScreen> {
                         prefixIcon: Icon(Icons.medical_services_outlined),
                         border: OutlineInputBorder(),
                       ),
-                      validator: (v) =>
-                          v == null || v.trim().isEmpty ? 'Please enter specialization' : null,
+                      validator: (v) => v == null || v.trim().isEmpty
+                          ? 'Please enter specialization'
+                          : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -184,25 +230,15 @@ class _AddDoctorScreenState extends State<AddDoctorScreen> {
                         prefixIcon: Icon(Icons.school_outlined),
                         border: OutlineInputBorder(),
                       ),
-                      validator: (v) =>
-                          v == null || v.trim().isEmpty ? 'Please enter credentials' : null,
+                      validator: (v) => v == null || v.trim().isEmpty
+                          ? 'Please enter credentials'
+                          : null,
                     ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _imageUrlController,
-                      keyboardType: TextInputType.url,
-                      decoration: const InputDecoration(
-                        labelText: 'Doctor Image URL (Cloudinary Link)',
-                        hintText: 'https://res.cloudinary.com/...',
-                        prefixIcon: Icon(Icons.link),
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 20),
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        'Preview',
+                        'Photo',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -211,10 +247,30 @@ class _AddDoctorScreenState extends State<AddDoctorScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: _imagePreview(),
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: _submitting ? null : _pickImage,
+                        borderRadius: BorderRadius.circular(12),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: _imagePreview(),
+                        ),
+                      ),
                     ),
+                    if (_selectedImage != null) ...[
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed: _submitting
+                              ? null
+                              : () => setState(() => _selectedImage = null),
+                          icon: const Icon(Icons.delete_outline, size: 18),
+                          label: const Text('Remove photo'),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 28),
                     ElevatedButton(
                       onPressed: _submitting ? null : _submit,
@@ -245,7 +301,10 @@ class _AddDoctorScreenState extends State<AddDoctorScreen> {
                 color: Colors.black38,
                 child: Center(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 28,
+                    ),
                     margin: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surface,
@@ -268,7 +327,7 @@ class _AddDoctorScreenState extends State<AddDoctorScreen> {
                         ),
                         const SizedBox(height: 20),
                         Text(
-                          'Saving doctor…',
+                          _loadingMessage,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 16,

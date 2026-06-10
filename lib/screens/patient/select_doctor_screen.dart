@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:orthoq_app/theme/orthoq_colors.dart';
-import '../../services/doctor_service.dart';
 import '../../models/doctor_model.dart';
+import '../../services/doctor_service.dart';
+import '../../widgets/doctor_avatar.dart';
 import 'patient_information_screen.dart';
 
 class SelectDoctorScreen extends StatefulWidget {
@@ -350,46 +351,12 @@ class _DoctorCard extends StatelessWidget {
                   ),
                 ),
 
-                // Doctor Avatar with network image or default icon
-                CircleAvatar(
+                DoctorAvatar(
+                  imageUrl: doctor.imageUrl,
                   radius: 30,
                   backgroundColor: OrthoqColors.slateNavy,
-                  child: doctor.imageUrl != null && doctor.imageUrl!.isNotEmpty
-                      ? ClipOval(
-                          child: Image.network(
-                            doctor.imageUrl!,
-                            width: 60,
-                            height: 60,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Icon(
-                                Icons.person,
-                                size: 40,
-                                color: Theme.of(context).colorScheme.onPrimary,
-                              );
-                            },
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return SizedBox(
-                                width: 60,
-                                height: 60,
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Theme.of(context).colorScheme.onPrimary,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        )
-                      : Icon(
-                          Icons.person,
-                          size: 40,
-                          color: Theme.of(context).colorScheme.onPrimary,
-                        ),
+                  iconColor: Theme.of(context).colorScheme.onPrimary,
+                  iconSize: 40,
                 ),
               ],
             ),

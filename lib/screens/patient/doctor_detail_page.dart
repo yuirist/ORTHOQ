@@ -1,6 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:orthoq_app/theme/orthoq_colors.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../../widgets/doctor_avatar.dart';
 
 class DoctorDetailPage extends StatelessWidget {
   final String doctorId;
@@ -82,20 +84,11 @@ class DoctorDetailPage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        CircleAvatar(
+                        DoctorAvatar(
+                          imageUrl: imageUrl,
                           radius: 44,
-                          backgroundColor: const Color(0xFFE6F2FF),
-                          backgroundImage:
-                              (imageUrl != null && imageUrl.isNotEmpty)
-                                  ? NetworkImage(imageUrl)
-                                  : null,
-                          child: (imageUrl == null || imageUrl.isEmpty)
-                              ? Icon(
-                                  Icons.medical_services_outlined,
-                                  size: 42,
-                                  color: OrthoqColors.slateNavy.withOpacity(0.9),
-                                )
-                              : null,
+                          iconSize: 42,
+                          fallbackIcon: Icons.medical_services_outlined,
                         ),
                         const SizedBox(height: 14),
                         Text(

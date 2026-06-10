@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:file_picker/file_picker.dart';
 
@@ -69,6 +71,43 @@ class StorageService {
       await ref.delete();
     } catch (e) {
       throw 'Error deleting referral letter: $e';
+    }
+  }
+
+  /// Uploads a patient profile photo to `profile_photos/{userId}.jpg`.
+  Future<String> uploadProfilePhoto({
+    required String userId,
+    required String filePath,
+  }) async {
+    try {
+      final ref = _storage.ref().child('profile_photos/$userId.jpg');
+      final uploadTask = path_upload.uploadFromPath(
+        ref,
+        filePath,
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
+      final snapshot = await uploadTask;
+      return await snapshot.ref.getDownloadURL();
+    } catch (e) {
+      throw 'Error uploading profile photo: $e';
+    }
+  }
+
+  /// Uploads profile photo from in-memory bytes (fallback when path is unavailable).
+  Future<String> uploadProfilePhotoBytes({
+    required String userId,
+    required List<int> bytes,
+  }) async {
+    try {
+      final ref = _storage.ref().child('profile_photos/$userId.jpg');
+      final uploadTask = ref.putData(
+        bytes is Uint8List ? bytes : Uint8List.fromList(bytes),
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
+      final snapshot = await uploadTask;
+      return await snapshot.ref.getDownloadURL();
+    } catch (e) {
+      throw 'Error uploading profile photo: $e';
     }
   }
 }

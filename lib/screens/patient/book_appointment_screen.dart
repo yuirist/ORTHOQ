@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/doctor_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/doctor_model.dart';
+import '../../widgets/doctor_avatar.dart';
 import '../../widgets/slot_availability_checker.dart';
 import '../../utils/validation_utils.dart';
 import 'referral_upload_page.dart';
@@ -1646,45 +1647,14 @@ class _DoctorCard extends StatelessWidget {
               // Circular Profile Image with network image or default icon
               Hero(
                 tag: 'doctor_${doctor.id}',
-                child: CircleAvatar(
+                child: DoctorAvatar(
+                  imageUrl: doctor.imageUrl,
                   radius: 30,
                   backgroundColor: isSelected
-                      ? OrthoqColors.slateNavy.withOpacity(0.2)
+                      ? OrthoqColors.slateNavy.withValues(alpha: 0.2)
                       : Colors.grey.shade200,
-                  child: doctor.imageUrl != null && doctor.imageUrl!.isNotEmpty
-                      ? ClipOval(
-                          child: Image.network(
-                            doctor.imageUrl!,
-                            width: 60,
-                            height: 60,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Icon(
-                                Icons.person,
-                                color: OrthoqColors.slateNavy,
-                                size: 40,
-                              );
-                            },
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return const SizedBox(
-                                width: 60,
-                                height: 60,
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(OrthoqColors.slateNavy),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        )
-                      : const Icon(
-                          Icons.person,
-                          color: OrthoqColors.slateNavy,
-                          size: 40,
-                        ),
+                  iconColor: OrthoqColors.slateNavy,
+                  iconSize: 40,
                 ),
               ),
               const SizedBox(width: 16),

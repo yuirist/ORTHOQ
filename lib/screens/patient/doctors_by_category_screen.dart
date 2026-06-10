@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:orthoq_app/theme/orthoq_colors.dart';
-import '../../services/doctor_service.dart';
 import '../../models/doctor_model.dart';
+import '../../services/doctor_service.dart';
+import '../../widgets/doctor_avatar.dart';
 
 class DoctorsByCategoryScreen extends StatelessWidget {
   final String category;
@@ -62,14 +63,12 @@ class DoctorsByCategoryScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: ListTile(
-                  leading: CircleAvatar(
+                  leading: DoctorAvatar(
+                    imageUrl: doctor.imageUrl,
                     radius: 30,
                     backgroundColor: OrthoqColors.slateNavy,
-                    child: Icon(
-                      Icons.person,
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      size: 30,
-                    ),
+                    iconColor: Theme.of(context).colorScheme.onPrimary,
+                    iconSize: 30,
                   ),
                   title: Text(
                     'Dr. ${doctor.name}',

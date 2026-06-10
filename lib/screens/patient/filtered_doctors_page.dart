@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:orthoq_app/theme/orthoq_colors.dart';
 
+import '../../widgets/doctor_avatar.dart';
 import 'doctor_detail_page.dart';
 
 class FilteredDoctorsPage extends StatelessWidget {
@@ -114,7 +115,7 @@ class FilteredDoctorsPage extends StatelessWidget {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _DoctorCardAvatar(imageUrl: imageUrl),
+                          DoctorAvatar(imageUrl: imageUrl, radius: 28),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
@@ -175,67 +176,6 @@ class FilteredDoctorsPage extends StatelessWidget {
             },
           );
         },
-      ),
-    );
-  }
-}
-
-class _DoctorCardAvatar extends StatelessWidget {
-  final String? imageUrl;
-
-  const _DoctorCardAvatar({this.imageUrl});
-
-  @override
-  Widget build(BuildContext context) {
-    final url = imageUrl?.trim();
-    const radius = 28.0;
-
-    if (url == null || url.isEmpty) {
-      return CircleAvatar(
-        radius: radius,
-        backgroundColor: const Color(0xFFE6F2FF),
-        child: const Icon(
-          Icons.person,
-          size: 32,
-          color: OrthoqColors.techBlue,
-        ),
-      );
-    }
-
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: const Color(0xFFE6F2FF),
-      child: ClipOval(
-        child: Image.network(
-          url,
-          width: radius * 2,
-          height: radius * 2,
-          fit: BoxFit.cover,
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return SizedBox(
-              width: radius * 2,
-              height: radius * 2,
-              child: const Center(
-                child: SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: OrthoqColors.techBlue,
-                  ),
-                ),
-              ),
-            );
-          },
-          errorBuilder: (context, error, stackTrace) {
-            return const Icon(
-              Icons.person,
-              size: 32,
-              color: OrthoqColors.techBlue,
-            );
-          },
-        ),
       ),
     );
   }

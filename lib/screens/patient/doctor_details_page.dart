@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:orthoq_app/theme/orthoq_colors.dart';
 
+import '../../widgets/doctor_avatar.dart';
+
 class DoctorDetailsPage extends StatelessWidget {
   final String doctorId;
 
@@ -81,7 +83,7 @@ class DoctorDetailsPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                     child: AspectRatio(
                       aspectRatio: 4 / 3,
-                      child: _DoctorHeaderImage(imageUrl: imageUrl),
+                      child: DoctorHeaderImage(imageUrl: imageUrl),
                     ),
                   ),
                 ),
@@ -135,54 +137,6 @@ class DoctorDetailsPage extends StatelessWidget {
           );
         },
       ),
-    );
-  }
-}
-
-class _DoctorHeaderImage extends StatelessWidget {
-  final String? imageUrl;
-
-  const _DoctorHeaderImage({this.imageUrl});
-
-  @override
-  Widget build(BuildContext context) {
-    final url = imageUrl?.trim();
-    if (url == null || url.isEmpty) {
-      return Container(
-        color: const Color(0xFFE6F2FF),
-        child: const Icon(
-          Icons.person,
-          size: 120,
-          color: OrthoqColors.techBlue,
-        ),
-      );
-    }
-
-    return Image.network(
-      url,
-      fit: BoxFit.cover,
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) return child;
-        return Container(
-          color: const Color(0xFFE6F2FF),
-          child: const Center(
-            child: CircularProgressIndicator(
-              color: OrthoqColors.techBlue,
-              strokeWidth: 2,
-            ),
-          ),
-        );
-      },
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
-          color: const Color(0xFFE6F2FF),
-          child: const Icon(
-            Icons.person,
-            size: 120,
-            color: OrthoqColors.techBlue,
-          ),
-        );
-      },
     );
   }
 }

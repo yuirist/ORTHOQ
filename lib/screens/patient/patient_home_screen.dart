@@ -89,6 +89,8 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
 class _HomeTab extends StatelessWidget {
   const _HomeTab({required this.onOpenAiAssistant});
 
+  static const Color _headerBlue = Color(0xFFEBF3FF);
+
   final VoidCallback onOpenAiAssistant;
 
   @override
@@ -100,56 +102,70 @@ class _HomeTab extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: OrthoqColors.scaffoldBg,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 28, 12, 28),
-              child: Row(
-                children: [
-                  const SizedBox(width: 48),
-                  Expanded(
-                    child: Center(
-                      child: Image.asset(
-                        'assets/images/LOGOORTHOQ.png',
-                        height: 75,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: 'AI Assistant',
-                    onPressed: onOpenAiAssistant,
-                    icon: const Icon(Icons.smart_toy_outlined),
-                    color: OrthoqColors.navy,
-                    iconSize: 28,
-                    style: IconButton.styleFrom(
-                      backgroundColor: OrthoqColors.navy.withValues(alpha: 0.08),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ],
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              color: _headerBlue,
+              borderRadius: BorderRadius.vertical(
+                bottom: Radius.circular(24),
               ),
             ),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Welcome back', style: OrthoqTypography.bodyMedium()),
-                          const SizedBox(height: 4),
-                          Text(userFullName, style: OrthoqTypography.headingMedium()),
-                        ],
+            padding: EdgeInsets.only(
+              top: MediaQuery.paddingOf(context).top + 16,
+              bottom: 20,
+              left: 20,
+              right: 20,
+            ),
+            child: Row(
+              children: [
+                const SizedBox(width: 48),
+                Expanded(
+                  child: Center(
+                    child: Image.asset(
+                      'assets/images/LOGOORTHOQ.png',
+                      height: 75,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'AI Assistant',
+                  onPressed: onOpenAiAssistant,
+                  icon: const Icon(Icons.smart_toy_outlined),
+                  color: OrthoqColors.navy,
+                  iconSize: 28,
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.white.withValues(alpha: 0.75),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: OrthoqColors.navy.withValues(alpha: 0.12),
                       ),
                     ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Welcome back', style: OrthoqTypography.bodyMedium()),
+                        const SizedBox(height: 4),
+                        Text(userFullName, style: OrthoqTypography.headingMedium()),
+                      ],
+                    ),
+                  ),
             const SizedBox(height: OrthoqSpacing.sm),
             OrthoqSectionHeader(
               title: 'Specialties',
@@ -271,12 +287,11 @@ class _HomeTab extends StatelessWidget {
               },
             ),
             const SizedBox(height: 24),
-                  ],
-                ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

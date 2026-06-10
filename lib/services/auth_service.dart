@@ -387,6 +387,7 @@ class AuthService {
     required String userId,
     String? fullName,
     String? phoneNumber,
+    String? profileImageUrl,
   }) async {
     try {
       Map<String, dynamic> updateData = {
@@ -394,8 +395,18 @@ class AuthService {
       };
       if (fullName != null) updateData['fullName'] = fullName;
       if (phoneNumber != null) updateData['phoneNumber'] = phoneNumber;
+      if (profileImageUrl != null) updateData['profileImageUrl'] = profileImageUrl;
 
       await _firestore.collection('users').doc(userId).update(updateData);
+
+      // Keep legacy patients collection in sync when present.
+      if (profileImageUrl != null) {
+        final patientRef = _firestore.collection('patients').doc(userId);
+        final patientDoc = await patientRef.get();
+        if (patientDoc.exists) {
+          await patientRef.update({'profileImageUrl': profileImageUrl});
+        }
+      }
     } catch (e) {
       throw 'Error updating profile: $e';
     }

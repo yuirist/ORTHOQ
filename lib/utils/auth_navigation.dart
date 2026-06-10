@@ -67,6 +67,7 @@ UserModel profileForUid(String uid, UserModel userData) {
     doctorId: userData.doctorId,
     staffId: userData.staffId,
     assignedDoctorIds: userData.assignedDoctorIds,
+    profileImageUrl: userData.profileImageUrl,
   );
 }
 

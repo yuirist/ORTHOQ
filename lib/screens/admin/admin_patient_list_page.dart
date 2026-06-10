@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/user_model.dart';
@@ -70,9 +71,6 @@ class AdminPatientListPage extends StatelessWidget {
             children: [
               ...List.generate(patients.length, (index) {
                 final patient = patients[index];
-                final initials = patient.fullName.isNotEmpty
-                    ? patient.fullName[0].toUpperCase()
-                    : '?';
                 final icLabel = patient.icNumber?.trim().isNotEmpty == true
                     ? patient.icNumber!.trim()
                     : 'No IC';
@@ -84,15 +82,9 @@ class AdminPatientListPage extends StatelessWidget {
                       horizontal: 16,
                       vertical: 8,
                     ),
-                    leading: CircleAvatar(
-                      backgroundColor: Colors.grey.shade200,
-                      child: Text(
-                        initials,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: Colors.grey.shade700,
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
+                    leading: _PatientListAvatar(
+                      fullName: patient.fullName,
+                      profileImageUrl: patient.profileImageUrl,
                     ),
                     title: Text(
                       patient.fullName,
@@ -112,6 +104,82 @@ class AdminPatientListPage extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+/// List tile avatar — network photo when available, otherwise name initial.
+class _PatientListAvatar extends StatelessWidget {
+  const _PatientListAvatar({
+    required this.fullName,
+    required this.profileImageUrl,
+  });
+
+  final String fullName;
+  final String? profileImageUrl;
+
+  static const double _size = 40;
+
+  String get _initial {
+    if (fullName.trim().isEmpty) return '?';
+    return fullName.trim()[0].toUpperCase();
+  }
+
+  TextStyle _initialStyle(BuildContext context) {
+    return Theme.of(context).textTheme.titleMedium!.copyWith(
+          color: Colors.grey.shade700,
+          fontWeight: FontWeight.bold,
+        );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final url = profileImageUrl?.trim();
+    final hasImage = url != null && url.isNotEmpty;
+
+    return CircleAvatar(
+      radius: _size / 2,
+      backgroundColor: Colors.grey.shade200,
+      child: hasImage
+          ? ClipOval(
+              child: CachedNetworkImage(
+                imageUrl: url,
+                width: _size,
+                height: _size,
+                fit: BoxFit.cover,
+                placeholder: (_, __) => _InitialFallback(
+                  initial: _initial,
+                  style: _initialStyle(context),
+                ),
+                errorWidget: (_, __, ___) => _InitialFallback(
+                  initial: _initial,
+                  style: _initialStyle(context),
+                ),
+              ),
+            )
+          : _InitialFallback(
+              initial: _initial,
+              style: _initialStyle(context),
+            ),
+    );
+  }
+}
+
+class _InitialFallback extends StatelessWidget {
+  const _InitialFallback({
+    required this.initial,
+    required this.style,
+  });
+
+  final String initial;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: _PatientListAvatar._size,
+      height: _PatientListAvatar._size,
+      child: Center(child: Text(initial, style: style)),
     );
   }
 }
