@@ -92,6 +92,27 @@ class AdminService {
     });
   }
 
+  Stream<List<UserModel>> watchPatientMembers() {
+    return _firestore
+        .collection('users')
+        .where('role', isEqualTo: 'patient')
+        .snapshots()
+        .map((snap) {
+      final list = <UserModel>[];
+      for (final doc in snap.docs) {
+        try {
+          list.add(UserModel.fromMap(doc.data(), doc.id));
+        } catch (_) {
+          // Skip malformed patient documents.
+        }
+      }
+      list.sort(
+        (a, b) => a.fullName.toLowerCase().compareTo(b.fullName.toLowerCase()),
+      );
+      return list;
+    });
+  }
+
   Future<void> updateStaffMember({
     required String userId,
     required String fullName,

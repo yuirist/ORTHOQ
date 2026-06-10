@@ -1,15 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'screens/auth/welcome_screen.dart';
 import 'utils/auth_navigation.dart';
+import 'widgets/auth_gate.dart';
 
 import 'firebase_options.dart';
 import 'theme/orthoq_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (_) {
+    // Optional — use --dart-define=GEMINI_API_KEY=... in production builds.
+  }
 
   bool firebaseInitialized = false;
   try {
@@ -44,10 +52,9 @@ class OrthoQApp extends StatelessWidget {
         title: 'OrthoQ',
         debugShowCheckedModeBanner: false,
         theme: OrthoqTheme.light,
-        initialRoute: '/welcome',
+        home: const AuthGate(),
         routes: {
           '/welcome': (context) => const WelcomeScreen(),
-          '/app-home': (context) => const AuthWrapper(),
           '/patient-home': (context) => _homeFromProvider(context, 'patient'),
           '/doctor-home': (context) => _homeFromProvider(context, 'doctor'),
           '/staff-home': (context) => _homeFromProvider(context, 'staff'),
@@ -68,43 +75,4 @@ Widget _homeFromProvider(BuildContext context, String role) {
   final resolved =
       ensureUserProfile(user: user, profile: profile, fallbackRole: role);
   return homeScreenForRole(role, uid: user.uid, userData: resolved);
-}
-
-/// Restores session on cold start when a user is already signed in.
-class AuthWrapper extends StatelessWidget {
-  const AuthWrapper({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, _) {
-        if (!authProvider.isFirebaseInitialized) {
-          return const WelcomeScreen();
-        }
-
-        if (authProvider.currentUser == null) {
-          return const WelcomeScreen();
-        }
-
-        if (authProvider.currentUserData == null) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        final user = authProvider.currentUser!;
-        final profile = authProvider.currentUserData!;
-        final resolved = ensureUserProfile(
-          user: user,
-          profile: profile,
-          fallbackRole: profile.role,
-        );
-        return homeScreenForRole(
-          profile.role,
-          uid: user.uid,
-          userData: resolved,
-        );
-      },
-    );
-  }
 }

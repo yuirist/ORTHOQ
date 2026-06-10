@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import '../../models/user_model.dart';
 import '../../services/admin_service.dart';
 import '../../theme/orthoq_colors.dart';
+import '../../theme/orthoq_navigation.dart';
 import '../auth/welcome_screen.dart';
 import 'admin_assign_staff_page.dart';
 import 'appointment_report_screen.dart';
 import 'admin_doctor_list_page.dart';
 import 'admin_staff_list_page.dart';
+import 'admin_patient_list_page.dart';
 
 /// Admin portal — Hospital Kajang OrthoQ administrator console.
 class AdminHomeScreen extends StatefulWidget {
@@ -72,7 +74,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   }
 
   void _openPage(Widget page) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+    pushOrthoQPage(context, page);
   }
 
   void _scrollToTop() {
@@ -114,6 +116,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         onDoctors: () {
           Navigator.pop(context);
           _openPage(const AdminDoctorListPage());
+        },
+        onPatientList: () {
+          Navigator.pop(context);
+          _openPage(const AdminPatientListPage());
         },
         onAssignStaff: () {
           Navigator.pop(context);
@@ -354,6 +360,7 @@ class _AdminDrawer extends StatelessWidget {
     required this.onDashboard,
     required this.onStaffList,
     required this.onDoctors,
+    required this.onPatientList,
     required this.onAssignStaff,
     required this.onReports,
     required this.onLogout,
@@ -364,6 +371,7 @@ class _AdminDrawer extends StatelessWidget {
   final VoidCallback onDashboard;
   final VoidCallback onStaffList;
   final VoidCallback onDoctors;
+  final VoidCallback onPatientList;
   final VoidCallback onAssignStaff;
   final VoidCallback onReports;
   final VoidCallback onLogout;
@@ -403,7 +411,8 @@ class _AdminDrawer extends StatelessWidget {
           ),
           _DrawerTile(icon: Icons.dashboard_outlined, label: 'Dashboard', onTap: onDashboard),
           _DrawerTile(icon: Icons.groups, label: 'Staff List', onTap: onStaffList),
-          _DrawerTile(icon: Icons.medical_services_outlined, label: 'Doctors', onTap: onDoctors),
+          _DrawerTile(icon: Icons.medical_services_outlined, label: 'Doctors List', onTap: onDoctors),
+          _DrawerTile(icon: Icons.people_outline, label: 'Patient List', onTap: onPatientList),
           _DrawerTile(icon: Icons.assignment_ind_outlined, label: 'Assign Staff', onTap: onAssignStaff),
           _DrawerTile(icon: Icons.bar_chart, label: 'Reports', onTap: onReports),
           const Spacer(),

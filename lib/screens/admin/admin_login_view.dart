@@ -7,8 +7,8 @@ import 'admin_home_screen.dart';
 class AdminLoginView extends StatefulWidget {
   const AdminLoginView({super.key});
 
-  static const String kAdminEmail = 'danishjamari3@gmail.com';
-  static const String kAdminPassword = 'Danish3*';
+  static const String kAdminEmail = 'fathiismail@gmail.com';
+  static const String kAdminPassword = 'Fathi3*';
 
   @override
   State<AdminLoginView> createState() => _AdminLoginViewState();

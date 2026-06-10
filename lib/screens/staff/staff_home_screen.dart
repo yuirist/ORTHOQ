@@ -3,17 +3,17 @@ import 'package:flutter/material.dart';
 import '../../models/user_model.dart';
 import '../../services/doctor_delay_notification_service.dart';
 import '../../theme/orthoq_colors.dart';
+import '../../theme/orthoq_widgets.dart';
 import 'delay_notifications_page.dart';
 import 'doctor_management_page.dart';
 import 'doctor_requests_page.dart';
 import 'patient_verification_page.dart';
 import 'staff_dashboard_page.dart';
 
-/// Staff portal shell — bottom navigation and tab content.
+/// Staff portal shell — modern bottom navigation and tab content.
 class StaffHomeScreen extends StatefulWidget {
   const StaffHomeScreen({super.key, this.userProfile});
 
-  /// Profile loaded at login (safe Timestamp parsing applied).
   final UserModel? userProfile;
 
   @override
@@ -25,8 +25,6 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
   static const Color _badgeRed = Color(0xFFE53935);
 
   int _currentIndex = 0;
-
-  /// Last pending count acknowledged when staff opens Reschedule Requests.
   int _acknowledgedPendingCount = 0;
 
   void _onRejectionComplete(String patientEmail) {
@@ -42,16 +40,8 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
         messenger.hideCurrentSnackBar();
         messenger.showSnackBar(
           SnackBar(
-            content: Text(
-              'Successfully sent rejection email to $patientEmail.',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            content: Text('Rejection email sent to $patientEmail.'),
             backgroundColor: OrthoqColors.navy,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 4),
           ),
         );
       });
@@ -72,30 +62,27 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
     return unread < 0 ? 0 : unread;
   }
 
-  Widget _rescheduleNavIcon({
+  Widget _navIcon(IconData outlined, IconData filled, bool selected) {
+    return Icon(selected ? filled : outlined);
+  }
+
+  Widget _rescheduleDestinationIcon({
     required bool selected,
     required int badgeCount,
   }) {
-    final iconColor =
-        selected ? OrthoqColors.navy : const Color(0xFF64748B);
-    final icon = Icon(Icons.schedule, color: iconColor);
-
+    final icon = _navIcon(
+      Icons.event_repeat_outlined,
+      Icons.event_repeat_rounded,
+      selected,
+    );
     if (badgeCount <= 0) return icon;
-
     final label = badgeCount > 99 ? '99+' : '$badgeCount';
-
     return Badge(
       label: Text(
         label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          height: 1.1,
-        ),
+        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
       ),
       backgroundColor: _badgeRed,
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
       child: icon,
     );
   }
@@ -103,13 +90,12 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: OrthoqColors.scaffoldBg,
       body: IndexedStack(
         index: _currentIndex,
         children: [
           StaffDashboardPage(userProfile: widget.userProfile),
-          PatientVerificationPage(
-            onRejectionComplete: _onRejectionComplete,
-          ),
+          PatientVerificationPage(onRejectionComplete: _onRejectionComplete),
           const DoctorRequestsPage(),
           const DelayNotificationsPage(),
           DoctorManagementPage(userProfile: widget.userProfile),
@@ -123,43 +109,33 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
               : 0;
           final badgeCount = _badgeCount(pendingCount);
 
-          return BottomNavigationBar(
-            currentIndex: _currentIndex,
-            onTap: (index) => _onNavTap(index, pendingCount),
-            type: BottomNavigationBarType.fixed,
-            selectedItemColor: Theme.of(context)
-                .bottomNavigationBarTheme
-                .selectedItemColor,
-            unselectedItemColor: Theme.of(context)
-                .bottomNavigationBarTheme
-                .unselectedItemColor,
-            backgroundColor: Theme.of(context).colorScheme.surface,
-            items: [
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.dashboard),
+          return OrthoqModernBottomNav(
+            selectedIndex: _currentIndex,
+            onDestinationSelected: (index) => _onNavTap(index, pendingCount),
+            destinations: [
+              NavigationDestination(
+                icon: _navIcon(Icons.dashboard_outlined, Icons.dashboard_rounded, false),
+                selectedIcon: _navIcon(Icons.dashboard_outlined, Icons.dashboard_rounded, true),
                 label: 'Dashboard',
               ),
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.verified_user),
-                label: 'Verification',
+              NavigationDestination(
+                icon: _navIcon(Icons.verified_user_outlined, Icons.verified_user_rounded, false),
+                selectedIcon: _navIcon(Icons.verified_user_outlined, Icons.verified_user_rounded, true),
+                label: 'Verify',
               ),
-              BottomNavigationBarItem(
-                icon: _rescheduleNavIcon(
-                  selected: false,
-                  badgeCount: badgeCount,
-                ),
-                activeIcon: _rescheduleNavIcon(
-                  selected: true,
-                  badgeCount: badgeCount,
-                ),
-                label: 'Reschedule Requests',
+              NavigationDestination(
+                icon: _rescheduleDestinationIcon(selected: false, badgeCount: badgeCount),
+                selectedIcon: _rescheduleDestinationIcon(selected: true, badgeCount: badgeCount),
+                label: 'Reschedule',
               ),
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.notifications),
-                label: 'Delay Notifications',
+              NavigationDestination(
+                icon: _navIcon(Icons.notifications_outlined, Icons.notifications_rounded, false),
+                selectedIcon: _navIcon(Icons.notifications_outlined, Icons.notifications_rounded, true),
+                label: 'Alerts',
               ),
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.manage_accounts),
+              NavigationDestination(
+                icon: _navIcon(Icons.manage_accounts_outlined, Icons.manage_accounts_rounded, false),
+                selectedIcon: _navIcon(Icons.manage_accounts_outlined, Icons.manage_accounts_rounded, true),
                 label: 'Profile',
               ),
             ],

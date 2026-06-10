@@ -6,8 +6,8 @@ import '../models/user_model.dart';
 
 class AuthService {
   /// Temporary admin bypass credentials (must match Firebase Auth + Firestore).
-  static const String kAdminBypassEmail = 'danishjamari3@gmail.com';
-  static const String kAdminBypassPassword = 'Danish3*';
+  static const String kAdminBypassEmail = 'fathiismail@gmail.com';
+  static const String kAdminBypassPassword = 'Fathi3*';
 
   FirebaseAuth get _auth {
     if (Firebase.apps.isEmpty) {
@@ -236,7 +236,9 @@ class AuthService {
           .doc(userCredential.user!.uid)
           .set(userModel.toMap());
 
-      await userCredential.user!.sendEmailVerification();
+      if (normalizeRole(role) == 'patient') {
+        await userCredential.user!.sendEmailVerification();
+      }
 
       return userCredential;
     } on FirebaseAuthException catch (e) {

@@ -12,7 +12,17 @@ import 'referral_upload_page.dart';
 import 'confirmation_page.dart';
 
 class BookAppointmentScreen extends StatefulWidget {
-  const BookAppointmentScreen({super.key});
+  const BookAppointmentScreen({
+    super.key,
+    this.preselectedDoctorId,
+    this.preselectedDoctorName,
+    this.preselectedSpecialization,
+  });
+
+  /// Pre-fill from AI specialist recommendation flow.
+  final String? preselectedDoctorId;
+  final String? preselectedDoctorName;
+  final String? preselectedSpecialization;
 
   /// Insurance options when payment type is Insurance (exact labels).
   static const List<String> kInsuranceProviders = [
@@ -62,6 +72,11 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.preselectedDoctorId != null &&
+        widget.preselectedDoctorId!.isNotEmpty) {
+      _selectedDoctorId = widget.preselectedDoctorId;
+      _selectedDoctorName = widget.preselectedDoctorName;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _loadProfileIntoPatientFields();
       if (mounted) {
@@ -886,6 +901,39 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                 color: Colors.grey,
               ),
             ),
+            if (_selectedDoctorId != null && _selectedDoctorName != null) ...[
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: OrthoqColors.slateNavy.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: OrthoqColors.slateNavy.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.recommend_rounded,
+                      color: OrthoqColors.slateNavy,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Recommended: $_selectedDoctorName'
+                        '${widget.preselectedSpecialization != null ? ' (${widget.preselectedSpecialization})' : ''}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: OrthoqColors.slateNavy,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 32),
             
             // Doctor List with StreamBuilder

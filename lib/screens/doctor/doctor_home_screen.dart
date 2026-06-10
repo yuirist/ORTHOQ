@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/theme/orthoq_navigation.dart';
+import 'package:orthoq_app/theme/orthoq_typography.dart';
+import 'package:orthoq_app/theme/orthoq_widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/user_model.dart';
@@ -76,55 +79,37 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: OrthoqSpacing.screen,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Welcome Card
             Consumer<app_auth.AuthProvider>(
               builder: (context, authProvider, _) {
-                return Card(
+                return OrthoqInteractiveCard(
+                  margin: EdgeInsets.zero,
                   color: OrthoqColors.slateNavy,
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Welcome, Dr. ${authProvider.currentUserData?.fullName ?? ''}!',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Dr. ${authProvider.currentUserData?.fullName ?? ''}',
+                        style: OrthoqTypography.headingMedium(color: Colors.white),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Today\'s clinic schedule',
+                        style: OrthoqTypography.bodyMedium(
+                          color: Colors.white.withValues(alpha: 0.85),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Your appointment schedule',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onPrimary.withOpacity(0.8),
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 );
               },
             ),
-            const SizedBox(height: 24),
-
-            // Quick Actions
-            const Text(
-              'Quick Actions',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: OrthoqSpacing.lg),
+            const OrthoqSectionHeader(title: 'Quick actions'),
+            const SizedBox(height: OrthoqSpacing.sm),
             Center(
               child: Wrap(
                 alignment: WrapAlignment.center,
@@ -132,43 +117,25 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                 runSpacing: 12,
                 children: [
                   _QuickActionCard(
-                    icon: Icons.today,
+                    icon: Icons.today_rounded,
                     label: "Today's\nSchedule",
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const DoctorSchedulePage(),
-                        ),
-                      );
+                      pushOrthoQPage(context, const DoctorSchedulePage());
                     },
                   ),
                   _QuickActionCard(
-                    icon: Icons.campaign,
+                    icon: Icons.campaign_outlined,
                     label: 'Notify Staff\nof Delay',
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const NotifyStaffDelayPage(),
-                        ),
-                      );
+                      pushOrthoQPage(context, const NotifyStaffDelayPage());
                     },
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-
-            // Today's Appointments
-            const Text(
-              "Today's Appointments",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: OrthoqSpacing.lg),
+            const OrthoqSectionHeader(title: "Today's appointments"),
+            const SizedBox(height: OrthoqSpacing.sm),
             Consumer<app_auth.AuthProvider>(
               builder: (context, authProvider, _) {
                 final userId = authProvider.currentUser?.uid ?? '';
@@ -182,35 +149,23 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                   ),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
+                      return const OrthoqSkeletonAppointmentCard();
                     }
 
                     if (snapshot.hasError) {
-                      return Center(child: Text('Error: ${snapshot.error}'));
+                      return Text(
+                        'Unable to load appointments',
+                        style: OrthoqTypography.bodyMedium(color: Colors.red),
+                      );
                     }
 
                     final appointments = snapshot.data ?? [];
 
                     if (appointments.isEmpty) {
-                      return const Card(
-                        child: Padding(
-                          padding: EdgeInsets.all(32.0),
-                          child: Center(
-                            child: Column(
-                              children: [
-                                Icon(Icons.event_available, size: 64, color: Colors.grey),
-                                SizedBox(height: 16),
-                                Text(
-                                  'No appointments today',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                      return const OrthoqEmptyState(
+                        icon: Icons.event_available_rounded,
+                        title: 'No appointments today',
+                        subtitle: 'Your schedule is clear for now',
                       );
                     }
 
@@ -247,23 +202,27 @@ class _QuickActionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: 165,
-      child: Card(
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                Icon(icon, size: 44, color: OrthoqColors.slateNavy),
-                const SizedBox(height: 8),
-                Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ],
+      child: OrthoqInteractiveCard(
+        margin: EdgeInsets.zero,
+        onTap: onTap,
+        child: Column(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: OrthoqColors.navy.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, size: 28, color: OrthoqColors.slateNavy),
             ),
-          ),
+            const SizedBox(height: OrthoqSpacing.xs),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: OrthoqTypography.bodySmall(color: OrthoqColors.navy),
+            ),
+          ],
         ),
       ),
     );
@@ -277,11 +236,8 @@ class _AppointmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
+    return OrthoqInteractiveCard(
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
@@ -290,10 +246,7 @@ class _AppointmentCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     appointment.patientName,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: OrthoqTypography.titleMedium(),
                   ),
                 ),
                 Container(
@@ -361,7 +314,6 @@ class _AppointmentCard extends StatelessWidget {
               ),
           ],
         ),
-      ),
     );
   }
 

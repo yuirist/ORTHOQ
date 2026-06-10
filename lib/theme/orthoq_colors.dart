@@ -23,6 +23,9 @@ abstract final class OrthoqColors {
   /// Primary body text on light surfaces.
   static const Color textPrimary = Color(0xFF334155);
 
+  /// Logo “Q” accent — pinkish-red from the OrthoQ wordmark.
+  static const Color logoAccent = Color(0xFFE91E8C);
+
   /// Light gray for patient portals and general screens.
   static const Color scaffoldBg = Color(0xFFF8FAFC);
 

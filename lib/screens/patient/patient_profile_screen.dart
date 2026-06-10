@@ -3,6 +3,7 @@ import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/validation_utils.dart';
+import 'ai_assistant_screen.dart';
 
 class PatientProfileScreen extends StatefulWidget {
   const PatientProfileScreen({super.key});
@@ -237,6 +238,21 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 32),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () => openAiAssistant(context),
+                      icon: const Icon(Icons.smart_toy_rounded),
+                      label: const Text('AI Assistant'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: OrthoqColors.navy,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
 
                   // Sign Out Button
                   SizedBox(

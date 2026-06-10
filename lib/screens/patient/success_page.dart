@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/theme/orthoq_theme.dart';
+import 'package:orthoq_app/theme/orthoq_typography.dart';
+import 'package:orthoq_app/theme/orthoq_widgets.dart';
 import 'package:intl/intl.dart';
 import 'patient_home_screen.dart';
 
@@ -35,65 +38,33 @@ class SuccessPage extends StatelessWidget {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+          padding: OrthoqSpacing.form,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Success Icon
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check_circle,
-                  size: 80,
-                  color: Colors.green,
-                ),
-              ),
-              const SizedBox(height: 32),
-
-              // Success Message
-              const Text(
-                'Appointment Booked Successfully!',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: OrthoqColors.slateNavy,
-                ),
+              const OrthoqSuccessAnimation(size: 110),
+              const SizedBox(height: OrthoqSpacing.lg),
+              Text(
+                'Booking confirmed',
+                style: OrthoqTypography.headingMedium(),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Your appointment has been confirmed',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
+              const SizedBox(height: OrthoqSpacing.xs),
+              Text(
+                'Your appointment request has been submitted',
+                style: OrthoqTypography.bodyMedium(color: OrthoqColors.textSecondary),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 32),
-
-              // Appointment Details Card
-              Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Appointment Details',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+              const SizedBox(height: OrthoqSpacing.lg),
+              OrthoqInteractiveCard(
+                margin: EdgeInsets.zero,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Appointment details',
+                      style: OrthoqTypography.sectionTitle(),
+                    ),
                       const SizedBox(height: 20),
                       _buildDetailRow(
                         'Doctor',
@@ -115,17 +86,16 @@ class SuccessPage extends StatelessWidget {
                         'Pending Staff Approval',
                         valueColor: OrthoqColors.slateNavy,
                       ),
-                    ],
-                  ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: OrthoqSpacing.lg),
 
               // Info Message
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF7FAFC).withOpacity(0.5),
+                  color: OrthoqColors.inputFill,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -140,10 +110,7 @@ class SuccessPage extends StatelessWidget {
                     Expanded(
                       child: Text(
                         'Your appointment is pending approval. You will receive a notification once it\'s confirmed.',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade700,
-                        ),
+                        style: OrthoqTypography.bodyMedium(),
                       ),
                     ),
                   ],
@@ -164,21 +131,8 @@ class SuccessPage extends StatelessWidget {
                       (route) => false,
                     );
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: OrthoqColors.slateNavy,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Text(
-                    'Back to Home',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ),
+                  style: OrthoqTheme.primaryButton,
+                  child: const Text('Back to Home'),
                 ),
               ),
             ],
@@ -196,23 +150,12 @@ class SuccessPage extends StatelessWidget {
         children: [
           SizedBox(
             width: 100,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            child: Text(label, style: OrthoqTypography.label()),
           ),
           Expanded(
             child: Text(
               value,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: valueColor,
-              ),
+              style: OrthoqTypography.bodyLarge(color: valueColor),
             ),
           ),
         ],

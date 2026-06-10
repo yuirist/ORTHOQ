@@ -212,42 +212,46 @@ class _LoginScreenState extends State<LoginScreen> {
 
       final user = userCredential?.user;
       if (mounted && user != null) {
-        await user.reload();
-        final refreshedUser = FirebaseAuth.instance.currentUser ?? user;
+        final isPatientPortal = widget.userType == 'patient';
 
-        if (!refreshedUser.emailVerified) {
-          if (!mounted) return;
-          await showDialog<void>(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              title: const Text('Email Not Verified'),
-              content: const Text(
-                'Your email address has not been verified yet. '
-                'Please check your inbox and verify your account before logging in.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('OK'),
+        if (isPatientPortal) {
+          await user.reload();
+          final refreshedUser = FirebaseAuth.instance.currentUser ?? user;
+
+          if (!refreshedUser.emailVerified) {
+            if (!mounted) return;
+            await showDialog<void>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Email Not Verified'),
+                content: const Text(
+                  'Please verify your email address before logging in.',
                 ),
-              ],
-            ),
-          );
-
-          if (!mounted) return;
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => EmailVerificationPage(
-                userType: widget.userType,
-                email: refreshedUser.email ?? authEmail,
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('OK'),
+                  ),
+                ],
               ),
-            ),
-          );
-          return;
-        }
+            );
 
-        await _completeLogin(refreshedUser);
+            if (!mounted) return;
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => EmailVerificationPage(
+                  email: refreshedUser.email ?? authEmail,
+                ),
+              ),
+            );
+            return;
+          }
+
+          await _completeLogin(refreshedUser);
+        } else {
+          await _completeLogin(user);
+        }
       }
     } on FirebaseException catch (e) {
       debugPrint(

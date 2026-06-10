@@ -10,14 +10,13 @@ import '../../theme/orthoq_widgets.dart';
 import '../../utils/auth_navigation.dart';
 import 'login_screen.dart';
 
+/// Patient-only email verification gate after registration or blocked login.
 class EmailVerificationPage extends StatefulWidget {
   const EmailVerificationPage({
     super.key,
-    required this.userType,
     required this.email,
   });
 
-  final String userType;
   final String email;
 
   @override
@@ -60,7 +59,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
           context: context,
           user: user,
           profile: profile,
-          loginPortal: widget.userType,
+          loginPortal: 'patient',
         );
         return;
       }
@@ -112,7 +111,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(
-        builder: (context) => LoginScreen(userType: widget.userType),
+        builder: (context) => const LoginScreen(userType: 'patient'),
       ),
       (route) => false,
     );
@@ -147,8 +146,8 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
               ),
               const SizedBox(height: OrthoqSpacing.md),
               Text(
-                'A verification email has been sent to your email address. '
-                'Please check your inbox and verify your account before logging in.',
+                'A verification email has been sent to your registered email address. '
+                'Please verify your account before logging in.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
@@ -177,7 +176,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text('Check Verification Status'),
+                    : const Text('Check Status & Login'),
               ),
               const SizedBox(height: OrthoqSpacing.sm),
               OutlinedButton(

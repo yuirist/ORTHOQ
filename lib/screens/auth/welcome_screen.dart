@@ -1,55 +1,16 @@
 ﻿import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import '../../providers/auth_provider.dart';
 import '../../theme/orthoq_theme.dart';
-import '../../utils/auth_navigation.dart';
 import 'login_screen.dart';
 
-class WelcomeScreen extends StatefulWidget {
+class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
   static const Color _navy = Color(0xFF1B3C68);
   static const double _backgroundImageOpacity = 0.55;
   static const double _overlayOpacity = 0.52;
 
-  @override
-  State<WelcomeScreen> createState() => _WelcomeScreenState();
-}
-
-class _WelcomeScreenState extends State<WelcomeScreen> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _restoreSessionIfNeeded());
-  }
-
-  Future<void> _restoreSessionIfNeeded() async {
-    if (!mounted) return;
-    final auth = context.read<AuthProvider>();
-    final user = auth.currentUser;
-    final profile = auth.currentUserData;
-    if (user == null || profile == null) return;
-
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) {
-          final resolved = ensureUserProfile(
-            user: user,
-            profile: profile,
-            fallbackRole: profile.role,
-          );
-          return homeScreenForRole(
-            profile.role,
-            uid: user.uid,
-            userData: resolved,
-          );
-        },
-      ),
-    );
-  }
-
-  void _openLogin(String userType) {
+  void _openLogin(BuildContext context, String userType) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -61,12 +22,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: WelcomeScreen._navy,
+      backgroundColor: _navy,
       body: Stack(
         fit: StackFit.expand,
         children: [
           Opacity(
-            opacity: WelcomeScreen._backgroundImageOpacity,
+            opacity: _backgroundImageOpacity,
             child: Image.asset(
               'assets/images/hospitalkajang.jpg',
               fit: BoxFit.cover,
@@ -74,7 +35,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               height: double.infinity,
             ),
           ),
-          Container(color: WelcomeScreen._navy.withValues(alpha: WelcomeScreen._overlayOpacity)),
+          Container(color: _navy.withValues(alpha: _overlayOpacity)),
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -105,22 +66,22 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       const SizedBox(height: 48),
                       _WelcomeLoginButton(
                         label: 'Patient',
-                        onPressed: () => _openLogin('patient'),
+                        onPressed: () => _openLogin(context, 'patient'),
                       ),
                       const SizedBox(height: 14),
                       _WelcomeLoginButton(
                         label: 'Doctor',
-                        onPressed: () => _openLogin('doctor'),
+                        onPressed: () => _openLogin(context, 'doctor'),
                       ),
                       const SizedBox(height: 14),
                       _WelcomeLoginButton(
                         label: 'Staff',
-                        onPressed: () => _openLogin('staff'),
+                        onPressed: () => _openLogin(context, 'staff'),
                       ),
                       const SizedBox(height: 14),
                       _WelcomeLoginButton(
                         label: 'Admin',
-                        onPressed: () => _openLogin('admin'),
+                        onPressed: () => _openLogin(context, 'admin'),
                       ),
                     ],
                   ),

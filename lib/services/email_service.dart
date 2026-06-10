@@ -11,7 +11,7 @@ import 'package:mailer/smtp_server.dart';
 class EmailService {
   EmailService();
 
-  static const String _smtpUser = 'danishjamari3@gmail.com';
+  static const String _smtpUser = 'fathiismail@gmail.com';
 
   /// Gmail App Password (16 characters, no spaces).
   static const String _smtpPassword = 'jixrguqljhedvnza';

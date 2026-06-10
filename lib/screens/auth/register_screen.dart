@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
 import 'email_verification_page.dart';
+import 'login_screen.dart';
 import '../../services/auth_service.dart';
 import '../../utils/validation_utils.dart';
 
@@ -152,15 +153,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
 
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => EmailVerificationPage(
-              userType: widget.userType,
-              email: registrationEmail,
+        if (widget.userType == 'patient') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => EmailVerificationPage(
+                email: registrationEmail,
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Registration successful! Please log in to continue.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => LoginScreen(userType: widget.userType),
+            ),
+          );
+        }
       }
     } on FirebaseAuthException catch (e) {
       String errorMessage = 'Registration failed. Please try again.';

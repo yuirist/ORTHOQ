@@ -51,6 +51,29 @@ class AppointmentService {
             .toList());
   }
 
+  /// Next confirmed appointment from today onward (one-shot fetch for AI context).
+  Future<AppointmentModel?> getNextUpcomingAppointment(String patientId) async {
+    final now = DateTime.now();
+    final startOfToday = DateTime(now.year, now.month, now.day);
+
+    final snapshot = await _firestore
+        .collection('appointments')
+        .where('patientId', isEqualTo: patientId)
+        .where('status', isEqualTo: 'confirmed')
+        .where('appointmentDate', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfToday))
+        .orderBy('appointmentDate', descending: false)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isEmpty) return null;
+
+    final doc = snapshot.docs.first;
+    return AppointmentModel.fromMap(
+      doc.data() as Map<String, dynamic>,
+      doc.id,
+    );
+  }
+
   // Get appointments for a doctor
   Stream<List<AppointmentModel>> getDoctorAppointments(String doctorId) {
     return _firestore

@@ -2,109 +2,42 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'orthoq_colors.dart';
+import 'orthoq_typography.dart';
 
-/// Shared Material theme for OrthoQ.
+/// Shared Material 3 theme for OrthoQ healthcare portals.
 abstract final class OrthoqTheme {
-  static const double _inputRadius = 12;
-  static const double _cardRadius = 14;
-
-  static TextTheme _buildTextTheme(TextTheme base) {
-    return GoogleFonts.interTextTheme(base).copyWith(
-      displaySmall: GoogleFonts.inter(
-        fontSize: 32,
-        fontWeight: FontWeight.w700,
-        color: OrthoqColors.navy,
-        letterSpacing: -0.5,
-      ),
-      headlineMedium: GoogleFonts.inter(
-        fontSize: 24,
-        fontWeight: FontWeight.w700,
-        color: OrthoqColors.navy,
-        letterSpacing: -0.25,
-      ),
-      headlineSmall: GoogleFonts.inter(
-        fontSize: 20,
-        fontWeight: FontWeight.w700,
-        color: OrthoqColors.navy,
-      ),
-      titleLarge: GoogleFonts.inter(
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
-        color: OrthoqColors.navy,
-      ),
-      titleMedium: GoogleFonts.inter(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        color: OrthoqColors.navy,
-      ),
-      titleSmall: GoogleFonts.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: OrthoqColors.textPrimary,
-      ),
-      bodyLarge: GoogleFonts.inter(
-        fontSize: 16,
-        fontWeight: FontWeight.w400,
-        color: OrthoqColors.textPrimary,
-        height: 1.5,
-      ),
-      bodyMedium: GoogleFonts.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        color: OrthoqColors.textPrimary,
-        height: 1.45,
-      ),
-      bodySmall: GoogleFonts.inter(
-        fontSize: 12,
-        fontWeight: FontWeight.w400,
-        color: OrthoqColors.textSecondary,
-        height: 1.4,
-      ),
-      labelLarge: GoogleFonts.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.1,
-      ),
-    );
-  }
+  static const double inputRadius = 12;
+  static const double cardRadius = 16;
 
   static InputDecorationTheme get _inputTheme => InputDecorationTheme(
         filled: true,
         fillColor: OrthoqColors.inputFill,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        hintStyle: GoogleFonts.inter(
-          color: OrthoqColors.textSecondary,
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-        ),
-        labelStyle: GoogleFonts.inter(
-          color: OrthoqColors.textSecondary,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
+        hintStyle: OrthoqTypography.bodyMedium(color: OrthoqColors.textSecondary),
+        labelStyle: OrthoqTypography.label(),
         floatingLabelStyle: GoogleFonts.inter(
           color: OrthoqColors.navy,
           fontSize: 14,
           fontWeight: FontWeight.w600,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(_inputRadius),
+          borderRadius: BorderRadius.circular(inputRadius),
           borderSide: BorderSide(color: OrthoqColors.lightSlate.withValues(alpha: 0.9)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(_inputRadius),
+          borderRadius: BorderRadius.circular(inputRadius),
           borderSide: BorderSide(color: OrthoqColors.lightSlate.withValues(alpha: 0.9)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(_inputRadius),
+          borderRadius: BorderRadius.circular(inputRadius),
           borderSide: const BorderSide(color: OrthoqColors.navy, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(_inputRadius),
+          borderRadius: BorderRadius.circular(inputRadius),
           borderSide: const BorderSide(color: Color(0xFFDC2626)),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(_inputRadius),
+          borderRadius: BorderRadius.circular(inputRadius),
           borderSide: const BorderSide(color: Color(0xFFDC2626), width: 2),
         ),
       );
@@ -127,7 +60,7 @@ abstract final class OrthoqTheme {
       ),
     );
 
-    final textTheme = _buildTextTheme(base.textTheme);
+    final textTheme = OrthoqTypography.buildTextTheme(base.textTheme);
 
     return base.copyWith(
       textTheme: textTheme,
@@ -137,9 +70,9 @@ abstract final class OrthoqTheme {
         foregroundColor: OrthoqColors.white,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: GoogleFonts.poppins(
           fontSize: 18,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w500,
           color: OrthoqColors.white,
         ),
         iconTheme: const IconThemeData(color: OrthoqColors.white),
@@ -150,12 +83,9 @@ abstract final class OrthoqTheme {
           foregroundColor: OrthoqColors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-          textStyle: GoogleFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: OrthoqTypography.button(),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(_inputRadius),
+            borderRadius: BorderRadius.circular(inputRadius),
           ),
         ),
       ),
@@ -164,23 +94,45 @@ abstract final class OrthoqTheme {
           foregroundColor: OrthoqColors.navy,
           side: BorderSide(color: OrthoqColors.navy.withValues(alpha: 0.35)),
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-          textStyle: GoogleFonts.inter(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: OrthoqTypography.button(color: OrthoqColors.navy),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(_inputRadius),
+            borderRadius: BorderRadius.circular(inputRadius),
           ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: OrthoqColors.navy,
-          textStyle: GoogleFonts.inter(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: OrthoqTypography.button(color: OrthoqColors.navy),
         ),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: OrthoqColors.navy,
+        foregroundColor: OrthoqColors.white,
+        elevation: 4,
+        highlightElevation: 6,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: OrthoqColors.white,
+        indicatorColor: OrthoqColors.navy.withValues(alpha: 0.12),
+        elevation: 3,
+        height: 68,
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return GoogleFonts.inter(
+            fontSize: 11,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+            color: selected ? OrthoqColors.navy : OrthoqColors.textSecondary,
+          );
+        }),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return IconThemeData(
+            color: selected ? OrthoqColors.navy : OrthoqColors.textSecondary,
+            size: 24,
+          );
+        }),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: OrthoqColors.white,
@@ -195,7 +147,7 @@ abstract final class OrthoqTheme {
         margin: const EdgeInsets.only(bottom: 12),
         shadowColor: OrthoqColors.navy.withValues(alpha: 0.08),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(_cardRadius),
+          borderRadius: BorderRadius.circular(cardRadius),
           side: BorderSide(color: OrthoqColors.lightSlate.withValues(alpha: 0.75)),
         ),
       ),
@@ -209,26 +161,13 @@ abstract final class OrthoqTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        contentTextStyle: GoogleFonts.inter(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: OrthoqColors.white,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        contentTextStyle: OrthoqTypography.bodyMedium(color: OrthoqColors.white),
       ),
       dialogTheme: DialogThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        titleTextStyle: GoogleFonts.inter(
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-          color: OrthoqColors.navy,
-        ),
-        contentTextStyle: GoogleFonts.inter(
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-          color: OrthoqColors.textPrimary,
-          height: 1.45,
-        ),
+        titleTextStyle: OrthoqTypography.sectionTitle(),
+        contentTextStyle: OrthoqTypography.bodyMedium(),
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
         color: OrthoqColors.navy,
@@ -236,6 +175,13 @@ abstract final class OrthoqTheme {
       inputDecorationTheme: _inputTheme,
       splashColor: OrthoqColors.navy.withValues(alpha: 0.08),
       highlightColor: OrthoqColors.navy.withValues(alpha: 0.04),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+        },
+      ),
     );
   }
 
@@ -261,8 +207,8 @@ abstract final class OrthoqTheme {
         foregroundColor: OrthoqColors.white,
         elevation: 0,
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-        textStyle: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        textStyle: OrthoqTypography.button(),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(inputRadius)),
       );
 
   static ButtonStyle welcomePortalButton(Color navy) => ElevatedButton.styleFrom(
@@ -271,11 +217,10 @@ abstract final class OrthoqTheme {
         elevation: 2,
         shadowColor: OrthoqColors.navy.withValues(alpha: 0.25),
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-        textStyle: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        textStyle: OrthoqTypography.button(),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(inputRadius)),
       );
 
-  /// Soft card shadow used by interactive list cards.
   static List<BoxShadow> get cardShadow => [
         BoxShadow(
           color: OrthoqColors.navy.withValues(alpha: 0.06),
