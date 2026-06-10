@@ -93,16 +93,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      const Text(
+                      Text(
                         'Orthopaedic Outpatient Clinic,\nHospital Kajang',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 19,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          height: 1.35,
-                          letterSpacing: 0.15,
-                        ),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              height: 1.35,
+                            ),
                       ),
                       const SizedBox(height: 48),
                       _WelcomeLoginButton(
@@ -152,14 +150,7 @@ class _WelcomeLoginButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: OrthoqTheme.welcomePortalButton(WelcomeScreen._navy),
-        child: Text(
-          label,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
+        child: Text(label),
       ),
     );
   }

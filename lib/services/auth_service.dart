@@ -236,6 +236,8 @@ class AuthService {
           .doc(userCredential.user!.uid)
           .set(userModel.toMap());
 
+      await userCredential.user!.sendEmailVerification();
+
       return userCredential;
     } on FirebaseAuthException catch (e) {
       throw _handleAuthException(e);
@@ -404,6 +406,30 @@ class AuthService {
     } catch (e) {
       throw 'Error signing out: $e';
     }
+  }
+
+  /// Sends a verification email to the currently signed-in user.
+  Future<void> sendEmailVerification() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw 'No signed-in user. Please sign in again.';
+    }
+    if (user.emailVerified) return;
+    try {
+      await user.sendEmailVerification();
+    } on FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
+    } catch (e) {
+      throw 'Error sending verification email: $e';
+    }
+  }
+
+  /// Reloads the current user and returns whether their email is verified.
+  Future<bool> reloadAndCheckEmailVerified() async {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+    await user.reload();
+    return _auth.currentUser?.emailVerified ?? false;
   }
 
   // Password reset

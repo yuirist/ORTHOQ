@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/theme/orthoq_theme.dart';
+import 'package:orthoq_app/theme/orthoq_widgets.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
-import 'login_screen.dart';
+import 'email_verification_page.dart';
 import '../../services/auth_service.dart';
 import '../../utils/validation_utils.dart';
 
@@ -150,17 +152,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Registration successful! Please login to continue.'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        // Navigate to Login Page
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => LoginScreen(userType: widget.userType),
+            builder: (context) => EmailVerificationPage(
+              userType: widget.userType,
+              email: registrationEmail,
+            ),
           ),
         );
       }
@@ -237,7 +235,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+          padding: OrthoqSpacing.form,
           child: Form(
             key: _formKey,
             child: Column(
@@ -256,20 +254,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 24),
                 Text(
                   'Create ${widget.userType.toUpperCase()} Account',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                  style: Theme.of(context).textTheme.headlineSmall,
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: OrthoqSpacing.lg),
                 
                 // Full Name Field
                 TextFormField(
                   controller: _fullNameController,
-                  decoration: const InputDecoration(
+                  decoration: OrthoqTheme.field(
                     labelText: 'Full Name',
-                    prefixIcon: Icon(Icons.person),
-                    border: OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.person),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -278,28 +273,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: OrthoqSpacing.md),
                 
                 // Phone Number Field
                 TextFormField(
                   controller: _phoneNumberController,
                   keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
+                  decoration: OrthoqTheme.field(
                     labelText: 'Phone Number',
-                    prefixIcon: Icon(Icons.phone),
-                    border: OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.phone),
                   ),
                   validator: ValidationUtils.validateMalaysianPhone,
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: OrthoqSpacing.md),
 
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
+                  decoration: OrthoqTheme.field(
                     labelText: 'Email',
-                    prefixIcon: Icon(Icons.email),
-                    border: OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.email),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -311,32 +304,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: OrthoqSpacing.md),
 
                 if (widget.userType == 'patient') ...[
                   TextFormField(
                     controller: _icNumberController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
+                    decoration: OrthoqTheme.field(
                       labelText: 'IC Number',
                       hintText: 'e.g., 990101-14-5678',
-                      prefixIcon: Icon(Icons.credit_card),
-                      border: OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.credit_card),
                     ),
                     validator: ValidationUtils.validateMalaysianIC,
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: OrthoqSpacing.md),
                   TextFormField(
                     controller: _homeAddressController,
                     keyboardType: TextInputType.multiline,
                     textCapitalization: TextCapitalization.sentences,
                     minLines: 3,
                     maxLines: 6,
-                    decoration: const InputDecoration(
+                    decoration: OrthoqTheme.field(
                       labelText: 'Home Address',
                       alignLabelWithHint: true,
-                      prefixIcon: Icon(Icons.home_outlined),
-                      border: OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.home_outlined),
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -345,18 +336,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: OrthoqSpacing.md),
                 ],
                 
                 // Doctor Specialization Field (only for doctors)
                 if (widget.userType == 'doctor') ...[
                   TextFormField(
                     controller: _specializationController,
-                    decoration: const InputDecoration(
+                    decoration: OrthoqTheme.field(
                       labelText: 'Specialization',
                       hintText: 'e.g., Orthopedic Surgeon',
-                      prefixIcon: Icon(Icons.work),
-                      border: OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.work),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -365,28 +355,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: OrthoqSpacing.md),
                 ],
                 
                 // Staff ID Field (only for staff/admin)
                 if (widget.userType == 'staff' || widget.userType == 'admin') ...[
                   TextFormField(
                     controller: _staffIdController,
-                    decoration: const InputDecoration(
+                    decoration: OrthoqTheme.field(
                       labelText: 'Staff ID',
                       hintText: 'Optional',
-                      prefixIcon: Icon(Icons.badge),
-                      border: OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.badge),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: OrthoqSpacing.md),
                 ],
                 
                 // Password Field
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
-                  decoration: InputDecoration(
+                  decoration: OrthoqTheme.field(
                     labelText: 'Password',
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
@@ -399,7 +388,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         });
                       },
                     ),
-                    border: const OutlineInputBorder(),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -411,13 +399,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: OrthoqSpacing.md),
                 
                 // Confirm Password Field
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
-                  decoration: InputDecoration(
+                  decoration: OrthoqTheme.field(
                     labelText: 'Confirm Password',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
@@ -430,7 +418,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         });
                       },
                     ),
-                    border: const OutlineInputBorder(),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -442,39 +429,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: OrthoqSpacing.lg),
                 
                 // Register Button
                 ElevatedButton(
                   onPressed: _isLoading ? null : _handleRegister,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: OrthoqColors.slateNavy,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
+                  style: OrthoqTheme.primaryButton,
                   child: _isLoading
-                      ? SizedBox(
+                      ? const SizedBox(
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Theme.of(context).colorScheme.onPrimary,
-                            ),
+                            color: Colors.white,
                           ),
                         )
-                      : Text(
-                          'Register',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                        ),
+                      : const Text('Register'),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: OrthoqSpacing.md),
                 
                 // Login Link
                 Row(

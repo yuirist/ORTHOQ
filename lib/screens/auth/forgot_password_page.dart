@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/theme/orthoq_theme.dart';
+import 'package:orthoq_app/theme/orthoq_widgets.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -86,7 +88,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: OrthoqSpacing.form,
           child: Form(
             key: _formKey,
             child: Column(
@@ -96,7 +98,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 Icon(
                   Icons.lock_reset,
                   size: 72,
-                  color: OrthoqColors.slateNavy.withOpacity(0.9),
+                  color: OrthoqColors.slateNavy.withValues(alpha: 0.9),
                 ),
                 const SizedBox(height: 20),
                 Text(
@@ -117,19 +119,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
+                  decoration: OrthoqTheme.field(
                     labelText: 'Email Address',
                     prefixIcon: const Icon(Icons.email_outlined),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: OrthoqColors.slateNavy,
-                        width: 2,
-                      ),
-                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -145,29 +137,17 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: _isLoading ? null : _sendResetLink,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: OrthoqColors.slateNavy,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
+                  style: OrthoqTheme.primaryButton,
                   child: _isLoading
                       ? const SizedBox(
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
+                            color: Colors.white,
                           ),
                         )
-                      : const Text(
-                          'Send Reset Link',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                        ),
+                      : const Text('Send Reset Link'),
                 ),
                 const SizedBox(height: 16),
                 Text(

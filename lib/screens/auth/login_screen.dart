@@ -8,9 +8,11 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/auth_service.dart';
 import 'register_screen.dart';
+import 'email_verification_page.dart';
 import 'forgot_password_page.dart';
 import '../../theme/orthoq_colors.dart';
 import '../../theme/orthoq_theme.dart';
+import '../../theme/orthoq_widgets.dart';
 import '../../utils/auth_navigation.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -210,7 +212,42 @@ class _LoginScreenState extends State<LoginScreen> {
 
       final user = userCredential?.user;
       if (mounted && user != null) {
-        await _completeLogin(user);
+        await user.reload();
+        final refreshedUser = FirebaseAuth.instance.currentUser ?? user;
+
+        if (!refreshedUser.emailVerified) {
+          if (!mounted) return;
+          await showDialog<void>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Email Not Verified'),
+              content: const Text(
+                'Your email address has not been verified yet. '
+                'Please check your inbox and verify your account before logging in.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+
+          if (!mounted) return;
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => EmailVerificationPage(
+                userType: widget.userType,
+                email: refreshedUser.email ?? authEmail,
+              ),
+            ),
+          );
+          return;
+        }
+
+        await _completeLogin(refreshedUser);
       }
     } on FirebaseException catch (e) {
       debugPrint(
@@ -285,7 +322,7 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
+            padding: OrthoqSpacing.form,
             child: SizedBox(
               width: 400,
               child: Form(
@@ -303,17 +340,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     fit: BoxFit.contain,
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: OrthoqSpacing.lg),
 
                 if (widget.userType == 'patient') ...[
                   TextFormField(
                     controller: _patientIcController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
+                    decoration: OrthoqTheme.field(
                       labelText: 'IC Number',
                       hintText: 'e.g., 990101-14-5678',
-                      prefixIcon: Icon(Icons.credit_card),
-                      border: OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.credit_card),
                     ),
                     validator: ValidationUtils.validateMalaysianIC,
                   ),
@@ -321,10 +357,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
+                    decoration: OrthoqTheme.field(
                       labelText: 'Email',
-                      prefixIcon: Icon(Icons.email),
-                      border: OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.email),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -337,13 +372,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                   ),
                 ],
-                const SizedBox(height: 20),
+                const SizedBox(height: OrthoqSpacing.md),
                 
                 // Password Field
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
-                  decoration: InputDecoration(
+                  decoration: OrthoqTheme.field(
                     labelText: 'Password',
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
@@ -356,7 +391,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         });
                       },
                     ),
-                    border: const OutlineInputBorder(),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -383,7 +417,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Text('Forgot Password?'),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: OrthoqSpacing.md),
                 
                 // Login Button
                 ElevatedButton(
@@ -398,17 +432,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : const Text(
-                          'Login',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
+                      : const Text('Login'),
                 ),
                 if (!widget._isAdminPortal) ...[
-                  const SizedBox(height: 24),
+                  const SizedBox(height: OrthoqSpacing.lg),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [

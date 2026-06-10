@@ -140,7 +140,7 @@ class AuthProvider with ChangeNotifier {
       throw 'Firebase is not initialized. Please run: flutterfire configure';
     }
     try {
-      UserCredential? userCredential = await _authService!.registerWithEmailAndPassword(
+      await _authService!.registerWithEmailAndPassword(
         email: email,
         password: password,
         fullName: fullName,
@@ -152,10 +152,6 @@ class AuthProvider with ChangeNotifier {
         doctorId: doctorId,
         staffId: staffId,
       );
-
-      if (userCredential?.user != null) {
-        await applyLoginSession(firebaseUser: userCredential!.user!);
-      }
     } catch (e) {
       rethrow;
     }

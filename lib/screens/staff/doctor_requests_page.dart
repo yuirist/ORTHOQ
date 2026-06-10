@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/theme/orthoq_theme.dart';
+import 'package:orthoq_app/theme/orthoq_widgets.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../../models/doctor_model.dart';
@@ -169,14 +171,9 @@ class _DoctorRequestsPageState extends State<DoctorRequestsPage> {
         ? DateFormat('EEE, MMM d, y').format(delayDate)
         : 'N/A';
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      color: Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+    return OrthoqInteractiveCard(
+      margin: const EdgeInsets.only(bottom: OrthoqSpacing.md),
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
@@ -307,24 +304,13 @@ class _DoctorRequestsPageState extends State<DoctorRequestsPage> {
                   data,
                   doctors,
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: OrthoqColors.navy,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
+                style: OrthoqTheme.primaryButton,
                 icon: const Icon(Icons.campaign),
-                label: const Text(
-                  'Broadcast to Patients',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
+                label: const Text('Broadcast to Patients'),
               ),
             ),
           ],
         ),
-      ),
     );
   }
 
