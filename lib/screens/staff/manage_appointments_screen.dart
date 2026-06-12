@@ -5,6 +5,7 @@ import '../../services/appointment_service.dart';
 import '../../services/email_service.dart';
 import '../../services/notification_service.dart';
 import '../../models/appointment_model.dart';
+import '../../utils/patient_email_resolver.dart';
 
 class ManageAppointmentsScreen extends StatefulWidget {
   final bool showPendingReschedules;
@@ -40,17 +41,23 @@ class _ManageAppointmentsScreenState extends State<ManageAppointmentsScreen> {
 
       final oldDateLabel =
           DateFormat.yMMMMd().format(appointment.appointmentDate);
+      final oldTimeStr = appointment.appointmentTime;
       final newDateObj =
           appointment.requestedDate ?? appointment.appointmentDate;
       final newDateLabel = DateFormat.yMMMMd().format(newDateObj);
       final newTimeStr =
           appointment.requestedTime ?? appointment.appointmentTime;
-      final patientEmail = appointment.email?.trim();
+      final patientEmail = await PatientEmailResolver().resolve(
+        data: appointment.toMap(),
+        patientId: appointment.patientId,
+      );
+      var emailSent = false;
       if (patientEmail != null && patientEmail.isNotEmpty) {
-        await EmailService().sendRescheduleEmail(
+        emailSent = await EmailService().sendRescheduleEmail(
           patientEmail,
           appointment.patientName,
           oldDateLabel,
+          oldTimeStr,
           newDateLabel,
           newTimeStr,
           appointment.doctorName,
@@ -59,9 +66,14 @@ class _ManageAppointmentsScreenState extends State<ManageAppointmentsScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Reschedule approved successfully'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: Text(
+              emailSent
+                  ? 'Reschedule approved — confirmation email sent'
+                  : 'Reschedule approved — email could not be sent',
+            ),
+            backgroundColor:
+                emailSent ? Colors.green : Colors.orange.shade800,
           ),
         );
       }
@@ -136,17 +148,23 @@ class _ManageAppointmentsScreenState extends State<ManageAppointmentsScreen> {
 
       final oldDateLabel =
           DateFormat.yMMMMd().format(appointment.appointmentDate);
+      final oldTimeStr = appointment.appointmentTime;
       final newDateObj =
           appointment.doctorRequestedDate ?? appointment.appointmentDate;
       final newDateLabel = DateFormat.yMMMMd().format(newDateObj);
       final newTimeStr =
           appointment.doctorRequestedTime ?? appointment.appointmentTime;
-      final patientEmail = appointment.email?.trim();
+      final patientEmail = await PatientEmailResolver().resolve(
+        data: appointment.toMap(),
+        patientId: appointment.patientId,
+      );
+      var emailSent = false;
       if (patientEmail != null && patientEmail.isNotEmpty) {
-        await EmailService().sendRescheduleEmail(
+        emailSent = await EmailService().sendRescheduleEmail(
           patientEmail,
           appointment.patientName,
           oldDateLabel,
+          oldTimeStr,
           newDateLabel,
           newTimeStr,
           appointment.doctorName,
@@ -155,9 +173,14 @@ class _ManageAppointmentsScreenState extends State<ManageAppointmentsScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Schedule change approved successfully'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: Text(
+              emailSent
+                  ? 'Schedule change approved — confirmation email sent'
+                  : 'Schedule change approved — email could not be sent',
+            ),
+            backgroundColor:
+                emailSent ? Colors.green : Colors.orange.shade800,
           ),
         );
       }

@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../services/cloudinary_service.dart';
 import '../../services/email_service.dart';
+import '../../utils/patient_email_resolver.dart';
 import 'success_page.dart';
 
 class ReferralUploadPage extends StatefulWidget {
@@ -126,7 +127,11 @@ class _ReferralUploadPageState extends State<ReferralUploadPage> {
         'hasDoctorScheduleChange': false,
       });
 
-      final recipient = widget.email?.trim();
+      final recipient = await PatientEmailResolver().resolve(
+            data: {'email': widget.email},
+            patientId: user.uid,
+            fallbackEmail: widget.email,
+          );
       if (recipient != null && recipient.isNotEmpty) {
         await EmailService().sendBookingPendingEmail(recipient, widget.patientName);
       }

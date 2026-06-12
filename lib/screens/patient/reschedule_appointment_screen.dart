@@ -3,6 +3,7 @@ import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/appointment_model.dart';
+import '../../utils/patient_email_resolver.dart';
 import '../../widgets/slot_availability_checker.dart';
 
 class RescheduleAppointmentScreen extends StatefulWidget {
@@ -134,11 +135,17 @@ class _RescheduleAppointmentScreenState
     });
 
     try {
+      final patientEmail = await PatientEmailResolver().resolve(
+            data: widget.appointment.toMap(),
+            patientId: widget.appointment.patientId,
+          ) ??
+          '';
+
       await FirebaseFirestore.instance.collection('reschedule_requests').add({
         'appointmentId': widget.appointment.id,
         'patientId': widget.appointment.patientId,
         'patientName': widget.appointment.patientName,
-        'patientEmail': widget.appointment.email ?? '',
+        'patientEmail': patientEmail,
         'doctorId': widget.appointment.doctorId,
         'doctorName': widget.appointment.doctorName,
         'oldDate': Timestamp.fromDate(widget.appointment.appointmentDate),

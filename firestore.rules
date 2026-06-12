@@ -1,93 +1,13 @@
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    
-    // Helper function to check if user is authenticated
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-    
-    // Helper function to check if user owns the document
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-    
-    // Patients Collection - Secure Rules
-    match /patients/{patientId} {
-      // Allow authenticated users to create their own profile
-      // Document ID must match the user's UID
-      allow create: if isAuthenticated() 
-                    && request.auth.uid == patientId
-                    && request.resource.data.keys().hasAll(['fullName', 'phoneNumber', 'email', 'registrationDate', 'uid'])
-                    && request.resource.data.uid == request.auth.uid;
-      
-      // Only allow users to read their own data
-      allow read: if isOwner(patientId);
-      
-      // Only allow users to update their own data
-      // Prevent changing the uid field
-      allow update: if isOwner(patientId)
-                    && request.resource.data.uid == request.auth.uid
-                    && !('registrationDate' in request.resource.data.diff(resource.data).affectedKeys());
-      
-      // Users cannot delete their own profile (only admins can, handled separately)
-      allow delete: if false;
-    }
-    
-    // Users Collection - For backward compatibility
-    match /users/{userId} {
-      allow read, write: if isOwner(userId);
-      allow read: if isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-      // Firebase-authenticated admins can update any user (e.g. assignedDoctorIds for staff).
-      allow update: if isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-    
-    // Appointments Collection
-    match /appointments/{appointmentId} {
-      allow read: if isAuthenticated() && (
-        resource.data.patientId == request.auth.uid ||
-        resource.data.doctorId == request.auth.uid ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['staff', 'admin']
-      );
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && (
-        resource.data.patientId == request.auth.uid ||
-        resource.data.doctorId == request.auth.uid ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['staff', 'admin']
-      );
-      allow delete: if isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['staff', 'admin'];
-    }
-    
-    // Doctors Collection
-    match /doctors/{doctorId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-    
-    // Notifications Collection
-    match /notifications/{notificationId} {
-      allow read, write: if isAuthenticated() && 
-        resource.data.userId == request.auth.uid;
-    }
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Merge this block into your existing Firestore rules in the Firebase console
+// (or your deployed rules file). Required for appointment/reschedule emails.
+//
+// match /outbound_mail/{mailId} {
+//   allow create: if request.auth != null
+//     && request.resource.data.status == 'pending'
+//     && request.resource.data.to is string
+//     && request.resource.data.to.size() > 3
+//     && request.resource.data.subject is string
+//     && request.resource.data.html is string;
+//   allow read: if request.auth != null;
+//   allow update, delete: if false;
+// }

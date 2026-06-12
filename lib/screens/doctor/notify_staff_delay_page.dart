@@ -4,6 +4,9 @@ import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/doctor_service.dart';
+import '../../services/email_service.dart';
+import '../../utils/staff_email_resolver.dart';
 
 class NotifyStaffDelayPage extends StatefulWidget {
   const NotifyStaffDelayPage({super.key});
@@ -74,11 +77,41 @@ class _NotifyStaffDelayPageState extends State<NotifyStaffDelayPage> {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
+      final doctorModel = doctorId != null
+          ? await DoctorService().getDoctorByUserId(doctorId)
+          : null;
+      final resolvedDoctorName =
+          doctorModel?.name.trim().isNotEmpty == true
+              ? doctorModel!.name.trim()
+              : doctorName;
+      final staffEmails = await StaffEmailResolver().resolveDelayAlertRecipients(
+        doctorDocumentId: doctorModel?.id,
+      );
+
+      var emailsSent = 0;
+      final delayDateLabel =
+          DateFormat('EEEE, MMMM d, y').format(normalizedDate);
+      for (final staffEmail in staffEmails) {
+        final sent = await EmailService().sendStaffDoctorDelayEmail(
+          toEmail: staffEmail,
+          doctorName: resolvedDoctorName,
+          delayDate: delayDateLabel,
+          delayMessage: message,
+        );
+        if (sent) emailsSent++;
+      }
+
       if (mounted) {
+        final emailNote = staffEmails.isEmpty
+            ? ' No staff email addresses were found.'
+            : emailsSent > 0
+                ? ' $emailsSent staff email notification(s) sent.'
+                : ' Staff emails could not be sent — check SMTP configuration.';
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Delay alert sent to staff.'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: Text('Delay alert sent to staff.$emailNote'),
+            backgroundColor:
+                emailsSent > 0 || staffEmails.isEmpty ? Colors.green : Colors.orange.shade800,
           ),
         );
         Navigator.pop(context);

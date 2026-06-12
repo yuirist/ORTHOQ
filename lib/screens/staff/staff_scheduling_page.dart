@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../../services/doctor_service.dart';
 import '../../services/email_service.dart';
+import '../../utils/patient_email_resolver.dart';
 import '../../widgets/slot_availability_checker.dart';
 
 class StaffSchedulingPage extends StatefulWidget {
@@ -147,15 +148,21 @@ class _StaffSchedulingPageState extends State<StaffSchedulingPage> {
       await batch.commit();
 
       final postSnap = await appointmentRef.get();
-      final patientEmail = postSnap.data()?['email'] as String?;
-      if (patientEmail != null && patientEmail.trim().isNotEmpty) {
+      final postData = postSnap.data() ?? <String, dynamic>{};
+      final patientEmail = await PatientEmailResolver().resolve(
+        data: postData,
+        patientId: widget.patientId,
+      );
+
+      var emailSent = false;
+      if (patientEmail != null && patientEmail.isNotEmpty) {
         final dateLabel = DateFormat.yMMMMd().format(_selectedDate!);
         final doctorModel =
             await DoctorService().getDoctorById(widget.doctorId);
         final specialization =
             doctorModel?.specialization ?? '—';
-        await EmailService().sendApprovalEmail(
-          patientEmail.trim(),
+        emailSent = await EmailService().sendApprovalEmail(
+          patientEmail,
           dateLabel,
           timeString,
           widget.doctorName,
@@ -165,9 +172,16 @@ class _StaffSchedulingPageState extends State<StaffSchedulingPage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Appointment scheduled successfully'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: Text(
+              emailSent
+                  ? 'Appointment scheduled — confirmation email sent'
+                  : patientEmail == null || patientEmail.isEmpty
+                      ? 'Appointment scheduled — no patient email on file'
+                      : 'Appointment scheduled — confirmation email could not be sent',
+            ),
+            backgroundColor:
+                emailSent ? Colors.green : Colors.orange.shade800,
           ),
         );
         Navigator.pop(context, true); // Return true to indicate success

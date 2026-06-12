@@ -7,6 +7,7 @@ import '../../models/appointment_model.dart';
 import '../../services/appointment_service.dart';
 import '../../services/email_service.dart';
 import '../../providers/auth_provider.dart';
+import '../../utils/patient_email_resolver.dart';
 import '../../widgets/slot_availability_checker.dart';
 import 'patient_home_screen.dart';
 
@@ -153,7 +154,11 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
 
       var emailSent = false;
       if (widget.patientType == 'Follow-up') {
-        final recipient = widget.email?.trim();
+        final recipient = await PatientEmailResolver().resolve(
+          data: {'email': widget.email},
+          patientId: userId,
+          fallbackEmail: widget.email,
+        );
         if (recipient != null && recipient.isNotEmpty) {
           final dateLabel =
               DateFormat('EEEE, d MMMM y').format(widget.appointmentDate);
@@ -172,12 +177,17 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
           _isSaving = false;
           _isSaved = true;
         });
-        if (emailSent) {
+        if (widget.patientType == 'Follow-up') {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Confirmation email sent'),
+            SnackBar(
+              content: Text(
+                emailSent
+                    ? 'Confirmation email sent'
+                    : 'Booking saved — confirmation email could not be sent',
+              ),
+              backgroundColor: emailSent ? null : Colors.orange.shade800,
               behavior: SnackBarBehavior.floating,
-              duration: Duration(seconds: 3),
+              duration: const Duration(seconds: 4),
             ),
           );
         }

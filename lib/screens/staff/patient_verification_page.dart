@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../../services/email_service.dart';
+import '../../utils/patient_email_resolver.dart';
 import '../../utils/referral_url_utils.dart';
 import '../../utils/staff_scope.dart';
 import 'staff_scheduling_page.dart';
@@ -58,32 +59,6 @@ class _PatientVerificationPageState extends State<PatientVerificationPage> {
         ),
       );
     }
-  }
-
-  Future<String?> _resolvePatientEmail({
-    required Map<String, dynamic> appointmentData,
-    required String patientId,
-  }) async {
-    final fromAppointment = appointmentData['email']?.toString().trim();
-    if (fromAppointment != null && fromAppointment.isNotEmpty) {
-      return fromAppointment;
-    }
-
-    if (patientId.isEmpty) return null;
-
-    try {
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(patientId)
-          .get();
-      final fromUser = userDoc.data()?['email']?.toString().trim();
-      if (fromUser != null && fromUser.isNotEmpty) {
-        return fromUser;
-      }
-    } catch (e) {
-      debugPrint('Could not load patient email from users/$patientId: $e');
-    }
-    return null;
   }
 
   void _showBlockingLoading() {
@@ -229,8 +204,8 @@ class _PatientVerificationPageState extends State<PatientVerificationPage> {
 
     String? patientEmail;
     try {
-      patientEmail = await _resolvePatientEmail(
-        appointmentData: appointmentData,
+      patientEmail = await PatientEmailResolver().resolve(
+        data: appointmentData,
         patientId: patientId,
       );
 
@@ -1004,10 +979,12 @@ class _PatientVerificationPageState extends State<PatientVerificationPage> {
       debugPrint('Appointment updated successfully!');
 
       // Doctor name alignment: keep exact DB value, do not overwrite doctorName.
-      final patientEmail =
-          appointmentData['email']?.toString().trim().isNotEmpty == true
-          ? appointmentData['email']?.toString().trim() ?? ''
-          : fallbackPatientEmail;
+      final patientEmail = await PatientEmailResolver().resolve(
+            data: appointmentData,
+            patientId: appointmentData['patientId']?.toString(),
+            fallbackEmail: fallbackPatientEmail,
+          ) ??
+          '';
       final patientName =
           appointmentData['patientName']?.toString().isNotEmpty == true
           ? appointmentData['patientName']?.toString() ?? fallbackPatientName
@@ -1024,24 +1001,38 @@ class _PatientVerificationPageState extends State<PatientVerificationPage> {
                 ? appointmentDoctorName
                 : 'Unknown Doctor');
 
+      var emailSent = false;
       if (patientEmail.isNotEmpty) {
         if (isAccepted) {
-          final approvedDateLabel = requestedDate != null
-              ? DateFormat('yyyy-MM-dd').format(requestedDate)
+          final oldDateLabel = oldDate != null
+              ? DateFormat('EEEE, MMMM d, y').format(oldDate)
               : (appointmentCurrentDate != null
-                    ? DateFormat('yyyy-MM-dd').format(appointmentCurrentDate)
+                    ? DateFormat('EEEE, MMMM d, y').format(appointmentCurrentDate)
                     : 'N/A');
-          final approvedTimeLabel =
+          final oldTimeLabel =
+              oldTime.isNotEmpty && oldTime != 'N/A'
+              ? oldTime
+              : (appointmentCurrentTime.isNotEmpty
+                    ? appointmentCurrentTime
+                    : 'N/A');
+          final newDateLabel = requestedDate != null
+              ? DateFormat('EEEE, MMMM d, y').format(requestedDate)
+              : (appointmentCurrentDate != null
+                    ? DateFormat('EEEE, MMMM d, y').format(appointmentCurrentDate)
+                    : 'N/A');
+          final newTimeLabel =
               requestedTime ??
               (appointmentCurrentTime.isNotEmpty
                   ? appointmentCurrentTime
                   : 'N/A');
-          await EmailService().sendRescheduleConfirmationEmail(
+          emailSent = await EmailService().sendRescheduleConfirmationEmail(
             patientEmail,
             patientName,
             true,
-            approvedDateLabel,
-            approvedTimeLabel,
+            oldDateLabel,
+            oldTimeLabel,
+            newDateLabel,
+            newTimeLabel,
             resolvedDoctorName,
           );
         } else {
@@ -1051,7 +1042,7 @@ class _PatientVerificationPageState extends State<PatientVerificationPage> {
           final declinedTimeLabel = appointmentCurrentTime.isNotEmpty
               ? appointmentCurrentTime
               : 'N/A';
-          await EmailService().sendRescheduleResponseEmail(
+          emailSent = await EmailService().sendRescheduleResponseEmail(
             patientEmail,
             patientName,
             false,
@@ -1066,10 +1057,16 @@ class _PatientVerificationPageState extends State<PatientVerificationPage> {
           SnackBar(
             content: Text(
               isAccepted
-                  ? 'Request Approved! Confirmation email has been sent to the patient.'
-                  : 'Request Declined. Notification email has been sent to the patient.',
+                  ? emailSent
+                        ? 'Request approved — confirmation email sent to the patient.'
+                        : 'Request approved — confirmation email could not be sent.'
+                  : emailSent
+                        ? 'Request declined — notification email sent to the patient.'
+                        : 'Request declined — notification email could not be sent.',
             ),
-            backgroundColor: isAccepted ? Colors.green : Colors.grey.shade700,
+            backgroundColor: emailSent
+                ? (isAccepted ? Colors.green : Colors.grey.shade700)
+                : Colors.orange.shade800,
           ),
         );
       }

@@ -1,20 +1,36 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
 
 /// Sends transactional email via Gmail SMTP using the [mailer] package.
 ///
-/// **Security:** `_smtpPassword` is hardcoded below for local debugging only.
-/// Anyone with repo access can read it. Prefer removing the password before
-/// pushing to a remote, or use a dedicated low-privilege account and rotate
-/// the app password if it is ever exposed.
+/// **Security:** Prefer `SMTP_USER` / `SMTP_APP_PASSWORD` in `.env` so credentials
+/// are not committed. The fallbacks below are for local debugging only.
 class EmailService {
-  EmailService();
+  EmailService({FirebaseFirestore? firestore})
+      : _firestore = firestore ?? FirebaseFirestore.instance;
 
-  static const String _smtpUser = 'fathiismail@gmail.com';
+  final FirebaseFirestore _firestore;
 
-  /// Gmail App Password (16 characters, no spaces).
-  static const String _smtpPassword = 'jixrguqljhedvnza';
+  /// Gmail address used as the SMTP login (not your personal password).
+  static const String _smtpUserFallback = 'danishjamari3@gmail.com';
+
+  /// Paste your 16-character Google App Password here (no spaces).
+  /// Generate at: Google Account → Security → 2-Step Verification → App passwords.
+  /// Do NOT use your normal Gmail login password — SMTP requires an app password.
+  static const String _smtpAppPasswordFallback = 'qauhdvqvectgavyr';
+
+  static String get _smtpUser =>
+      dotenv.env['SMTP_USER']?.trim().isNotEmpty == true
+          ? dotenv.env['SMTP_USER']!.trim()
+          : _smtpUserFallback;
+
+  static String get _smtpPassword =>
+      dotenv.env['SMTP_APP_PASSWORD']?.trim().isNotEmpty == true
+          ? dotenv.env['SMTP_APP_PASSWORD']!.trim()
+          : _smtpAppPasswordFallback;
 
   SmtpServer get _smtpServer => gmail(_smtpUser, _smtpPassword);
 
@@ -50,7 +66,7 @@ $innerBodyHtml
 </html>''';
   }
 
-  Future<void> sendBookingPendingEmail(
+  Future<bool> sendBookingPendingEmail(
     String patientEmail,
     String patientName,
   ) async {
@@ -80,7 +96,7 @@ $innerBodyHtml
         '- Verifying your details\n'
         '- Assigning a slot and notifying you\n';
 
-    await _sendOrLog(
+    return _sendOrLog(
       to: patientEmail,
       subject: subject,
       html: html,
@@ -158,7 +174,7 @@ $innerBodyHtml
     );
   }
 
-  Future<void> sendApprovalEmail(
+  Future<bool> sendApprovalEmail(
     String patientEmail,
     String date,
     String time,
@@ -202,7 +218,7 @@ $innerBodyHtml
     final plain =
         'Your appointment is confirmed.\nDoctor: $doctorName\nSpecialization: $specialization\nDate: $date\nTime: $time\n';
 
-    await _sendOrLog(
+    return _sendOrLog(
       to: patientEmail,
       subject: subject,
       html: html,
@@ -211,20 +227,75 @@ $innerBodyHtml
     );
   }
 
-  Future<void> sendRescheduleEmail(
+  static String _rescheduleComparisonTableHtml({
+    required String statusLabel,
+    required String statusColor,
+    required String doctorName,
+    required String oldDate,
+    required String oldTime,
+    required String newDate,
+    required String newTime,
+  }) {
+    final safeDoctor = _escapeHtml(doctorName);
+    final safeOldDate = _escapeHtml(oldDate);
+    final safeOldTime = _escapeHtml(oldTime);
+    final safeNewDate = _escapeHtml(newDate);
+    final safeNewTime = _escapeHtml(newTime);
+    final safeStatus = _escapeHtml(statusLabel);
+
+    return '''
+    <table role="presentation" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;font-size:15px;background:#ffffff;">
+      <tr style="border-bottom:1px solid #eee;">
+        <td style="padding:10px;font-weight:bold;color:#1B3C68;">Status</td>
+        <td style="padding:10px;color:$statusColor;font-weight:bold;">$safeStatus</td>
+      </tr>
+      <tr style="border-bottom:1px solid #eee;">
+        <td style="padding:10px;font-weight:bold;color:#1B3C68;">Doctor</td>
+        <td style="padding:10px;color:#2d3748;">$safeDoctor</td>
+      </tr>
+      <tr style="border-bottom:1px solid #eee;background-color:#f9f9f9;">
+        <td style="padding:10px;color:#777;font-weight:bold;">Original Date</td>
+        <td style="padding:10px;color:#777;text-decoration:line-through;">$safeOldDate</td>
+      </tr>
+      <tr style="border-bottom:1px solid #eee;background-color:#f9f9f9;">
+        <td style="padding:10px;color:#777;font-weight:bold;">Original Time</td>
+        <td style="padding:10px;color:#777;text-decoration:line-through;">$safeOldTime</td>
+      </tr>
+      <tr style="border-bottom:1px solid #eee;">
+        <td style="padding:10px;font-weight:bold;color:#1B3C68;">New Appointment Date</td>
+        <td style="padding:10px;color:#2d3748;"><strong>$safeNewDate</strong></td>
+      </tr>
+      <tr style="border-bottom:1px solid #eee;">
+        <td style="padding:10px;font-weight:bold;color:#1B3C68;">Time</td>
+        <td style="padding:10px;color:#2d3748;"><strong>$safeNewTime</strong></td>
+      </tr>
+    </table>''';
+  }
+
+  Future<bool> sendRescheduleEmail(
     String patientEmail,
     String patientName,
     String oldDate,
+    String oldTime,
     String newDate,
     String newTime,
     String doctorName,
   ) async {
     const subject = 'IMPORTANT: Your Appointment Has Been Rescheduled - OrthoQ';
     final safeName = _escapeHtml(patientName);
-    final safeDoctor = _escapeHtml(doctorName);
-    final safeOldDate = _escapeHtml(oldDate);
-    final safeNewDate = _escapeHtml(newDate);
-    final safeNewTime = _escapeHtml(newTime);
+    final doctorLabel = doctorName.trim().toLowerCase().startsWith('dr')
+        ? doctorName.trim()
+        : 'Dr. $doctorName';
+
+    final table = _rescheduleComparisonTableHtml(
+      statusLabel: 'RESCHEDULED',
+      statusColor: '#C53030',
+      doctorName: doctorLabel,
+      oldDate: oldDate,
+      oldTime: oldTime,
+      newDate: newDate,
+      newTime: newTime,
+    );
 
     final inner =
         '''
@@ -235,30 +306,7 @@ $innerBodyHtml
     <p style="margin:0 0 18px 0;font-size:15px;line-height:1.55;color:#4A5568;">
       Your orthopaedic appointment details have been updated. Please review the summary below.
     </p>
-    <table role="presentation" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;font-size:15px;background:#ffffff;">
-      <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;width:38%;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Status</td>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;">
-          <span style="font-weight:bold;color:#C53030;">RESCHEDULED</span>
-        </td>
-      </tr>
-      <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Doctor</td>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;">$safeDoctor</td>
-      </tr>
-      <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Previous Date</td>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#718096;text-decoration:line-through;">$safeOldDate</td>
-      </tr>
-      <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">New Confirmed Date</td>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;"><strong>$safeNewDate</strong></td>
-      </tr>
-      <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">New Confirmed Time</td>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;"><strong>$safeNewTime</strong></td>
-      </tr>
-    </table>
+    $table
     <p style="margin:22px 0 0 0;font-size:14px;line-height:1.55;color:#4A5568;">
       If this new time does not work for you, please contact the clinic assistant at Hospital Kajang immediately.
     </p>''';
@@ -272,15 +320,16 @@ Hi $patientName,
 
 Appointment Reschedule Notice
 Status: RESCHEDULED
-Doctor: $doctorName
-Previous Date: $oldDate
-New Confirmed Date: $newDate
-New Confirmed Time: $newTime
+Doctor: $doctorLabel
+Original Date: $oldDate
+Original Time: $oldTime
+New Appointment Date: $newDate
+Time: $newTime
 
 If this new time does not work for you, please contact the clinic assistant at Hospital Kajang immediately.
 ''';
 
-    await _sendOrLog(
+    return _sendOrLog(
       to: patientEmail,
       subject: subject,
       html: html,
@@ -289,7 +338,7 @@ If this new time does not work for you, please contact the clinic assistant at H
     );
   }
 
-  Future<void> sendRescheduleResponseEmail(
+  Future<bool> sendRescheduleResponseEmail(
     String email,
     String name,
     bool isAccepted,
@@ -343,7 +392,7 @@ If this new time does not work for you, please contact the clinic assistant at H
         ? 'Hi $name,\n\nYour reschedule request for Hospital Kajang has been APPROVED.\nNew Date: $newDate\nNew Time: $newTime\n'
         : 'Hi $name,\n\nYour reschedule request has been DECLINED. Please attend your original appointment.\n';
 
-    await _sendOrLog(
+    return _sendOrLog(
       to: email,
       subject: subject,
       html: html,
@@ -352,18 +401,22 @@ If this new time does not work for you, please contact the clinic assistant at H
     );
   }
 
-  Future<void> sendRescheduleConfirmationEmail(
+  Future<bool> sendRescheduleConfirmationEmail(
     String email,
     String name,
     bool isAccepted,
+    String oldDate,
+    String oldTime,
     String newDate,
     String newTime,
     String doctorName,
   ) async {
     final safeName = _escapeHtml(name);
-    final safeNewDate = _escapeHtml(newDate);
-    final safeNewTime = _escapeHtml(newTime);
-    final safeDoctor = _escapeHtml(doctorName);
+    final safeOldDate = _escapeHtml(oldDate);
+    final safeOldTime = _escapeHtml(oldTime);
+    final doctorLabel = doctorName.trim().toLowerCase().startsWith('dr')
+        ? doctorName.trim()
+        : 'Dr. $doctorName';
 
     final subject = isAccepted
         ? 'Reschedule Request Approved - OrthoQ'
@@ -376,24 +429,15 @@ If this new time does not work for you, please contact the clinic assistant at H
       Your reschedule request for <strong>Hospital Kajang</strong> has been <strong style="color:#2F855A;">APPROVED</strong>.
       Your updated appointment details are shown below.
     </p>
-    <table role="presentation" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;font-size:15px;background:#ffffff;">
-      <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;width:38%;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Status</td>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;"><strong style="color:#2F855A;">APPROVED</strong></td>
-      </tr>
-      <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Doctor</td>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;"><strong>Dr. $safeDoctor</strong></td>
-      </tr>
-      <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">New Appointment Date</td>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;">$safeNewDate</td>
-      </tr>
-      <tr>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;background-color:#EDF2F7;font-weight:bold;color:#1B3C68;">Time</td>
-        <td style="border:1px solid #CBD5E0;padding:12px 14px;color:#2d3748;">$safeNewTime</td>
-      </tr>
-    </table>
+    ${_rescheduleComparisonTableHtml(
+      statusLabel: 'APPROVED (RESCHEDULED)',
+      statusColor: '#2F855A',
+      doctorName: doctorLabel,
+      oldDate: oldDate,
+      oldTime: oldTime,
+      newDate: newDate,
+      newTime: newTime,
+    )}
     <p style="margin:20px 0 0 0;font-size:14px;line-height:1.5;color:#4A5568;">
       Please attend according to this updated slot.
     </p>'''
@@ -401,20 +445,93 @@ If this new time does not work for you, please contact the clinic assistant at H
     <p style="margin:0 0 16px 0;font-size:16px;line-height:1.5;">Hi $safeName,</p>
     <p style="margin:0 0 16px 0;font-size:15px;line-height:1.55;">
       Your reschedule request has been <strong style="color:#C53030;">DECLINED</strong>.
-      Please attend your original appointment.
+      Please attend your original appointment on <strong>$safeOldDate</strong> at <strong>$safeOldTime</strong>.
     </p>''';
 
     final html = _htmlDocument(inner);
     final plain = isAccepted
-        ? 'Hi $name,\n\nYour reschedule request for Hospital Kajang has been APPROVED.\nDoctor: Dr. $doctorName\nNew Date: $newDate\nNew Time: $newTime\n'
-        : 'Hi $name,\n\nYour reschedule request has been DECLINED. Please attend your original appointment.\n';
+        ? 'Hi $name,\n\nYour reschedule request for Hospital Kajang has been APPROVED.\n'
+            'Doctor: $doctorLabel\n'
+            'Original Date: $oldDate\n'
+            'Original Time: $oldTime\n'
+            'New Appointment Date: $newDate\n'
+            'Time: $newTime\n'
+        : 'Hi $name,\n\nYour reschedule request has been DECLINED. '
+            'Please attend your original appointment on $oldDate at $oldTime.\n';
 
-    await _sendOrLog(
+    return _sendOrLog(
       to: email,
       subject: subject,
       html: html,
       plainText: plain,
       contextLabel: 'sendRescheduleConfirmationEmail',
+    );
+  }
+
+  /// Notifies clinic staff that a doctor has reported a schedule delay.
+  Future<bool> sendStaffDoctorDelayEmail({
+    required String toEmail,
+    required String doctorName,
+    required String delayDate,
+    required String delayMessage,
+  }) async {
+    const subject = 'Urgent: Doctor Appointment Delay Notice - OrthoQ';
+    final doctorLabel = doctorName.trim().toLowerCase().startsWith('dr')
+        ? doctorName.trim()
+        : 'Dr. $doctorName';
+    final safeDoctor = _escapeHtml(doctorLabel);
+    final safeDate = _escapeHtml(delayDate);
+    final safeMessage = _escapeHtml(delayMessage);
+
+    final inner =
+        '''
+    <p style="margin:0 0 18px 0;font-size:16px;line-height:1.5;">
+      Dear Clinic Staff,
+    </p>
+    <p style="margin:0 0 20px 0;font-size:15px;line-height:1.55;color:#4A5568;">
+      A doctor has submitted an urgent delay notice through OrthoQ. Please review the details below and notify affected patients as needed.
+    </p>
+    <table role="presentation" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;font-size:15px;background:#ffffff;">
+      <tr style="border-bottom:1px solid #eee;">
+        <td style="padding:10px;font-weight:bold;color:#1B3C68;">Status</td>
+        <td style="padding:10px;color:#C05621;font-weight:bold;">DOCTOR DELAY NOTICE</td>
+      </tr>
+      <tr style="border-bottom:1px solid #eee;">
+        <td style="padding:10px;font-weight:bold;color:#1B3C68;">Doctor Name</td>
+        <td style="padding:10px;color:#2d3748;">$safeDoctor</td>
+      </tr>
+      <tr style="border-bottom:1px solid #eee;">
+        <td style="padding:10px;font-weight:bold;color:#1B3C68;">Effective Date</td>
+        <td style="padding:10px;color:#2d3748;"><strong>$safeDate</strong></td>
+      </tr>
+    </table>
+    <h2 style="margin:22px 0 12px 0;font-size:16px;color:#1B3C68;font-weight:bold;">
+      Delay Message Context
+    </h2>
+    <p style="margin:0;font-size:15px;line-height:1.6;color:#2d3748;padding:14px;background:#FFFAF0;border:1px solid #FBD38D;border-radius:8px;">
+      $safeMessage
+    </p>
+    <p style="margin:20px 0 0 0;font-size:14px;line-height:1.55;color:#4A5568;">
+      Log in to OrthoQ to broadcast patient notifications for this delay.
+    </p>''';
+
+    final html = _htmlDocument(inner);
+    final plain =
+        'Urgent: Doctor Appointment Delay Notice - OrthoQ\n\n'
+        'Dear Clinic Staff,\n\n'
+        'A doctor has submitted an urgent delay notice.\n\n'
+        'Status: DOCTOR DELAY NOTICE\n'
+        'Doctor Name: $doctorLabel\n'
+        'Effective Date: $delayDate\n\n'
+        'Delay Message Context:\n$delayMessage\n\n'
+        'Log in to OrthoQ to broadcast patient notifications for this delay.\n';
+
+    return _sendOrLog(
+      to: toEmail,
+      subject: subject,
+      html: html,
+      plainText: plain,
+      contextLabel: 'sendStaffDoctorDelayEmail',
     );
   }
 
@@ -569,25 +686,63 @@ If this new time does not work for you, please contact the clinic assistant at H
       return false;
     }
 
-    if (!_canSend) {
-      debugPrint(
-        'EmailService($contextLabel): skipped — _smtpPassword is empty. '
-        'Paste your 16-character Gmail App Password (no spaces) into '
-        'email_service.dart.',
+    // Mobile/desktop: send immediately via SMTP when credentials are configured.
+    if (!kIsWeb && _canSend) {
+      final sent = await _sendDirect(
+        to: trimmedTo,
+        subject: subject,
+        html: html,
+        plainText: plainText,
+        contextLabel: contextLabel,
       );
-      return false;
+      if (sent) return true;
     }
 
+    // Web (and mobile fallback): queue for the sendOutboundMail Cloud Function.
+    try {
+      await _firestore.collection('outbound_mail').add({
+        'to': trimmedTo,
+        'subject': subject,
+        'html': html,
+        'text': plainText,
+        'contextLabel': contextLabel,
+        'status': 'pending',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      debugPrint(
+        'EmailService($contextLabel): queued for delivery → $trimmedTo',
+      );
+      return true;
+    } catch (e, stack) {
+      debugPrint('EmailService($contextLabel): queue failed — $e');
+      debugPrint('$stack');
+      if (kIsWeb) {
+        debugPrint(
+          'EmailService($contextLabel): deploy Cloud Functions '
+          '(sendOutboundMail) and add Firestore rules for outbound_mail.',
+        );
+      }
+      return false;
+    }
+  }
+
+  Future<bool> _sendDirect({
+    required String to,
+    required String subject,
+    required String html,
+    required String plainText,
+    required String contextLabel,
+  }) async {
     final message = Message()
       ..from = Address(_smtpUser, 'OrthoQ')
-      ..recipients.add(trimmedTo)
+      ..recipients.add(to)
       ..subject = subject
       ..html = html
       ..text = plainText;
 
     try {
       final report = await send(message, _smtpServer);
-      debugPrint('EmailService($contextLabel): success → $trimmedTo — $report');
+      debugPrint('EmailService($contextLabel): direct SMTP success → $to — $report');
       return true;
     } on MailerException catch (e, stack) {
       debugPrint('EmailService($contextLabel): MailerException — $e');
@@ -599,7 +754,7 @@ If this new time does not work for you, please contact the clinic assistant at H
       debugPrint('$stack');
       return false;
     } catch (e, stack) {
-      debugPrint('EmailService($contextLabel): failed — $e');
+      debugPrint('EmailService($contextLabel): direct SMTP failed — $e');
       debugPrint('$stack');
       return false;
     }
