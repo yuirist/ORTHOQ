@@ -137,6 +137,95 @@ class StaffAppointmentCalendarDataSource extends CalendarDataSource {
 bool isSameCalendarDay(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
 
+/// Normalizes [date] to midnight for use as a map key.
+DateTime normalizeCalendarDay(DateTime date) =>
+    DateTime(date.year, date.month, date.day);
+
+/// Groups Firestore appointment docs by calendar day for month-view indicators.
+Map<DateTime, List<Map<String, dynamic>>> groupDoctorAppointmentsByDate(
+  List<QueryDocumentSnapshot<Object?>> docs,
+) {
+  final grouped = <DateTime, List<Map<String, dynamic>>>{};
+  for (final doc in docs) {
+    final raw = doc.data();
+    if (raw is! Map<String, dynamic>) continue;
+    final date = parseAppointmentDateOnly(raw['appointmentDate']);
+    if (date == null) continue;
+    final key = normalizeCalendarDay(date);
+    grouped.putIfAbsent(key, () => []).add(raw);
+  }
+  return grouped;
+}
+
+/// Month cell with red (busy) / green (available) status dot below the day number.
+Widget buildStaffCalendarMonthCell({
+  required MonthCellDetails details,
+  required Map<DateTime, List<dynamic>> doctorAppointments,
+}) {
+  final normalizedDay = normalizeCalendarDay(details.date);
+  final hasAppointments = doctorAppointments.containsKey(normalizedDay) &&
+      doctorAppointments[normalizedDay]!.isNotEmpty;
+  final isToday = isSameCalendarDay(details.date, DateTime.now());
+  final midVisible = details.visibleDates.isNotEmpty
+      ? details.visibleDates[details.visibleDates.length ~/ 2]
+      : details.date;
+  final isCurrentMonth =
+      details.date.month == midVisible.month &&
+      details.date.year == midVisible.year;
+
+  final dayTextStyle = TextStyle(
+    fontSize: 13,
+    fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
+    color: isCurrentMonth
+        ? (isToday ? const Color(0xFF1B3C68) : Colors.black87)
+        : Colors.grey.shade400,
+  );
+
+  return SizedBox(
+    width: details.bounds.width,
+    height: details.bounds.height,
+    child: DecoratedBox(
+      decoration: BoxDecoration(
+        color: isToday
+            ? const Color(0xFF1B3C68).withValues(alpha: 0.08)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.hardEdge,
+        children: [
+          Positioned(
+            top: 8,
+            left: 0,
+            right: 0,
+            child: Text(
+              '${details.date.day}',
+              textAlign: TextAlign.center,
+              style: dayTextStyle,
+            ),
+          ),
+          Positioned(
+            bottom: 2,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                width: 5,
+                height: 5,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: hasAppointments ? Colors.red : Colors.green,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 int _durationMinutesFromFirestore(Map<String, dynamic> data) {
   final v = data['durationMinutes'];
   if (v is int) return v.clamp(5, 120);

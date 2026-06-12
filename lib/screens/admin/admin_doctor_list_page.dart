@@ -5,6 +5,7 @@ import '../../services/doctor_service.dart';
 import '../../theme/orthoq_colors.dart';
 import '../../theme/orthoq_widgets.dart';
 import '../../widgets/doctor_avatar.dart';
+import '../staff/doctor_calendar_view.dart';
 import 'add_doctor_screen.dart';
 import 'admin_edit_doctor_screen.dart';
 
@@ -127,6 +128,32 @@ class AdminDoctorListPage extends StatelessWidget {
                             Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
+                                SizedBox(
+                                  height: 36,
+                                  child: OutlinedButton.icon(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => DoctorCalendarView(
+                                            doctorId: d.id,
+                                            doctorName: d.name,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    icon: const Icon(Icons.calendar_month, size: 18),
+                                    label: const Text('Calendar'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: _navy,
+                                      side: const BorderSide(color: _navy),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
                                 SizedBox(
                                   height: 36,
                                   child: OutlinedButton(

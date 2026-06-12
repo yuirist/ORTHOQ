@@ -10,19 +10,38 @@ import '../../services/appointment_service.dart';
 import '../../services/doctor_service.dart';
 import '../../services/notification_service.dart';
 
-class MyAppointmentsScreen extends StatelessWidget {
+bool _isHistoryAppointment(AppointmentModel appointment) {
+  final status = appointment.status.toLowerCase();
+  final isTerminal = status == 'cancelled' ||
+      status == 'completed' ||
+      status == 'rejected';
+  final now = DateTime.now();
+  final startOfToday = DateTime(now.year, now.month, now.day);
+  final isPast = appointment.appointmentDate.isBefore(startOfToday);
+  return isTerminal || isPast;
+}
+
+class MyAppointmentsScreen extends StatefulWidget {
   const MyAppointmentsScreen({super.key});
+
+  @override
+  State<MyAppointmentsScreen> createState() => _MyAppointmentsScreenState();
+}
+
+class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
+  bool _showHistory = false;
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-    
+    final onPrimary = Theme.of(context).colorScheme.onPrimary;
+
     if (user == null) {
       return Scaffold(
         appBar: AppBar(
           title: const Text('My Appointments'),
           backgroundColor: OrthoqColors.slateNavy,
-          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          foregroundColor: onPrimary,
         ),
         body: const Center(
           child: Text('Please log in to view your appointments'),
@@ -32,9 +51,19 @@ class MyAppointmentsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Appointments'),
+        title: Text(_showHistory ? 'Appointment History' : 'My Appointments'),
         backgroundColor: OrthoqColors.slateNavy,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        foregroundColor: onPrimary,
+        actions: [
+          IconButton(
+            tooltip: _showHistory ? 'Show upcoming appointments' : 'View appointment history',
+            onPressed: () => setState(() => _showHistory = !_showHistory),
+            icon: Icon(
+              _showHistory ? Icons.event_note_outlined : Icons.history,
+              color: onPrimary,
+            ),
+          ),
+        ],
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
@@ -159,23 +188,45 @@ class MyAppointmentsScreen extends StatelessWidget {
             );
           }
 
-          // Success state
-          final appointments = snapshot.data?.docs ?? [];
+          final allAppointments = (snapshot.data?.docs ?? [])
+              .map(
+                (doc) => AppointmentModel.fromMap(
+                  doc.data() as Map<String, dynamic>,
+                  doc.id,
+                ),
+              )
+              .toList();
 
-          if (appointments.isEmpty) {
+          final visibleAppointments = allAppointments
+              .where(
+                (appointment) => _showHistory
+                    ? _isHistoryAppointment(appointment)
+                    : !_isHistoryAppointment(appointment),
+              )
+              .toList();
+
+          if (_showHistory) {
+            visibleAppointments.sort(
+              (a, b) => b.appointmentDate.compareTo(a.appointmentDate),
+            );
+          }
+
+          if (visibleAppointments.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.event_note,
+                    _showHistory ? Icons.history : Icons.event_note,
                     size: 64,
                     color: Colors.grey.shade400,
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'No Appointments Found',
-                    style: TextStyle(
+                  Text(
+                    _showHistory
+                        ? 'No Appointment History'
+                        : 'No Upcoming Appointments',
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Colors.grey,
@@ -183,7 +234,10 @@ class MyAppointmentsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'You don\'t have any appointments yet.',
+                    _showHistory
+                        ? 'Completed, cancelled, and past visits will appear here.'
+                        : 'You don\'t have any active upcoming appointments.',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey.shade700,
@@ -194,20 +248,16 @@ class MyAppointmentsScreen extends StatelessWidget {
             );
           }
 
-          // Display appointments in ListView.builder
           return ListView.builder(
             padding: const EdgeInsets.all(16.0),
-            itemCount: appointments.length,
+            itemCount: visibleAppointments.length,
             itemBuilder: (context, index) {
-              final doc = appointments[index];
-              final appointment = AppointmentModel.fromMap(
-                doc.data() as Map<String, dynamic>,
-                doc.id,
-              );
+              final appointment = visibleAppointments[index];
               return _AppointmentCard(
                 appointment: appointment,
                 appointmentService: AppointmentService(),
                 notificationService: NotificationService(),
+                isHistoryView: _showHistory,
               );
             },
           );
@@ -221,11 +271,13 @@ class _AppointmentCard extends StatelessWidget {
   final AppointmentModel appointment;
   final AppointmentService appointmentService;
   final NotificationService notificationService;
+  final bool isHistoryView;
 
   const _AppointmentCard({
     required this.appointment,
     required this.appointmentService,
     required this.notificationService,
+    this.isHistoryView = false,
   });
 
   Future<void> _cancelAppointment(BuildContext context) async {
@@ -306,8 +358,8 @@ class _AppointmentCard extends StatelessWidget {
       'rejected',
       'completed',
     }.contains(appointment.status.toLowerCase());
-    final canReschedule = !isPast && !isTerminal;
-    final canCancel = !isPast && !isTerminal;
+    final canReschedule = !isHistoryView && !isPast && !isTerminal;
+    final canCancel = !isHistoryView && !isPast && !isTerminal;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),

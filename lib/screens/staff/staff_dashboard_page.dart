@@ -1,12 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:orthoq_app/theme/orthoq_colors.dart';
 
+import '../../models/appointment_model.dart';
 import '../../models/doctor_model.dart';
 import '../../models/user_model.dart';
+import '../../services/appointment_service.dart';
 import '../../services/doctor_service.dart';
 import '../../utils/staff_scope.dart';
+import '../../utils/validation_utils.dart';
 import 'doctor_schedule_preview_card.dart';
 
 class StaffDashboardPage extends StatefulWidget {
@@ -22,6 +26,45 @@ class StaffDashboardPage extends StatefulWidget {
 
 class _StaffDashboardPageState extends State<StaffDashboardPage> {
   final DoctorService _doctorService = DoctorService();
+  final AppointmentService _appointmentService = AppointmentService();
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+
+  String? _activeSearchIc;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _onSearchIcChanged(String? ic) {
+    if (_activeSearchIc == ic) return;
+    setState(() => _activeSearchIc = ic);
+  }
+
+  void _submitSearch() {
+    final normalized = ValidationUtils.normalizeICNumber(_searchController.text);
+    if (normalized.length != 12) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a full 12-digit IC number.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      _searchFocusNode.requestFocus();
+      return;
+    }
+    _onSearchIcChanged(normalized);
+    _searchFocusNode.requestFocus();
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    _onSearchIcChanged(null);
+    _searchFocusNode.requestFocus();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +124,17 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
       ),
       body: _StaffDashboardBody(
         doctorService: _doctorService,
+        appointmentService: _appointmentService,
         userProfile: widget.userProfile,
+        searchInput: _StaffIcSearchInput(
+          key: const ValueKey('staff_dashboard_ic_search'),
+          controller: _searchController,
+          focusNode: _searchFocusNode,
+          onSearchIcChanged: _onSearchIcChanged,
+          onSubmitted: _submitSearch,
+          onClear: _clearSearch,
+        ),
+        activeSearchIc: _activeSearchIc,
       ),
     );
   }
@@ -90,11 +143,17 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
 class _StaffDashboardBody extends StatelessWidget {
   const _StaffDashboardBody({
     required this.doctorService,
+    required this.appointmentService,
     this.userProfile,
+    required this.searchInput,
+    required this.activeSearchIc,
   });
 
   final DoctorService doctorService;
+  final AppointmentService appointmentService;
   final UserModel? userProfile;
+  final Widget searchInput;
+  final String? activeSearchIc;
 
   @override
   Widget build(BuildContext context) {
@@ -103,107 +162,484 @@ class _StaffDashboardBody extends StatelessWidget {
       return const Center(child: Text('Please sign in.'));
     }
 
-    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
-      builder: (context, userSnap) {
-        if (userSnap.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final assigned = StaffScope.assignedDoctorIds(userSnap.data?.data());
-
-        return StreamBuilder<List<DoctorModel>>(
-          stream: doctorService.getActiveDoctors(),
-          builder: (context, doctorSnap) {
-            if (doctorSnap.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (doctorSnap.hasError) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Text(
-                    'Could not load doctors.\n${doctorSnap.error}',
-                    textAlign: TextAlign.center,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                userProfile != null && userProfile!.fullName.trim().isNotEmpty
+                    ? 'Welcome, ${userProfile!.fullName.trim()}'
+                    : 'Doctor Schedule Overview',
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: StaffDashboardPage._navy,
+                ),
+              ),
+              if (userProfile != null &&
+                  userProfile!.fullName.trim().isNotEmpty) ...[
+                const SizedBox(height: 6),
+                const Text(
+                  'Doctor Schedule Overview',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: StaffDashboardPage._navy,
                   ),
                 ),
-              );
-            }
+              ],
+              const SizedBox(height: 16),
+              searchInput,
+            ],
+          ),
+        ),
+        Expanded(
+          child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            stream: FirebaseFirestore.instance
+                .collection('users')
+                .doc(uid)
+                .snapshots(),
+            builder: (context, userSnap) {
+              if (userSnap.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final assigned =
+                  StaffScope.assignedDoctorIds(userSnap.data?.data());
 
-            final all = doctorSnap.data ?? [];
-            final doctors = assigned.isEmpty
-                ? <DoctorModel>[]
-                : all.where((d) => assigned.contains(d.id)).toList();
-            final previewDoctors = doctors.take(3).toList();
-
-            return SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    userProfile != null &&
-                            userProfile!.fullName.trim().isNotEmpty
-                        ? 'Welcome, ${userProfile!.fullName.trim()}'
-                        : 'Doctor Schedule Overview',
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      color: StaffDashboardPage._navy,
-                    ),
-                  ),
-                  if (userProfile != null &&
-                      userProfile!.fullName.trim().isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Doctor Schedule Overview',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: StaffDashboardPage._navy,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 8),
-                  Text(
-                    assigned.isEmpty
-                        ? 'An admin must assign exactly 3 doctors to your account before schedules appear here.'
-                        : 'Only your assigned doctors are shown. Tap a card for calendar view.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      height: 1.35,
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  if (doctors.isEmpty)
-                    Card(
-                      margin: EdgeInsets.zero,
+              return StreamBuilder<List<DoctorModel>>(
+                stream: doctorService.getActiveDoctors(),
+                builder: (context, doctorSnap) {
+                  if (doctorSnap.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (doctorSnap.hasError) {
+                    return Center(
                       child: Padding(
                         padding: const EdgeInsets.all(24),
                         child: Text(
-                          assigned.isEmpty
-                              ? 'No assigned doctors yet. Ask an administrator to use Admin → Assign staff.'
-                              : 'No active doctors match your assignment.',
-                          style: TextStyle(color: Colors.grey.shade700),
+                          'Could not load doctors.\n${doctorSnap.error}',
+                          textAlign: TextAlign.center,
                         ),
                       ),
-                    )
-                  else
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        for (var i = 0; i < previewDoctors.length; i++) ...[
-                          if (i > 0) const SizedBox(height: 18),
-                          DoctorSchedulePreviewCard(doctor: previewDoctors[i]),
-                        ],
-                      ],
-                    ),
+                    );
+                  }
+
+                  final all = doctorSnap.data ?? [];
+                  final doctors = assigned.isEmpty
+                      ? <DoctorModel>[]
+                      : all.where((d) => assigned.contains(d.id)).toList();
+                  final previewDoctors = doctors.take(3).toList();
+                  final isSearchActive = activeSearchIc != null;
+
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+                    child: isSearchActive
+                        ? _IcSearchResultsSection(
+                            appointmentService: appointmentService,
+                            searchIc: activeSearchIc!,
+                            assignedDoctorIds: assigned,
+                          )
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                assigned.isEmpty
+                                    ? 'An admin must assign exactly 3 doctors to your account before schedules appear here.'
+                                    : 'Only your assigned doctors are shown. Tap a card for calendar view.',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  height: 1.35,
+                                  color: Colors.grey.shade700,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              if (doctors.isEmpty)
+                                Card(
+                                  margin: EdgeInsets.zero,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(24),
+                                    child: Text(
+                                      assigned.isEmpty
+                                          ? 'No assigned doctors yet. Ask an administrator to use Admin → Assign staff.'
+                                          : 'No active doctors match your assignment.',
+                                      style: TextStyle(
+                                        color: Colors.grey.shade700,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              else
+                                Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    for (var i = 0;
+                                        i < previewDoctors.length;
+                                        i++) ...[
+                                      if (i > 0) const SizedBox(height: 18),
+                                      DoctorSchedulePreviewCard(
+                                        doctor: previewDoctors[i],
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                            ],
+                          ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Isolated search field so stream/list rebuilds do not steal TextField focus.
+class _StaffIcSearchInput extends StatefulWidget {
+  const _StaffIcSearchInput({
+    super.key,
+    required this.controller,
+    required this.focusNode,
+    required this.onSearchIcChanged,
+    required this.onSubmitted,
+    required this.onClear,
+  });
+
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final ValueChanged<String?> onSearchIcChanged;
+  final VoidCallback onSubmitted;
+  final VoidCallback onClear;
+
+  @override
+  State<_StaffIcSearchInput> createState() => _StaffIcSearchInputState();
+}
+
+class _StaffIcSearchInputState extends State<_StaffIcSearchInput> {
+  String? _lastNotifiedIc;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_handleControllerChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant _StaffIcSearchInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_handleControllerChanged);
+      widget.controller.addListener(_handleControllerChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_handleControllerChanged);
+    super.dispose();
+  }
+
+  void _handleControllerChanged() {
+    final normalized =
+        ValidationUtils.normalizeICNumber(widget.controller.text);
+    final ic = normalized.length == 12 ? normalized : null;
+
+    if (_lastNotifiedIc != ic) {
+      _lastNotifiedIc = ic;
+      widget.onSearchIcChanged(ic);
+    }
+
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: widget.controller,
+      focusNode: widget.focusNode,
+      keyboardType: TextInputType.number,
+      textInputAction: TextInputAction.search,
+      onSubmitted: (_) => widget.onSubmitted(),
+      decoration: InputDecoration(
+        hintText: 'Search patient by IC Number...',
+        prefixIcon: const Icon(
+          Icons.search,
+          color: StaffDashboardPage._navy,
+        ),
+        suffixIcon: widget.controller.text.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.clear),
+                onPressed: widget.onClear,
+                tooltip: 'Clear search',
+              )
+            : null,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+            color: StaffDashboardPage._navy,
+            width: 1.5,
+          ),
+        ),
+        filled: true,
+        fillColor: Colors.white,
+      ),
+    );
+  }
+}
+
+class _IcSearchResultsSection extends StatelessWidget {
+  const _IcSearchResultsSection({
+    required this.appointmentService,
+    required this.searchIc,
+    required this.assignedDoctorIds,
+  });
+
+  final AppointmentService appointmentService;
+  final String searchIc;
+  final List<String> assignedDoctorIds;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<AppointmentModel>>(
+      stream: appointmentService.searchAppointmentsByIc(searchIc),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Text(
+                'Could not search appointments.\n${snapshot.error}',
+                style: const TextStyle(color: Colors.red),
+              ),
+            ),
+          );
+        }
+
+        final allResults = snapshot.data ?? [];
+        final results = assignedDoctorIds.isEmpty
+            ? allResults
+            : allResults
+                .where((a) => assignedDoctorIds.contains(a.doctorId))
+                .toList();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Search results for IC $searchIc',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: StaffDashboardPage._navy,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${results.length} appointment(s) found',
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
+            ),
+            const SizedBox(height: 16),
+            if (results.isEmpty)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.person_search,
+                        size: 48,
+                        color: Colors.grey.shade400,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'No appointments found for this IC number.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey.shade700),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              Column(
+                children: [
+                  for (var i = 0; i < results.length; i++) ...[
+                    if (i > 0) const SizedBox(height: 16),
+                    _StaffIcAppointmentCard(appointment: results[i]),
+                  ],
                 ],
               ),
-            );
-          },
+          ],
         );
       },
+    );
+  }
+}
+
+class _StaffIcAppointmentCard extends StatelessWidget {
+  const _StaffIcAppointmentCard({required this.appointment});
+
+  final AppointmentModel appointment;
+
+  Color _statusColor(BuildContext context, String status) {
+    switch (status.toLowerCase()) {
+      case 'booked':
+      case 'pending':
+        return Theme.of(context).colorScheme.secondary;
+      case 'confirmed':
+        return StaffDashboardPage._navy;
+      case 'rescheduled':
+        return Colors.orange;
+      case 'cancelled':
+      case 'rejected':
+        return Colors.red;
+      case 'completed':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        appointment.patientName.trim().isNotEmpty
+                            ? appointment.patientName
+                            : 'Patient',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Dr. ${appointment.doctorName}',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      FutureBuilder(
+                        future: DoctorService().getDoctorById(appointment.doctorId),
+                        builder: (context, snapshot) {
+                          final specialization =
+                              snapshot.data?.specialization.trim();
+                          if (specialization == null || specialization.isEmpty) {
+                            return const SizedBox.shrink();
+                          }
+                          return Text(
+                            specialization,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade600,
+                              height: 1.3,
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _statusColor(context, appointment.status),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    appointment.status.toUpperCase(),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const Icon(Icons.calendar_today, size: 18, color: Colors.grey),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    DateFormat('EEEE, MMMM d, y')
+                        .format(appointment.appointmentDate),
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.access_time, size: 18, color: Colors.grey),
+                const SizedBox(width: 8),
+                Text(
+                  appointment.appointmentTime.trim().isEmpty
+                      ? '—'
+                      : appointment.appointmentTime,
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ],
+            ),
+            if (appointment.icNumber != null &&
+                appointment.icNumber!.trim().isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.badge_outlined, size: 18, color: Colors.grey),
+                  const SizedBox(width: 8),
+                  Text(
+                    appointment.icNumber!,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/appointment_model.dart';
+import '../utils/validation_utils.dart';
 
 class AppointmentService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -117,6 +118,52 @@ class AppointmentService {
             .map((doc) => AppointmentModel.fromMap(
                 doc.data() as Map<String, dynamic>, doc.id))
             .toList());
+  }
+
+  /// Live search by Malaysian IC (12 digits, hyphens/spaces stripped).
+  /// Matches `appointments.icNumber` and falls back to `users.icNumber` → `patientId`.
+  Stream<List<AppointmentModel>> searchAppointmentsByIc(String icNumber) {
+    final normalized = ValidationUtils.normalizeICNumber(icNumber);
+    if (normalized.length != 12) {
+      return Stream.value(const []);
+    }
+
+    return _firestore
+        .collection('appointments')
+        .where('icNumber', isEqualTo: normalized)
+        .snapshots()
+        .asyncMap((snapshot) async {
+      final byId = <String, AppointmentModel>{};
+
+      for (final doc in snapshot.docs) {
+        byId[doc.id] = AppointmentModel.fromMap(
+          doc.data() as Map<String, dynamic>,
+          doc.id,
+        );
+      }
+
+      final userSnap = await _firestore
+          .collection('users')
+          .where('icNumber', isEqualTo: normalized)
+          .get();
+
+      for (final userDoc in userSnap.docs) {
+        final patientSnap = await _firestore
+            .collection('appointments')
+            .where('patientId', isEqualTo: userDoc.id)
+            .get();
+        for (final doc in patientSnap.docs) {
+          byId[doc.id] = AppointmentModel.fromMap(
+            doc.data() as Map<String, dynamic>,
+            doc.id,
+          );
+        }
+      }
+
+      final results = byId.values.toList()
+        ..sort((a, b) => b.appointmentDate.compareTo(a.appointmentDate));
+      return results;
+    });
   }
 
   // Get appointment by ID

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:orthoq_app/theme/orthoq_colors.dart';
@@ -26,6 +28,15 @@ class DoctorCalendarView extends StatefulWidget {
 class _DoctorCalendarViewState extends State<DoctorCalendarView> {
   late final CalendarController _controller;
   CalendarView _view = CalendarView.week;
+  StreamSubscription<QuerySnapshot<Object?>>? _appointmentsSub;
+
+  Map<DateTime, List<dynamic>> _doctorAppointments = {};
+  StaffCalendarMappingResult _mapping = const StaffCalendarMappingResult(
+    appointments: [],
+    metaByDocId: {},
+  );
+  bool _loadingAppointments = true;
+  Object? _appointmentsError;
 
   static const _navy = OrthoqColors.navy;
   static const _currentTimeIndicatorColor = Color(0xFFFF5722);
@@ -36,10 +47,37 @@ class _DoctorCalendarViewState extends State<DoctorCalendarView> {
     _controller = CalendarController()
       ..displayDate = DateTime.now()
       ..view = CalendarView.week;
+    _listenDoctorAppointments();
+  }
+
+  void _listenDoctorAppointments() {
+    _appointmentsSub = FirebaseFirestore.instance
+        .collection('appointments')
+        .where('doctorId', isEqualTo: widget.doctorId)
+        .snapshots()
+        .listen(
+      (snapshot) {
+        if (!mounted) return;
+        setState(() {
+          _loadingAppointments = false;
+          _appointmentsError = null;
+          _doctorAppointments = groupDoctorAppointmentsByDate(snapshot.docs);
+          _mapping = mapFirestoreDocsToCalendarAppointments(snapshot.docs);
+        });
+      },
+      onError: (Object error) {
+        if (!mounted) return;
+        setState(() {
+          _loadingAppointments = false;
+          _appointmentsError = error;
+        });
+      },
+    );
   }
 
   @override
   void dispose() {
+    _appointmentsSub?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -65,6 +103,80 @@ class _DoctorCalendarViewState extends State<DoctorCalendarView> {
       doctorId: widget.doctorId,
       doctorName: widget.doctorName,
       initialDate: _controller.displayDate,
+    );
+  }
+
+  Widget _buildCalendarBody() {
+    if (_appointmentsError != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            'Could not load appointments.\n$_appointmentsError',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.red),
+          ),
+        ),
+      );
+    }
+    if (_loadingAppointments) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final dataSource =
+        StaffAppointmentCalendarDataSource(_mapping.appointments);
+
+    return SfCalendar(
+      controller: _controller,
+      view: _view,
+      dataSource: dataSource,
+      specialRegions: StaffCalendarSlotSettings.preClinicBufferRegions,
+      showCurrentTimeIndicator: true,
+      todayHighlightColor: _currentTimeIndicatorColor,
+      backgroundColor: Colors.white,
+      cellBorderColor: OrthoqColors.lightSlate,
+      headerStyle: StaffCalendarSlotSettings.navyHeader,
+      viewHeaderStyle: ViewHeaderStyle(
+        backgroundColor: Colors.grey.shade50,
+        dayTextStyle: TextStyle(
+          color: Colors.grey.shade700,
+          fontWeight: FontWeight.w500,
+          fontSize: 12,
+        ),
+        dateTextStyle: const TextStyle(
+          color: _navy,
+          fontWeight: FontWeight.w700,
+          fontSize: 13,
+        ),
+      ),
+      timeSlotViewSettings: StaffCalendarSlotSettings.fullCalendar,
+      monthViewSettings: MonthViewSettings(
+        appointmentDisplayMode: MonthAppointmentDisplayMode.none,
+        showAgenda: true,
+        monthCellStyle: MonthCellStyle(
+          textStyle: TextStyle(
+            color: Colors.grey.shade800,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+          trailingDatesTextStyle: TextStyle(color: Colors.grey.shade400),
+          leadingDatesTextStyle: TextStyle(color: Colors.grey.shade400),
+        ),
+      ),
+      monthCellBuilder: (context, details) => buildStaffCalendarMonthCell(
+        details: details,
+        doctorAppointments: _doctorAppointments,
+      ),
+      appointmentTextStyle: const TextStyle(
+        color: OrthoqColors.navy,
+        fontSize: 10,
+        fontWeight: FontWeight.w600,
+      ),
+      appointmentBuilder: (context, details) => staffCalendarAppointmentBuilder(
+        context,
+        details,
+        _mapping.metaByDocId,
+      ),
     );
   }
 
@@ -194,76 +306,7 @@ class _DoctorCalendarViewState extends State<DoctorCalendarView> {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(8),
-                child: StreamBuilder<QuerySnapshot<Object?>>(
-                  stream: FirebaseFirestore.instance
-                      .collection('appointments')
-                      .where('doctorId', isEqualTo: widget.doctorId)
-                      .snapshots(),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasError) {
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Text(
-                            'Could not load appointments.\n${snapshot.error}',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(color: Colors.red),
-                          ),
-                        ),
-                      );
-                    }
-                    final docs = snapshot.data?.docs ?? const [];
-                    final mapped =
-                        mapFirestoreDocsToCalendarAppointments(docs);
-                    final dataSource = StaffAppointmentCalendarDataSource(
-                      mapped.appointments,
-                    );
-
-                    return SfCalendar(
-                      controller: _controller,
-                      view: _view,
-                      dataSource: dataSource,
-                      specialRegions:
-                          StaffCalendarSlotSettings.preClinicBufferRegions,
-                      showCurrentTimeIndicator: true,
-                      todayHighlightColor: _currentTimeIndicatorColor,
-                      backgroundColor: Colors.white,
-                      cellBorderColor: OrthoqColors.lightSlate,
-                      headerStyle: StaffCalendarSlotSettings.navyHeader,
-                      viewHeaderStyle: ViewHeaderStyle(
-                        backgroundColor: Colors.grey.shade50,
-                        dayTextStyle: TextStyle(
-                          color: Colors.grey.shade700,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 12,
-                        ),
-                        dateTextStyle: const TextStyle(
-                          color: _navy,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                        ),
-                      ),
-                      timeSlotViewSettings:
-                          StaffCalendarSlotSettings.fullCalendar,
-                      monthViewSettings: const MonthViewSettings(
-                        appointmentDisplayMode:
-                            MonthAppointmentDisplayMode.appointment,
-                        showAgenda: true,
-                      ),
-                      appointmentTextStyle: const TextStyle(
-                        color: OrthoqColors.navy,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      appointmentBuilder: (context, details) =>
-                          staffCalendarAppointmentBuilder(
-                        context,
-                        details,
-                        mapped.metaByDocId,
-                      ),
-                    );
-                  },
-                ),
+                child: _buildCalendarBody(),
               ),
             ),
           ],
