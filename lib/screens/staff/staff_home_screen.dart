@@ -5,10 +5,10 @@ import '../../services/doctor_delay_notification_service.dart';
 import '../../theme/orthoq_colors.dart';
 import '../../theme/orthoq_widgets.dart';
 import 'delay_notifications_page.dart';
-import 'doctor_management_page.dart';
 import 'doctor_requests_page.dart';
 import 'patient_verification_page.dart';
 import 'staff_dashboard_page.dart';
+import 'staff_patient_page.dart';
 
 /// Staff portal shell — modern bottom navigation and tab content.
 class StaffHomeScreen extends StatefulWidget {
@@ -98,7 +98,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
           PatientVerificationPage(onRejectionComplete: _onRejectionComplete),
           const DoctorRequestsPage(),
           const DelayNotificationsPage(),
-          DoctorManagementPage(userProfile: widget.userProfile),
+          StaffPatientPage(userProfile: widget.userProfile),
         ],
       ),
       bottomNavigationBar: StreamBuilder(
@@ -134,9 +134,9 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                 label: 'Alerts',
               ),
               NavigationDestination(
-                icon: _navIcon(Icons.manage_accounts_outlined, Icons.manage_accounts_rounded, false),
-                selectedIcon: _navIcon(Icons.manage_accounts_outlined, Icons.manage_accounts_rounded, true),
-                label: 'Profile',
+                icon: _navIcon(Icons.people_outline, Icons.people_rounded, false),
+                selectedIcon: _navIcon(Icons.people_outline, Icons.people_rounded, true),
+                label: 'Patients',
               ),
             ],
           );

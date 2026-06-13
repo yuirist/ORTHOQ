@@ -61,6 +61,10 @@ class _ManageAppointmentsScreenState extends State<ManageAppointmentsScreen> {
           newDateLabel,
           newTimeStr,
           appointment.doctorName,
+          appointment.rescheduleReason?.trim().isNotEmpty == true
+              ? appointment.rescheduleReason!.trim()
+              : 'Your reschedule request has been approved.',
+          patientId: appointment.patientId,
         );
       }
 
@@ -168,6 +172,10 @@ class _ManageAppointmentsScreenState extends State<ManageAppointmentsScreen> {
           newDateLabel,
           newTimeStr,
           appointment.doctorName,
+          appointment.doctorChangeReason?.trim().isNotEmpty == true
+              ? appointment.doctorChangeReason!.trim()
+              : 'Your doctor has updated your appointment schedule.',
+          patientId: appointment.patientId,
         );
       }
 

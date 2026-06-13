@@ -6,6 +6,7 @@ import 'package:syncfusion_flutter_calendar/calendar.dart';
 import '../../models/doctor_model.dart';
 import '../../services/doctor_service.dart';
 import '../../widgets/doctor_avatar.dart';
+import 'staff_manual_appointment_sheet.dart';
 
 /// Default follow-up tile background when visit type is unknown.
 const Color kStaffCalendarDefaultTileBackground = Color(0xFFE3F2FD);
@@ -13,6 +14,7 @@ const Color kStaffCalendarDefaultTileBackground = Color(0xFFE3F2FD);
 /// Display fields for one appointment block on the staff/doctor schedule calendar.
 class StaffCalendarTileMeta {
   const StaffCalendarTileMeta({
+    required this.appointmentDocId,
     required this.patientName,
     required this.time,
     required this.patientTypeLabel,
@@ -20,8 +22,11 @@ class StaffCalendarTileMeta {
     this.status = 'Pending',
     this.paymentLabel = 'Self Pay',
     this.appointmentDate,
+    this.patientEmail,
+    this.patientId,
   });
 
+  final String appointmentDocId;
   final String patientName;
   final String time;
   final String patientTypeLabel;
@@ -29,6 +34,8 @@ class StaffCalendarTileMeta {
   final String status;
   final String paymentLabel;
   final DateTime? appointmentDate;
+  final String? patientEmail;
+  final String? patientId;
 }
 
 /// Resolves new vs follow-up styling from label text only (never reads a bool field).
@@ -262,6 +269,7 @@ void showStaffCalendarAppointmentDetailSheet({
   required StaffCalendarTileMeta meta,
   required String doctorId,
   required String doctorName,
+  VoidCallback? onAppointmentChanged,
 }) {
   showModalBottomSheet<void>(
     context: context,
@@ -271,6 +279,7 @@ void showStaffCalendarAppointmentDetailSheet({
       meta: meta,
       doctorId: doctorId,
       doctorName: doctorName,
+      onAppointmentChanged: onAppointmentChanged,
     ),
   );
 }
@@ -281,11 +290,13 @@ class StaffCalendarAppointmentDetailSheet extends StatelessWidget {
     required this.meta,
     required this.doctorId,
     required this.doctorName,
+    this.onAppointmentChanged,
   });
 
   final StaffCalendarTileMeta meta;
   final String doctorId;
   final String doctorName;
+  final VoidCallback? onAppointmentChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -458,6 +469,39 @@ class StaffCalendarAppointmentDetailSheet extends StatelessWidget {
                         ],
                       ],
                     ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    final saved = await showStaffManualAppointmentSheet(
+                      context: context,
+                      doctorId: doctorId,
+                      doctorName: doctorName,
+                      initialDate: meta.appointmentDate ?? DateTime.now(),
+                      initialPatientName: meta.patientName,
+                      initialIcNumber:
+                          meta.icNumber == '—' ? '' : meta.icNumber,
+                      initialEmail: meta.patientEmail,
+                      initialPatientId: meta.patientId,
+                      appointmentId: meta.appointmentDocId,
+                      originalAppointmentDate: meta.appointmentDate,
+                      originalAppointmentTime:
+                          meta.time == 'Awaiting staff confirmation'
+                              ? null
+                              : meta.time,
+                    );
+                    if (saved) {
+                      onAppointmentChanged?.call();
+                    }
+                  },
+                  icon: const Icon(Icons.event_repeat),
+                  label: const Text('Reschedule appointment'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: OrthoqColors.slateNavy,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                 ),
               ],

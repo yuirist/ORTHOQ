@@ -129,6 +129,7 @@ StaffCalendarMappingResult mapFirestoreDocsToCalendarAppointments(
     final day = parseAppointmentDateOnly(data['appointmentDate']);
 
     metaByDocId[doc.id] = StaffCalendarTileMeta(
+      appointmentDocId: doc.id,
       patientName: patientName,
       time: displayTime,
       patientTypeLabel: patientTypeLabel,
@@ -136,6 +137,8 @@ StaffCalendarMappingResult mapFirestoreDocsToCalendarAppointments(
       status: status?.isNotEmpty == true ? status! : 'Pending',
       paymentLabel: staffCalendarPaymentLabel(data),
       appointmentDate: day,
+      patientEmail: data['email']?.toString().trim(),
+      patientId: data['patientId']?.toString().trim(),
     );
 
     if (day == null) continue;

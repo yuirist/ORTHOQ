@@ -133,7 +133,11 @@ class _ReferralUploadPageState extends State<ReferralUploadPage> {
             fallbackEmail: widget.email,
           );
       if (recipient != null && recipient.isNotEmpty) {
-        await EmailService().sendBookingPendingEmail(recipient, widget.patientName);
+        await EmailService().sendBookingPendingEmail(
+          recipient,
+          widget.patientName,
+          patientId: user.uid,
+        );
       }
 
       if (!mounted) return;

@@ -68,8 +68,9 @@ $innerBodyHtml
 
   Future<bool> sendBookingPendingEmail(
     String patientEmail,
-    String patientName,
-  ) async {
+    String patientName, {
+    String? patientId,
+  }) async {
     const subject = 'Booking Received - Pending Review';
     final safeName = _escapeHtml(patientName);
     final inner =
@@ -102,6 +103,9 @@ $innerBodyHtml
       html: html,
       plainText: plain,
       contextLabel: 'sendBookingPendingEmail',
+      patientId: patientId,
+      historyTitle: 'Booking Received - Pending Review',
+      historyDescription: 'sendBookingPendingEmail',
     );
   }
 
@@ -179,8 +183,9 @@ $innerBodyHtml
     String date,
     String time,
     String doctorName,
-    String specialization,
-  ) async {
+    String specialization, {
+    String? patientId,
+  }) async {
     const subject = 'Appointment Confirmed - OrthoQ';
     final safeDoctor = _escapeHtml(doctorName);
     final safeSpec = _escapeHtml(specialization);
@@ -224,6 +229,9 @@ $innerBodyHtml
       html: html,
       plainText: plain,
       contextLabel: 'sendApprovalEmail',
+      patientId: patientId,
+      historyTitle: 'Appointment Confirmed - OrthoQ',
+      historyDescription: 'sendApprovalEmail',
     );
   }
 
@@ -280,12 +288,18 @@ $innerBodyHtml
     String newDate,
     String newTime,
     String doctorName,
-  ) async {
+    String reason, {
+    String? patientId,
+  }) async {
     const subject = 'IMPORTANT: Your Appointment Has Been Rescheduled - OrthoQ';
     final safeName = _escapeHtml(patientName);
+    final safeReason = _escapeHtml(reason.trim().isEmpty
+        ? 'Please attend your updated appointment slot.'
+        : reason.trim());
     final doctorLabel = doctorName.trim().toLowerCase().startsWith('dr')
         ? doctorName.trim()
         : 'Dr. $doctorName';
+    final safeDoctor = _escapeHtml(doctorLabel);
 
     final table = _rescheduleComparisonTableHtml(
       statusLabel: 'RESCHEDULED',
@@ -303,15 +317,21 @@ $innerBodyHtml
     <h2 style="margin:0 0 18px 0;font-size:18px;color:#1B3C68;font-weight:bold;">
       Appointment Reschedule Notice
     </h2>
-    <p style="margin:0 0 18px 0;font-size:15px;line-height:1.55;color:#4A5568;">
-      Your orthopaedic appointment details have been updated. Please review the summary below.
+    <p style="font-size:14px;color:#333333;line-height:1.55;margin:0 0 18px 0;">
+      Due to unforeseen circumstances, <b>$safeDoctor</b> has to reschedule your appointment.<br><br>
+      <strong>Message from the doctor:</strong><br>
+      <span style="font-style:italic;color:#555555;">"$safeReason"</span>
     </p>
     $table
-    <p style="margin:22px 0 0 0;font-size:14px;line-height:1.55;color:#4A5568;">
-      If this new time does not work for you, please contact the clinic assistant at Hospital Kajang immediately.
+    <p style="font-size:14px;color:#333333;line-height:1.55;margin:20px 0 0 0;">
+      If you want to choose a different date and time, book in orthoq app.<br>
+      Thank you.
     </p>''';
 
     final html = _htmlDocument(inner);
+    final plainReason = reason.trim().isEmpty
+        ? 'Please attend your updated appointment slot.'
+        : reason.trim();
     final plain =
         '''
 IMPORTANT: Your appointment has been rescheduled.
@@ -319,6 +339,11 @@ IMPORTANT: Your appointment has been rescheduled.
 Hi $patientName,
 
 Appointment Reschedule Notice
+
+Due to unforeseen circumstances, $doctorLabel has to reschedule your appointment.
+
+Message from the doctor: "$plainReason"
+
 Status: RESCHEDULED
 Doctor: $doctorLabel
 Original Date: $oldDate
@@ -326,7 +351,8 @@ Original Time: $oldTime
 New Appointment Date: $newDate
 Time: $newTime
 
-If this new time does not work for you, please contact the clinic assistant at Hospital Kajang immediately.
+If you want to choose a different date and time, book in orthoq app.
+Thank you.
 ''';
 
     return _sendOrLog(
@@ -335,6 +361,10 @@ If this new time does not work for you, please contact the clinic assistant at H
       html: html,
       plainText: plain,
       contextLabel: 'sendRescheduleEmail',
+      patientId: patientId,
+      historyTitle: 'Appointment Rescheduled - OrthoQ',
+      historyDescription:
+          'Reschedule notice email sent to patient due to doctor schedule changes.',
     );
   }
 
@@ -409,8 +439,9 @@ If this new time does not work for you, please contact the clinic assistant at H
     String oldTime,
     String newDate,
     String newTime,
-    String doctorName,
-  ) async {
+    String doctorName, {
+    String? patientId,
+  }) async {
     final safeName = _escapeHtml(name);
     final safeOldDate = _escapeHtml(oldDate);
     final safeOldTime = _escapeHtml(oldTime);
@@ -465,6 +496,10 @@ If this new time does not work for you, please contact the clinic assistant at H
       html: html,
       plainText: plain,
       contextLabel: 'sendRescheduleConfirmationEmail',
+      patientId: patientId,
+      historyTitle: 'Appointment Rescheduled - OrthoQ',
+      historyDescription:
+          'Reschedule notice email sent to patient due to doctor schedule changes.',
     );
   }
 
@@ -671,12 +706,40 @@ If this new time does not work for you, please contact the clinic assistant at H
     );
   }
 
+  Future<void> _logEmailToPatientHistory({
+    required String patientId,
+    required String title,
+    required String description,
+    required String status,
+  }) async {
+    final trimmedId = patientId.trim();
+    if (trimmedId.isEmpty) return;
+
+    try {
+      await _firestore
+          .collection('patients')
+          .doc(trimmedId)
+          .collection('history')
+          .add({
+        'title': title,
+        'description': description,
+        'status': status,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      debugPrint('EmailService: failed to log patient history — $e');
+    }
+  }
+
   Future<bool> _sendOrLog({
     required String to,
     required String subject,
     required String html,
     required String plainText,
     required String contextLabel,
+    String? patientId,
+    String? historyTitle,
+    String? historyDescription,
   }) async {
     final trimmedTo = to.trim();
     if (trimmedTo.isEmpty) {
@@ -695,7 +758,16 @@ If this new time does not work for you, please contact the clinic assistant at H
         plainText: plainText,
         contextLabel: contextLabel,
       );
-      if (sent) return true;
+      if (sent) {
+        await _maybeLogPatientHistory(
+          patientId: patientId,
+          historyTitle: historyTitle,
+          historyDescription: historyDescription,
+          contextLabel: contextLabel,
+          status: 'sent',
+        );
+        return true;
+      }
     }
 
     // Web (and mobile fallback): queue for the sendOutboundMail Cloud Function.
@@ -712,6 +784,13 @@ If this new time does not work for you, please contact the clinic assistant at H
       debugPrint(
         'EmailService($contextLabel): queued for delivery → $trimmedTo',
       );
+      await _maybeLogPatientHistory(
+        patientId: patientId,
+        historyTitle: historyTitle,
+        historyDescription: historyDescription,
+        contextLabel: contextLabel,
+        status: 'pending',
+      );
       return true;
     } catch (e, stack) {
       debugPrint('EmailService($contextLabel): queue failed — $e');
@@ -724,6 +803,27 @@ If this new time does not work for you, please contact the clinic assistant at H
       }
       return false;
     }
+  }
+
+  Future<void> _maybeLogPatientHistory({
+    required String? patientId,
+    required String? historyTitle,
+    required String? historyDescription,
+    required String contextLabel,
+    required String status,
+  }) async {
+    final id = patientId?.trim() ?? '';
+    final title = historyTitle?.trim() ?? '';
+    if (id.isEmpty || title.isEmpty) return;
+
+    await _logEmailToPatientHistory(
+      patientId: id,
+      title: title,
+      description: historyDescription?.trim().isNotEmpty == true
+          ? historyDescription!.trim()
+          : contextLabel,
+      status: status,
+    );
   }
 
   Future<bool> _sendDirect({

@@ -167,6 +167,7 @@ class _StaffSchedulingPageState extends State<StaffSchedulingPage> {
           timeString,
           widget.doctorName,
           specialization,
+          patientId: widget.patientId,
         );
       }
 

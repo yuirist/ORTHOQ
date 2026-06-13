@@ -502,22 +502,9 @@ class _StaffIcAppointmentCard extends StatelessWidget {
 
   final AppointmentModel appointment;
 
-  bool get _isNewPatientVisit {
-    final patientType = appointment.patientType.toLowerCase();
-    final appointmentType = appointment.appointmentType.toLowerCase();
-    return patientType.contains('new') || appointmentType.contains('new');
-  }
+  bool get _isNewPatientVisit => appointment.isNewPatientVisit;
 
-  String get _visitTypeLabel {
-    if (_isNewPatientVisit) return 'New Patient';
-    final patientType = appointment.patientType.toLowerCase();
-    final appointmentType = appointment.appointmentType.toLowerCase();
-    if (patientType.contains('follow') || appointmentType.contains('follow')) {
-      return 'Follow Up';
-    }
-    final raw = appointment.patientType.trim();
-    return raw.isEmpty ? 'Follow Up' : raw;
-  }
+  String get _visitTypeLabel => appointment.visitTypeDisplayLabel;
 
   String get _paymentBadgeLabel {
     final raw = appointment.paymentType?.trim() ?? '';

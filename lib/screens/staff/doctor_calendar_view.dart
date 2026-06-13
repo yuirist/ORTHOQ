@@ -97,13 +97,16 @@ class _DoctorCalendarViewState extends State<DoctorCalendarView> {
     });
   }
 
-  void _openManualAppointmentSheet() {
-    showStaffManualAppointmentSheet(
+  Future<void> _openManualAppointmentSheet() async {
+    final saved = await showStaffManualAppointmentSheet(
       context: context,
       doctorId: widget.doctorId,
       doctorName: widget.doctorName,
       initialDate: _controller.displayDate,
     );
+    if (saved && mounted) {
+      setState(() {});
+    }
   }
 
   void _onCalendarTap(CalendarTapDetails details) {
@@ -123,6 +126,9 @@ class _DoctorCalendarViewState extends State<DoctorCalendarView> {
       meta: meta,
       doctorId: widget.doctorId,
       doctorName: widget.doctorName,
+      onAppointmentChanged: () {
+        if (mounted) setState(() {});
+      },
     );
   }
 

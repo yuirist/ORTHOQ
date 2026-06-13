@@ -146,8 +146,8 @@ class AppointmentModel {
       patientName: map['patientName']?.toString() ?? '',
       doctorId: map['doctorId']?.toString() ?? '',
       doctorName: map['doctorName']?.toString() ?? '',
-      appointmentType: map['appointmentType']?.toString() ?? 'new_patient',
-      patientType: map['patientType']?.toString() ?? 'New',
+      appointmentType: _appointmentTypeFromMap(map),
+      patientType: _patientTypeFromMap(map),
       appointmentDate: parseDateTime(map['appointmentDate']),
       appointmentTime: map['appointmentTime']?.toString() ?? '',
       durationMinutes: parseDurationMinutes(map['durationMinutes']),
@@ -173,6 +173,27 @@ class AppointmentModel {
       doctorChangeReason: map['doctorChangeReason']?.toString(),
       scheduleChangeApproved: map['scheduleChangeApproved'] ?? false,
     );
+  }
+
+  /// True when Firestore marks this as a new-patient visit.
+  bool get isNewPatientVisit {
+    final patientTypeLower = patientType.toLowerCase();
+    final appointmentTypeLower = appointmentType.toLowerCase();
+    return patientTypeLower.contains('new') ||
+        appointmentTypeLower.contains('new');
+  }
+
+  /// Display label for visit-type badges (New Patient vs Follow Up).
+  String get visitTypeDisplayLabel {
+    if (isNewPatientVisit) return 'New Patient';
+    final patientTypeLower = patientType.toLowerCase();
+    final appointmentTypeLower = appointmentType.toLowerCase();
+    if (patientTypeLower.contains('follow') ||
+        appointmentTypeLower.contains('follow')) {
+      return 'Follow Up';
+    }
+    final raw = patientType.trim();
+    return raw.isEmpty ? 'Follow Up' : raw;
   }
 
   AppointmentModel copyWith({
@@ -233,6 +254,36 @@ class AppointmentModel {
       scheduleChangeApproved: scheduleChangeApproved ?? this.scheduleChangeApproved,
     );
   }
+}
+
+String _patientTypeFromMap(Map<String, dynamic> map) {
+  final patientType = map['patientType']?.toString().trim();
+  if (patientType != null && patientType.isNotEmpty) return patientType;
+
+  final visitType = map['visitType']?.toString().trim();
+  if (visitType != null && visitType.isNotEmpty) return visitType;
+
+  final appointmentType =
+      (map['appointmentType'] ?? '').toString().toLowerCase();
+  if (appointmentType.contains('follow')) return 'Follow-up';
+  if (appointmentType.contains('new')) return 'New';
+  return 'New';
+}
+
+String _appointmentTypeFromMap(Map<String, dynamic> map) {
+  final appointmentType = map['appointmentType']?.toString().trim();
+  if (appointmentType != null && appointmentType.isNotEmpty) {
+    return appointmentType;
+  }
+
+  final visitType = (map['visitType'] ?? '').toString().toLowerCase();
+  if (visitType.contains('new')) return 'new_patient';
+  if (visitType.contains('follow')) return 'follow_up';
+
+  final patientType = (map['patientType'] ?? '').toString().toLowerCase();
+  if (patientType.contains('follow')) return 'follow_up';
+  if (patientType.contains('new')) return 'new_patient';
+  return 'new_patient';
 }
 
 

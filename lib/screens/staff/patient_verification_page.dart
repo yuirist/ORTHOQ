@@ -1034,6 +1034,7 @@ class _PatientVerificationPageState extends State<PatientVerificationPage> {
             newDateLabel,
             newTimeLabel,
             resolvedDoctorName,
+            patientId: appointmentData['patientId']?.toString(),
           );
         } else {
           final declinedDateLabel = appointmentCurrentDate != null
