@@ -11,6 +11,7 @@ import '../../services/appointment_service.dart';
 import '../../services/doctor_service.dart';
 import '../../utils/staff_scope.dart';
 import '../../utils/validation_utils.dart';
+import '../../widgets/doctor_avatar.dart';
 import 'doctor_schedule_preview_card.dart';
 
 class StaffDashboardPage extends StatefulWidget {
@@ -501,6 +502,69 @@ class _StaffIcAppointmentCard extends StatelessWidget {
 
   final AppointmentModel appointment;
 
+  bool get _isNewPatientVisit {
+    final patientType = appointment.patientType.toLowerCase();
+    final appointmentType = appointment.appointmentType.toLowerCase();
+    return patientType.contains('new') || appointmentType.contains('new');
+  }
+
+  String get _visitTypeLabel {
+    if (_isNewPatientVisit) return 'New Patient';
+    final patientType = appointment.patientType.toLowerCase();
+    final appointmentType = appointment.appointmentType.toLowerCase();
+    if (patientType.contains('follow') || appointmentType.contains('follow')) {
+      return 'Follow Up';
+    }
+    final raw = appointment.patientType.trim();
+    return raw.isEmpty ? 'Follow Up' : raw;
+  }
+
+  String get _paymentBadgeLabel {
+    final raw = appointment.paymentType?.trim() ?? '';
+    if (raw.isEmpty) return 'Self Pay';
+    final lower = raw.toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ');
+    if (lower.contains('insurance')) return 'Insurance';
+    return 'Self Pay';
+  }
+
+  Widget _paymentBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        _paymentBadgeLabel,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: Colors.grey.shade800,
+        ),
+      ),
+    );
+  }
+
+  Widget _visitTypeBadge() {
+    final isNewPatient = _isNewPatientVisit;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: isNewPatient ? const Color(0xFFF3E5F5) : const Color(0xFFE3F2FD),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        _visitTypeLabel,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: isNewPatient ? Colors.purple.shade900 : Colors.blue.shade900,
+        ),
+      ),
+    );
+  }
+
   Color _statusColor(BuildContext context, String status) {
     switch (status.toLowerCase()) {
       case 'booked':
@@ -547,30 +611,58 @@ class _StaffIcAppointmentCard extends StatelessWidget {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Dr. ${appointment.doctorName}',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      FutureBuilder(
-                        future: DoctorService().getDoctorById(appointment.doctorId),
+                      const SizedBox(height: 8),
+                      FutureBuilder<DoctorModel?>(
+                        future: DoctorService()
+                            .getDoctorById(appointment.doctorId),
                         builder: (context, snapshot) {
+                          final doctor = snapshot.data;
                           final specialization =
-                              snapshot.data?.specialization.trim();
-                          if (specialization == null || specialization.isEmpty) {
-                            return const SizedBox.shrink();
-                          }
-                          return Text(
-                            specialization,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey.shade600,
-                              height: 1.3,
-                            ),
+                              doctor?.specialization.trim();
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              DoctorAvatar(
+                                imageUrl: doctor?.imageUrl,
+                                radius: 24,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Dr. ${appointment.doctorName}',
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    if (specialization != null &&
+                                        specialization.isNotEmpty) ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        specialization,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.grey.shade600,
+                                          height: 1.3,
+                                        ),
+                                      ),
+                                    ],
+                                    const SizedBox(height: 8),
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 6,
+                                      children: [
+                                        _paymentBadge(),
+                                        _visitTypeBadge(),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           );
                         },
                       ),

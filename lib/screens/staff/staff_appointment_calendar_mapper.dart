@@ -7,9 +7,38 @@ import 'staff_calendar_appointment_tile.dart';
 /// Default session length on staff calendars (matches clinic slot grid).
 const int kStaffAppointmentSlotMinutes = 15;
 
+/// Whether the appointment is a new-patient visit (vs follow-up).
+/// Null-safe: handles missing Firestore fields, null booleans, and string visit types.
+bool staffCalendarIsNewPatient(Map<String, dynamic> data) {
+  final rawBool = data['isNewPatient'];
+  if (rawBool is bool) return rawBool;
+
+  final visitType = (data['visitType'] ?? '').toString().toLowerCase().trim();
+  if (visitType.contains('new')) return true;
+  if (visitType.contains('follow')) return false;
+
+  final patientType = (data['patientType'] ?? '').toString().toLowerCase().trim();
+  final appointmentType =
+      (data['appointmentType'] ?? '').toString().toLowerCase().trim();
+  if (patientType.contains('new') || appointmentType.contains('new')) {
+    return true;
+  }
+  if (patientType.contains('follow') || appointmentType.contains('follow')) {
+    return false;
+  }
+  return false;
+}
+
+/// Tile fill for Syncfusion month/agenda chips (matches custom tile palette).
+Color staffCalendarColorForPatientType(bool isNewPatient) {
+  return isNewPatient
+      ? const Color(0xFFF3E5F5)
+      : const Color(0xFFE3F2FD);
+}
+
 /// Tile fill for Syncfusion month/agenda chips (custom builder uses same palette).
-Color staffCalendarColorForStatus(String? status) {
-  return kStaffCalendarTileBackground;
+Color staffCalendarColorForStatus(String? status, {bool isNewPatient = false}) {
+  return staffCalendarColorForPatientType(isNewPatient);
 }
 
 DateTime? parseAppointmentDateOnly(dynamic value) {
@@ -37,18 +66,33 @@ DateTime? combineDayWithTimeSlot(DateTime day, String? timeSlot) {
   return DateTime(day.year, day.month, day.day, hour, minute);
 }
 
-/// Patient type label from Firestore `patientType` / `appointmentType`.
+/// Patient type label from Firestore visit / patient / appointment type fields.
 String staffCalendarPatientTypeLabel(Map<String, dynamic> data) {
-  final patientType = data['patientType']?.toString().toLowerCase() ?? '';
-  final appointmentType = data['appointmentType']?.toString().toLowerCase() ?? '';
+  final visitType = (data['visitType'] ?? '').toString().toLowerCase().trim();
+  if (visitType.contains('new')) return 'New Patient';
+  if (visitType.contains('follow')) return 'Follow-up';
+
+  final patientType = (data['patientType'] ?? '').toString().toLowerCase().trim();
+  final appointmentType =
+      (data['appointmentType'] ?? '').toString().toLowerCase().trim();
   if (patientType.contains('new') || appointmentType.contains('new')) {
     return 'New Patient';
   }
   if (patientType.contains('follow') || appointmentType.contains('follow')) {
     return 'Follow-up';
   }
-  final raw = data['patientType']?.toString().trim() ?? '';
+  final raw = (data['patientType'] ?? data['visitType'] ?? '').toString().trim();
   return raw.isEmpty ? '—' : raw;
+}
+
+/// Payment label from Firestore `paymentType` / `paymentMethod`.
+String staffCalendarPaymentLabel(Map<String, dynamic> data) {
+  final raw =
+      (data['paymentType'] ?? data['paymentMethod'] ?? '').toString().trim();
+  if (raw.isEmpty) return 'Self Pay';
+  final lower = raw.toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ');
+  if (lower.contains('insurance')) return 'Insurance';
+  return 'Self Pay';
 }
 
 class StaffCalendarMappingResult {
@@ -76,20 +120,24 @@ StaffCalendarMappingResult mapFirestoreDocsToCalendarAppointments(
     final timeStr = data['appointmentTime']?.toString().trim() ?? '';
     final displayTime =
         timeStr.isEmpty ? 'Awaiting staff confirmation' : timeStr;
+    final isNewPatient = staffCalendarIsNewPatient(data);
     final patientTypeLabel = staffCalendarPatientTypeLabel(data);
     final icRaw = data['icNumber']?.toString().trim() ?? '';
     final icNumber = icRaw.isEmpty ? '—' : icRaw;
-    final status = data['status']?.toString();
-    final color = staffCalendarColorForStatus(status);
+    final status = data['status']?.toString().trim();
+    final color = staffCalendarColorForStatus(status, isNewPatient: isNewPatient);
+    final day = parseAppointmentDateOnly(data['appointmentDate']);
 
     metaByDocId[doc.id] = StaffCalendarTileMeta(
       patientName: patientName,
       time: displayTime,
       patientTypeLabel: patientTypeLabel,
       icNumber: icNumber,
+      status: status?.isNotEmpty == true ? status! : 'Pending',
+      paymentLabel: staffCalendarPaymentLabel(data),
+      appointmentDate: day,
     );
 
-    final day = parseAppointmentDateOnly(data['appointmentDate']);
     if (day == null) continue;
 
     final dateOnly = DateTime(day.year, day.month, day.day);

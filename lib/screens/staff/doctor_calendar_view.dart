@@ -106,6 +106,26 @@ class _DoctorCalendarViewState extends State<DoctorCalendarView> {
     );
   }
 
+  void _onCalendarTap(CalendarTapDetails details) {
+    if (details.targetElement != CalendarElement.appointment) return;
+    final appointments = details.appointments;
+    if (appointments == null || appointments.isEmpty) return;
+
+    final appt = appointments.first;
+    final docId = appt.notes?.trim();
+    if (docId == null || docId.isEmpty) return;
+
+    final meta = _mapping.metaByDocId[docId];
+    if (meta == null) return;
+
+    showStaffCalendarAppointmentDetailSheet(
+      context: context,
+      meta: meta,
+      doctorId: widget.doctorId,
+      doctorName: widget.doctorName,
+    );
+  }
+
   Widget _buildCalendarBody() {
     if (_appointmentsError != null) {
       return Center(
@@ -130,6 +150,7 @@ class _DoctorCalendarViewState extends State<DoctorCalendarView> {
       controller: _controller,
       view: _view,
       dataSource: dataSource,
+      onTap: _onCalendarTap,
       specialRegions: StaffCalendarSlotSettings.preClinicBufferRegions,
       showCurrentTimeIndicator: true,
       todayHighlightColor: _currentTimeIndicatorColor,
