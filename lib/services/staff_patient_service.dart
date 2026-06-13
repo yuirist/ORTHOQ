@@ -15,6 +15,9 @@ class StaffDoctorPatient {
     this.latestAppointmentId,
     this.latestAppointmentDate,
     this.latestAppointmentTime,
+    this.status = 'confirmed',
+    this.paymentLabel = 'Self Pay',
+    this.patientTypeLabel = 'Follow Up',
   });
 
   final String key;
@@ -26,6 +29,9 @@ class StaffDoctorPatient {
   final String? latestAppointmentId;
   final DateTime? latestAppointmentDate;
   final String? latestAppointmentTime;
+  final String status;
+  final String paymentLabel;
+  final String patientTypeLabel;
 }
 
 class StaffPatientHistoryEntry {
@@ -60,6 +66,91 @@ class StaffPatientService {
         .asyncMap(_mapAppointmentsToPatients);
   }
 
+  /// Appointments for one doctor on a calendar day (one row per slot).
+  Stream<List<StaffDoctorPatient>> watchAppointmentsForDoctorOnDate(
+    String doctorId,
+    DateTime date,
+  ) {
+    if (doctorId.trim().isEmpty) {
+      return Stream.value(const []);
+    }
+
+    final start = DateTime(date.year, date.month, date.day);
+    final end = start.add(const Duration(days: 1));
+
+    return _firestore
+        .collection('appointments')
+        .where('doctorId', isEqualTo: doctorId.trim())
+        .where(
+          'appointmentDate',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(start),
+        )
+        .where('appointmentDate', isLessThan: Timestamp.fromDate(end))
+        .snapshots()
+        .asyncMap(_mapAppointmentsToScheduledRows);
+  }
+
+  /// Appointments for one doctor matching a normalized IC number.
+  Stream<List<StaffDoctorPatient>> watchAppointmentsForDoctorByIc(
+    String doctorId,
+    String icQuery,
+  ) {
+    final normalized = icQuery.trim().replaceAll(RegExp(r'[\s-]'), '');
+    if (doctorId.trim().isEmpty || normalized.isEmpty) {
+      return Stream.value(const []);
+    }
+
+    return _firestore
+        .collection('appointments')
+        .where('doctorId', isEqualTo: doctorId.trim())
+        .where('icNumber', isEqualTo: normalized)
+        .snapshots()
+        .asyncMap(_mapAppointmentsToScheduledRows);
+  }
+
+  Future<List<StaffDoctorPatient>> _mapAppointmentsToScheduledRows(
+    QuerySnapshot<Map<String, dynamic>> snapshot,
+  ) async {
+    final rows = <_PatientAccumulator>[];
+
+    for (final doc in snapshot.docs) {
+      final data = doc.data();
+      final patientId = data['patientId']?.toString().trim();
+      final ic = data['icNumber']?.toString().trim() ?? '';
+      final name = data['patientName']?.toString().trim();
+      final email = data['email']?.toString().trim();
+      final apptDate = _parseAppointmentDate(data['appointmentDate']);
+      final apptTime = data['appointmentTime']?.toString().trim() ?? '';
+      final fields = _appointmentDisplayFields(data);
+
+      rows.add(
+        _PatientAccumulator(
+          key: doc.id,
+          patientId: patientId?.isNotEmpty == true ? patientId : null,
+          fullName: name?.isNotEmpty == true ? name! : 'Patient',
+          icNumber: ic.isNotEmpty ? ic : '—',
+          email: email?.isNotEmpty == true ? email : null,
+          latestAppointmentId: doc.id,
+          latestAppointmentDate: apptDate,
+          latestAppointmentTime: apptTime.isNotEmpty ? apptTime : null,
+          status: fields.status,
+          paymentLabel: fields.paymentLabel,
+          patientTypeLabel: fields.patientTypeLabel,
+        ),
+      );
+    }
+
+    rows.sort((a, b) {
+      final byTime = (a.latestAppointmentTime ?? '').compareTo(
+        b.latestAppointmentTime ?? '',
+      );
+      if (byTime != 0) return byTime;
+      return a.fullName.toLowerCase().compareTo(b.fullName.toLowerCase());
+    });
+
+    return _enrichPatientRows(rows);
+  }
+
   Future<List<StaffDoctorPatient>> _mapAppointmentsToPatients(
     QuerySnapshot<Map<String, dynamic>> snapshot,
   ) async {
@@ -77,6 +168,7 @@ class StaffPatientService {
 
       final apptDate = _parseAppointmentDate(data['appointmentDate']);
       final apptTime = data['appointmentTime']?.toString().trim() ?? '';
+      final fields = _appointmentDisplayFields(data);
 
       final existing = byKey[key];
       if (existing == null) {
@@ -89,6 +181,9 @@ class StaffPatientService {
           latestAppointmentId: doc.id,
           latestAppointmentDate: apptDate,
           latestAppointmentTime: apptTime.isNotEmpty ? apptTime : null,
+          status: fields.status,
+          paymentLabel: fields.paymentLabel,
+          patientTypeLabel: fields.patientTypeLabel,
         );
         continue;
       }
@@ -100,11 +195,24 @@ class StaffPatientService {
           appointmentTime: apptTime.isNotEmpty ? apptTime : null,
           email: email?.isNotEmpty == true ? email : existing.email,
           fullName: name?.isNotEmpty == true ? name! : existing.fullName,
+          status: fields.status,
+          paymentLabel: fields.paymentLabel,
+          patientTypeLabel: fields.patientTypeLabel,
         );
       }
     }
 
-    final patientIds = byKey.values
+    final enriched = await _enrichPatientRows(byKey.values.toList());
+    enriched.sort(
+      (a, b) => a.fullName.toLowerCase().compareTo(b.fullName.toLowerCase()),
+    );
+    return enriched;
+  }
+
+  Future<List<StaffDoctorPatient>> _enrichPatientRows(
+    List<_PatientAccumulator> rows,
+  ) async {
+    final patientIds = rows
         .map((p) => p.patientId)
         .whereType<String>()
         .where((id) => id.isNotEmpty)
@@ -125,7 +233,7 @@ class StaffPatientService {
     }
 
     final enriched = <StaffDoctorPatient>[];
-    for (final patient in byKey.values) {
+    for (final patient in rows) {
       final profile = patient.patientId != null
           ? userProfiles[patient.patientId!]
           : null;
@@ -147,13 +255,13 @@ class StaffPatientService {
           latestAppointmentId: patient.latestAppointmentId,
           latestAppointmentDate: patient.latestAppointmentDate,
           latestAppointmentTime: patient.latestAppointmentTime,
+          status: patient.status,
+          paymentLabel: patient.paymentLabel,
+          patientTypeLabel: patient.patientTypeLabel,
         ),
       );
     }
 
-    enriched.sort(
-      (a, b) => a.fullName.toLowerCase().compareTo(b.fullName.toLowerCase()),
-    );
     return enriched;
   }
 
@@ -253,6 +361,9 @@ class _PatientAccumulator {
     this.latestAppointmentId,
     this.latestAppointmentDate,
     this.latestAppointmentTime,
+    this.status = 'confirmed',
+    this.paymentLabel = 'Self Pay',
+    this.patientTypeLabel = 'Follow Up',
   });
 
   final String key;
@@ -263,6 +374,9 @@ class _PatientAccumulator {
   final String? latestAppointmentId;
   final DateTime? latestAppointmentDate;
   final String? latestAppointmentTime;
+  final String status;
+  final String paymentLabel;
+  final String patientTypeLabel;
 
   _PatientAccumulator copyWithLatest({
     required String appointmentId,
@@ -270,6 +384,9 @@ class _PatientAccumulator {
     String? appointmentTime,
     String? email,
     String? fullName,
+    String? status,
+    String? paymentLabel,
+    String? patientTypeLabel,
   }) {
     return _PatientAccumulator(
       key: key,
@@ -280,6 +397,9 @@ class _PatientAccumulator {
       latestAppointmentId: appointmentId,
       latestAppointmentDate: appointmentDate,
       latestAppointmentTime: appointmentTime,
+      status: status ?? this.status,
+      paymentLabel: paymentLabel ?? this.paymentLabel,
+      patientTypeLabel: patientTypeLabel ?? this.patientTypeLabel,
     );
   }
 }
@@ -303,4 +423,47 @@ DateTime? _parseAppointmentDate(dynamic value) {
   if (value is DateTime) return value;
   if (value is String) return DateTime.tryParse(value);
   return null;
+}
+
+({String status, String paymentLabel, String patientTypeLabel})
+    _appointmentDisplayFields(Map<String, dynamic> data) {
+  final status = data['status']?.toString().trim();
+  final paymentRaw =
+      (data['paymentType'] ?? data['paymentMethod'] ?? '').toString().trim();
+  String paymentLabel = 'Self Pay';
+  if (paymentRaw.isNotEmpty) {
+    final lower =
+        paymentRaw.toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ');
+    paymentLabel = lower.contains('insurance') ? 'Insurance' : 'Self Pay';
+  }
+
+  final visitType = (data['visitType'] ?? '').toString().toLowerCase().trim();
+  final patientType = (data['patientType'] ?? '').toString().toLowerCase().trim();
+  final appointmentType =
+      (data['appointmentType'] ?? '').toString().toLowerCase().trim();
+
+  String patientTypeLabel = 'Follow Up';
+  if (visitType.contains('new') ||
+      patientType.contains('new') ||
+      appointmentType.contains('new')) {
+    patientTypeLabel = 'New Patient';
+  } else if (visitType.contains('follow') ||
+      patientType.contains('follow') ||
+      appointmentType.contains('follow')) {
+    patientTypeLabel = 'Follow Up';
+  } else {
+    final raw =
+        (data['patientType'] ?? data['visitType'] ?? '').toString().trim();
+    if (raw.isNotEmpty) {
+      patientTypeLabel = raw.toLowerCase().contains('new')
+          ? 'New Patient'
+          : (raw.toLowerCase().contains('follow') ? 'Follow Up' : raw);
+    }
+  }
+
+  return (
+    status: status?.isNotEmpty == true ? status! : 'confirmed',
+    paymentLabel: paymentLabel,
+    patientTypeLabel: patientTypeLabel,
+  );
 }

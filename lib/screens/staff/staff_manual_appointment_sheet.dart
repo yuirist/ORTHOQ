@@ -20,6 +20,7 @@ Future<bool> showStaffManualAppointmentSheet({
   DateTime? originalAppointmentDate,
   String? originalAppointmentTime,
 }) async {
+  final parentContext = context;
   final nameController = TextEditingController(text: initialPatientName ?? '');
   final icController = TextEditingController(text: initialIcNumber ?? '');
   final emailController = TextEditingController(text: initialEmail ?? '');
@@ -61,6 +62,8 @@ Future<bool> showStaffManualAppointmentSheet({
         return StatefulBuilder(
           builder: (context, setSheetState) {
             Future<void> save() async {
+              FocusScope.of(context).unfocus();
+
               // Capture all field values before any async work or navigation.
               final pName = nameController.text.trim();
               final pIc = icController.text.trim();
@@ -69,36 +72,46 @@ Future<bool> showStaffManualAppointmentSheet({
               final nTime = selectedTime?.trim();
               final nDate = selectedDate;
               final nDateLabel = DateFormat('EEEE, MMMM d, y').format(nDate);
+              final successMessage = isReschedule
+                  ? 'Appointment rescheduled for $pName.'
+                  : 'Appointment added for $pName.';
 
               if (pName.isEmpty) {
-                ScaffoldMessenger.of(sheetContext).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please enter the patient name.'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                if (sheetContext.mounted) {
+                  ScaffoldMessenger.of(sheetContext).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter the patient name.'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
                 return;
               }
               if (nTime == null || nTime.isEmpty) {
-                ScaffoldMessenger.of(sheetContext).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please select an appointment time.'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                if (sheetContext.mounted) {
+                  ScaffoldMessenger.of(sheetContext).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please select an appointment time.'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
                 return;
               }
 
               if (isReschedule && rescheduleReason.isEmpty) {
-                ScaffoldMessenger.of(sheetContext).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please enter a reason for the reschedule.'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                if (sheetContext.mounted) {
+                  ScaffoldMessenger.of(sheetContext).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter a reason for the reschedule.'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
                 return;
               }
 
+              if (!sheetContext.mounted) return;
               setSheetState(() => isSaving = true);
 
               try {
@@ -189,33 +202,27 @@ Future<bool> showStaffManualAppointmentSheet({
                 }
 
                 savedSuccessfully = true;
-                if (sheetContext.mounted) {
-                  ScaffoldMessenger.of(sheetContext).showSnackBar(
+
+                if (!sheetContext.mounted) return;
+                Navigator.pop(sheetContext);
+
+                if (parentContext.mounted) {
+                  ScaffoldMessenger.of(parentContext).showSnackBar(
                     SnackBar(
-                      content: Text(
-                        isReschedule
-                            ? 'Appointment rescheduled for $pName.'
-                            : 'Appointment added for $pName.',
-                      ),
+                      content: Text(successMessage),
                       backgroundColor: OrthoqColors.navy,
                     ),
                   );
                 }
-                if (context.mounted) {
-                  Navigator.pop(context);
-                }
               } catch (e) {
-                if (sheetContext.mounted) {
-                  ScaffoldMessenger.of(sheetContext).showSnackBar(
-                    SnackBar(
-                      content: Text('Could not save: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-                if (context.mounted) {
-                  setSheetState(() => isSaving = false);
-                }
+                if (!sheetContext.mounted) return;
+                ScaffoldMessenger.of(sheetContext).showSnackBar(
+                  SnackBar(
+                    content: Text('Could not save: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                setSheetState(() => isSaving = false);
               }
             }
 
