@@ -62,19 +62,24 @@ Future<bool> showStaffManualAppointmentSheet({
         return StatefulBuilder(
           builder: (context, setSheetState) {
             Future<void> save() async {
-              FocusScope.of(context).unfocus();
-
-              // Capture all field values before any async work or navigation.
+              // Capture all field values before unfocus, async work, or navigation.
               final pName = nameController.text.trim();
               final pIc = icController.text.trim();
               final pEmail = emailController.text.trim();
               final rescheduleReason = reasonController.text.trim();
-              final nTime = selectedTime?.trim();
-              final nDate = selectedDate;
-              final nDateLabel = DateFormat('EEEE, MMMM d, y').format(nDate);
+              final nTime = selectedTime?.trim() ?? '';
+              final dateOnly = DateTime(
+                selectedDate.year,
+                selectedDate.month,
+                selectedDate.day,
+              );
+              final nDateLabel =
+                  DateFormat('EEEE, MMMM d, y').format(dateOnly);
               final successMessage = isReschedule
                   ? 'Appointment rescheduled for $pName.'
                   : 'Appointment added for $pName.';
+              final cachedOldDateLabel = originalDateLabel;
+              final cachedOldTimeLabel = originalTimeLabel?.trim() ?? '';
 
               if (pName.isEmpty) {
                 if (sheetContext.mounted) {
@@ -87,7 +92,7 @@ Future<bool> showStaffManualAppointmentSheet({
                 }
                 return;
               }
-              if (nTime == null || nTime.isEmpty) {
+              if (nTime.isEmpty) {
                 if (sheetContext.mounted) {
                   ScaffoldMessenger.of(sheetContext).showSnackBar(
                     const SnackBar(
@@ -111,13 +116,15 @@ Future<bool> showStaffManualAppointmentSheet({
                 return;
               }
 
-              if (!sheetContext.mounted) return;
+              FocusManager.instance.primaryFocus?.unfocus();
+              await Future<void>.delayed(const Duration(milliseconds: 60));
+              if (!context.mounted || !sheetContext.mounted) return;
+
               setSheetState(() => isSaving = true);
 
               try {
-                final dateOnly = DateTime(nDate.year, nDate.month, nDate.day);
-                var oldDateLabel = originalDateLabel;
-                var oldTimeLabel = originalTimeLabel ?? '';
+                var oldDateLabel = cachedOldDateLabel;
+                var oldTimeLabel = cachedOldTimeLabel;
 
                 if (isReschedule) {
                   final docRef = FirebaseFirestore.instance
@@ -204,7 +211,7 @@ Future<bool> showStaffManualAppointmentSheet({
                 savedSuccessfully = true;
 
                 if (!sheetContext.mounted) return;
-                Navigator.pop(sheetContext);
+                Navigator.of(sheetContext).pop();
 
                 if (parentContext.mounted) {
                   ScaffoldMessenger.of(parentContext).showSnackBar(
@@ -214,15 +221,18 @@ Future<bool> showStaffManualAppointmentSheet({
                     ),
                   );
                 }
-              } catch (e) {
+              } catch (error) {
+                debugPrint('Error saving appointment safely: $error');
                 if (!sheetContext.mounted) return;
                 ScaffoldMessenger.of(sheetContext).showSnackBar(
                   SnackBar(
-                    content: Text('Could not save: $e'),
+                    content: Text('Could not save: $error'),
                     backgroundColor: Colors.red,
                   ),
                 );
-                setSheetState(() => isSaving = false);
+                if (context.mounted) {
+                  setSheetState(() => isSaving = false);
+                }
               }
             }
 
@@ -374,10 +384,12 @@ Future<bool> showStaffManualAppointmentSheet({
       },
     );
   } finally {
-    nameController.dispose();
-    icController.dispose();
-    emailController.dispose();
-    reasonController.dispose();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      nameController.dispose();
+      icController.dispose();
+      emailController.dispose();
+      reasonController.dispose();
+    });
   }
 
   return savedSuccessfully;

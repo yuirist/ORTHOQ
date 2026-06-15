@@ -263,11 +263,11 @@ class _StaffPatientPageState extends State<StaffPatientPage> {
     );
   }
 
-  void _openQuickBook(StaffDoctorPatient patient) {
+  Future<void> _openQuickBook(StaffDoctorPatient patient) async {
     final doctor = _selectedDoctor;
-    if (doctor == null) return;
+    if (doctor == null || !mounted) return;
 
-    showStaffManualAppointmentSheet(
+    await showStaffManualAppointmentSheet(
       context: context,
       doctorId: doctor.id,
       doctorName: doctor.name,
@@ -298,11 +298,17 @@ class _StaffPatientPageState extends State<StaffPatientPage> {
         doctorName: doctor.name,
         onReschedule: () {
           Navigator.pop(sheetContext);
-          _openQuickBook(patient);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            _openQuickBook(patient);
+          });
         },
         onHistory: () {
           Navigator.pop(sheetContext);
-          _showPatientHistoryDialog(patient);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            _showPatientHistoryDialog(patient);
+          });
         },
       ),
     );
