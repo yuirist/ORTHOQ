@@ -252,6 +252,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
   }
 
+  bool get _showsPasswordCriteria {
+    final role = widget.userType.toLowerCase();
+    return role == 'patient' ||
+        role == 'doctor' ||
+        role == 'staff' ||
+        role == 'admin';
+  }
+
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter a password';
+    }
+    if (_showsPasswordCriteria) {
+      if (!RegExp(r'^[A-Z]').hasMatch(value)) {
+        return 'First letter must be a capital letter';
+      }
+      if (!RegExp(r'[0-9]').hasMatch(value)) {
+        return 'Password must contain at least 1 number';
+      }
+      if (!RegExp(r'[!@#\$&*~_=-]').hasMatch(value)) {
+        return 'Password must contain at least 1 special character';
+      }
+    }
+    if (value.length < 6) {
+      return 'Password must be at least 6 characters';
+    }
+    return null;
+  }
+
   Widget _buildCriteriaRow(String text, bool isMet) {
     return Row(
       children: [
@@ -423,9 +452,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
-                  onChanged: widget.userType == 'patient'
-                      ? _updatePasswordCriteria
-                      : null,
+                  onChanged:
+                      _showsPasswordCriteria ? _updatePasswordCriteria : null,
                   decoration: OrthoqTheme.field(
                     labelText: 'Password',
                     prefixIcon: const Icon(Icons.lock),
@@ -440,28 +468,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       },
                     ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a password';
-                    }
-                    if (widget.userType == 'patient') {
-                      if (value.isEmpty || !RegExp(r'^[A-Z]').hasMatch(value)) {
-                        return 'First letter must be a capital letter';
-                      }
-                      if (!RegExp(r'[0-9]').hasMatch(value)) {
-                        return 'Password must contain at least 1 number';
-                      }
-                      if (!RegExp(r'[!@#\$&*~_=-]').hasMatch(value)) {
-                        return 'Password must contain at least 1 special character';
-                      }
-                    }
-                    if (value.length < 6) {
-                      return 'Password must be at least 6 characters';
-                    }
-                    return null;
-                  },
+                  validator: _validatePassword,
                 ),
-                if (widget.userType == 'patient') ...[
+                if (_showsPasswordCriteria) ...[
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12.0,
