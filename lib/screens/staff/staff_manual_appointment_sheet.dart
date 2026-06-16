@@ -277,29 +277,41 @@ Future<bool> showStaffManualAppointmentSheet({
                     const SizedBox(height: 16),
                     TextField(
                       controller: nameController,
-                      enabled: !isSaving,
-                      decoration: const InputDecoration(
+                      readOnly: isReschedule,
+                      enabled: isReschedule ? false : !isSaving,
+                      decoration: InputDecoration(
                         labelText: 'Patient name',
-                        border: OutlineInputBorder(),
+                        border: const OutlineInputBorder(),
+                        filled: isReschedule,
+                        fillColor:
+                            isReschedule ? Colors.grey.shade100 : null,
                       ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: icController,
-                      enabled: !isSaving,
-                      decoration: const InputDecoration(
+                      readOnly: isReschedule,
+                      enabled: isReschedule ? false : !isSaving,
+                      decoration: InputDecoration(
                         labelText: 'IC number',
-                        border: OutlineInputBorder(),
+                        border: const OutlineInputBorder(),
+                        filled: isReschedule,
+                        fillColor:
+                            isReschedule ? Colors.grey.shade100 : null,
                       ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: emailController,
-                      enabled: !isSaving,
+                      readOnly: isReschedule,
+                      enabled: isReschedule ? false : !isSaving,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
-                        labelText: 'Email (optional)',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: 'Email',
+                        border: const OutlineInputBorder(),
+                        filled: isReschedule,
+                        fillColor:
+                            isReschedule ? Colors.grey.shade100 : null,
                       ),
                     ),
                     const SizedBox(height: 12),

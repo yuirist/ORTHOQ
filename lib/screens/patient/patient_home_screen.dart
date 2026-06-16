@@ -131,19 +131,36 @@ class _HomeTab extends StatelessWidget {
                     ),
                   ),
                 ),
-                IconButton(
-                  tooltip: 'AI Assistant',
-                  onPressed: onOpenAiAssistant,
-                  icon: const Icon(Icons.smart_toy_outlined),
-                  color: OrthoqColors.navy,
-                  iconSize: 28,
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.white.withValues(alpha: 0.75),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(
-                        color: OrthoqColors.navy.withValues(alpha: 0.12),
-                      ),
+                GestureDetector(
+                  onTap: onOpenAiAssistant,
+                  child: Tooltip(
+                    message: 'AI Assistant',
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.smart_toy_outlined,
+                            color: Color(0xFF1E3A8A),
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'AI Assistant',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1E3A8A),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

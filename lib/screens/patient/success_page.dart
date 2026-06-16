@@ -3,7 +3,6 @@ import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:orthoq_app/theme/orthoq_theme.dart';
 import 'package:orthoq_app/theme/orthoq_typography.dart';
 import 'package:orthoq_app/theme/orthoq_widgets.dart';
-import 'package:intl/intl.dart';
 import 'patient_home_screen.dart';
 
 class SuccessPage extends StatelessWidget {
@@ -73,7 +72,7 @@ class SuccessPage extends StatelessWidget {
                       const Divider(),
                       _buildDetailRow(
                         'Date',
-                        DateFormat('EEEE, MMMM d, y').format(appointmentDate),
+                        'Awaiting Staff Confirmation',
                       ),
                       const Divider(),
                       _buildDetailRow(

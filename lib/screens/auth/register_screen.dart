@@ -39,6 +39,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
+  bool _hasCapital = false;
+  bool _hasNumber = false;
+  bool _hasSymbol = false;
+  bool _isLengthValid = false;
 
   @override
   void dispose() {
@@ -55,7 +59,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _handleRegister() async {
-    // Validate form
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -240,6 +243,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  void _updatePasswordCriteria(String value) {
+    setState(() {
+      _hasCapital = value.isNotEmpty && RegExp(r'^[A-Z]').hasMatch(value);
+      _hasNumber = RegExp(r'[0-9]').hasMatch(value);
+      _hasSymbol = RegExp(r'[!@#\$&*~_=-]').hasMatch(value);
+      _isLengthValid = value.length >= 6;
+    });
+  }
+
+  Widget _buildCriteriaRow(String text, bool isMet) {
+    return Row(
+      children: [
+        Icon(
+          isMet ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+          color: isMet ? Colors.green : Colors.grey.shade500,
+          size: 16,
+        ),
+        const SizedBox(width: 8),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 12,
+            color: isMet ? Colors.green.shade700 : Colors.grey.shade600,
+            fontWeight: isMet ? FontWeight.w600 : FontWeight.normal,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -390,6 +423,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
+                  onChanged: widget.userType == 'patient'
+                      ? _updatePasswordCriteria
+                      : null,
                   decoration: OrthoqTheme.field(
                     labelText: 'Password',
                     prefixIcon: const Icon(Icons.lock),
@@ -408,12 +444,55 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     if (value == null || value.isEmpty) {
                       return 'Please enter a password';
                     }
+                    if (widget.userType == 'patient') {
+                      if (value.isEmpty || !RegExp(r'^[A-Z]').hasMatch(value)) {
+                        return 'First letter must be a capital letter';
+                      }
+                      if (!RegExp(r'[0-9]').hasMatch(value)) {
+                        return 'Password must contain at least 1 number';
+                      }
+                      if (!RegExp(r'[!@#\$&*~_=-]').hasMatch(value)) {
+                        return 'Password must contain at least 1 special character';
+                      }
+                    }
                     if (value.length < 6) {
                       return 'Password must be at least 6 characters';
                     }
                     return null;
                   },
                 ),
+                if (widget.userType == 'patient') ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12.0,
+                      vertical: 8.0,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildCriteriaRow(
+                          'First letter must be a Capital letter',
+                          _hasCapital,
+                        ),
+                        const SizedBox(height: 4),
+                        _buildCriteriaRow(
+                          'Must contain at least 1 number',
+                          _hasNumber,
+                        ),
+                        const SizedBox(height: 4),
+                        _buildCriteriaRow(
+                          'Must contain at least 1 special character/symbol',
+                          _hasSymbol,
+                        ),
+                        const SizedBox(height: 4),
+                        _buildCriteriaRow(
+                          'Password must be at least 6 characters',
+                          _isLengthValid,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: OrthoqSpacing.md),
                 
                 // Confirm Password Field

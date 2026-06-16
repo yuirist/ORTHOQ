@@ -156,7 +156,7 @@ $innerBodyHtml
       </tr>
     </table>
     <p style="margin:20px 0 0 0;font-size:14px;line-height:1.5;color:#4A5568;">
-      Please arrive a few minutes early and bring any relevant documents or imaging reports.
+      Please arrive at least 30 min before your appointment time and bring any relevant documents
     </p>''';
 
     final html = _htmlDocument(inner);
@@ -216,7 +216,7 @@ $innerBodyHtml
       </tr>
     </table>
     <p style="margin:20px 0 0 0;font-size:14px;line-height:1.5;color:#4A5568;">
-      Please arrive a few minutes early and bring any relevant documents or imaging reports.
+      Please arrive at least 30 min before your appointment time and bring any relevant documents
     </p>''';
 
     final html = _htmlDocument(inner);

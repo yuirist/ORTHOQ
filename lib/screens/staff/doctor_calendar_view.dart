@@ -16,10 +16,14 @@ class DoctorCalendarView extends StatefulWidget {
     super.key,
     required this.doctorId,
     required this.doctorName,
+    this.initialCalendarView = CalendarView.week,
+    this.showManualBookingFab = true,
   });
 
   final String doctorId;
   final String doctorName;
+  final CalendarView initialCalendarView;
+  final bool showManualBookingFab;
 
   @override
   State<DoctorCalendarView> createState() => _DoctorCalendarViewState();
@@ -44,9 +48,10 @@ class _DoctorCalendarViewState extends State<DoctorCalendarView> {
   @override
   void initState() {
     super.initState();
+    _view = widget.initialCalendarView;
     _controller = CalendarController()
       ..displayDate = DateTime.now()
-      ..view = CalendarView.week;
+      ..view = widget.initialCalendarView;
     _listenDoctorAppointments();
   }
 
@@ -249,13 +254,15 @@ class _DoctorCalendarViewState extends State<DoctorCalendarView> {
           foregroundColor: Colors.white,
           elevation: 0,
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: _openManualAppointmentSheet,
-          backgroundColor: _navy,
-          foregroundColor: Colors.white,
-          tooltip: 'Add appointment',
-          child: const Icon(Icons.add),
-        ),
+        floatingActionButton: widget.showManualBookingFab
+            ? FloatingActionButton(
+                onPressed: _openManualAppointmentSheet,
+                backgroundColor: _navy,
+                foregroundColor: Colors.white,
+                tooltip: 'Add appointment',
+                child: const Icon(Icons.add),
+              )
+            : null,
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
