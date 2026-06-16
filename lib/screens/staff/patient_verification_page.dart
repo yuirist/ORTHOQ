@@ -8,6 +8,7 @@ import '../../utils/patient_email_resolver.dart';
 import '../../utils/referral_url_utils.dart';
 import '../../utils/staff_scope.dart';
 import 'staff_scheduling_page.dart';
+import 'staff_appointment_calendar_mapper.dart';
 
 class PatientVerificationPage extends StatefulWidget {
   const PatientVerificationPage({
@@ -305,7 +306,7 @@ class _PatientVerificationPageState extends State<PatientVerificationPage> {
   String _formatAppointmentDateLabel(Map<String, dynamic> data) {
     final date = _parseDate(data['appointmentDate']);
     if (date == null) return 'Not yet scheduled';
-    return DateFormat('EEEE, d MMMM y').format(date);
+    return DateFormat('EEE, MMM d, y').format(date);
   }
 
   String _formatAppointmentTimeLabel(Map<String, dynamic> data) {
@@ -392,17 +393,19 @@ class _PatientVerificationPageState extends State<PatientVerificationPage> {
               overflow: TextOverflow.ellipsis,
               style: _fieldValueStyle,
             ),
-            const SizedBox(height: 4),
-            Text(
-              timeText,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: isRequested ? OrthoqColors.navy : Colors.grey.shade700,
+            if (timeText.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                timeText,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: isRequested ? OrthoqColors.navy : Colors.grey.shade700,
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),
@@ -647,6 +650,7 @@ class _PatientVerificationPageState extends State<PatientVerificationPage> {
     required String doctorLabel,
     required String appointmentDateLabel,
     required String appointmentTimeLabel,
+    required String paymentMethodLabel,
     required bool hasScheduledSlot,
     required DateTime? createdAt,
     required String? referralUrl,
@@ -667,10 +671,23 @@ class _PatientVerificationPageState extends State<PatientVerificationPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Text(
+              patientName,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: OrthoqColors.navy,
+                height: 1.2,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                const Spacer(),
                 _buildStatusChip(
                   label: patientTypeLabel,
                   background: isNewPatient
@@ -680,78 +697,66 @@ class _PatientVerificationPageState extends State<PatientVerificationPage> {
                       ? OrthoqColors.navy
                       : const Color(0xFF166534),
                 ),
-                const SizedBox(width: 6),
-                _buildStatusChip(
-                  label: 'Pending',
-                  background: Colors.orange.shade100,
-                  foreground: Colors.orange.shade900,
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDCEEFF),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
+                      const Icon(
+                        Icons.badge_outlined,
+                        size: 14,
+                        color: OrthoqColors.navy,
+                      ),
+                      const SizedBox(width: 4),
                       Text(
-                        patientName,
-                        maxLines: 2,
+                        icNumber,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
                           color: OrthoqColors.navy,
-                          height: 1.2,
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildInfoField(
-                        icon: Icons.badge_outlined,
-                        label: 'IC Number',
-                        value: icNumber,
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 16),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _buildInfoField(
+              icon: Icons.email_outlined,
+              label: 'Email',
+              value: emailDisplay,
+            ),
+            const SizedBox(height: 16),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.local_hospital_outlined,
+                  size: 18,
+                  color: OrthoqColors.navy,
+                ),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildInfoField(
-                        icon: Icons.email_outlined,
-                        label: 'Email',
-                        value: emailDisplay,
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(
-                            Icons.local_hospital_outlined,
-                            size: 18,
-                            color: OrthoqColors.navy,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('DOCTOR', style: _fieldLabelStyle),
-                                const SizedBox(height: 4),
-                                Text(
-                                  doctorLabel,
-                                  style: _fieldValueStyle,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                      Text('ASSIGNED DOCTOR', style: _fieldLabelStyle),
+                      const SizedBox(height: 4),
+                      Text(
+                        doctorLabel,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: _fieldValueStyle,
                       ),
                     ],
                   ),
@@ -759,51 +764,31 @@ class _PatientVerificationPageState extends State<PatientVerificationPage> {
               ],
             ),
             const SizedBox(height: 14),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: OrthoqColors.scaffoldBg,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: OrthoqColors.lightSlate),
+            const Text('Appointment Details', style: _sectionHeaderStyle),
+            const SizedBox(height: 10),
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildScheduleComparisonBox(
+                    label: 'Requested Date',
+                    dateText: hasScheduledSlot
+                        ? appointmentDateLabel
+                        : 'Not yet scheduled',
+                    timeText: hasScheduledSlot
+                        ? appointmentTimeLabel
+                        : '—',
+                    isRequested: true,
+                  ),
+                  const SizedBox(width: 10),
+                  _buildScheduleComparisonBox(
+                    label: 'Payment Method',
+                    dateText: paymentMethodLabel,
+                    timeText: '',
+                    isRequested: false,
+                  ),
+                ],
               ),
-              child: hasScheduledSlot
-                  ? Row(
-                      children: [
-                        const Icon(
-                          Icons.event_outlined,
-                          size: 18,
-                          color: OrthoqColors.navy,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'REQUESTED',
-                                style: _fieldLabelStyle,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '$appointmentDateLabel · $appointmentTimeLabel',
-                                style: _fieldValueStyle,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    )
-                  : Align(
-                      alignment: Alignment.centerLeft,
-                      child: _buildStatusChip(
-                        label: 'Not yet scheduled',
-                        background: const Color(0xFFDCEEFF),
-                        foreground: OrthoqColors.navy,
-                      ),
-                    ),
             ),
             if (createdAt != null) ...[
               const SizedBox(height: 14),
@@ -826,45 +811,41 @@ class _PatientVerificationPageState extends State<PatientVerificationPage> {
                 ],
               ),
             ],
-            const SizedBox(height: 16),
-            const Divider(height: 1),
-            const SizedBox(height: 14),
+            const SizedBox(height: 24),
+            if (onViewReferral != null) ...[
+              OutlinedButton.icon(
+                onPressed: onViewReferral,
+                icon: const Icon(Icons.description_outlined, size: 18),
+                label: const Text('View Referral'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: OrthoqColors.navy,
+                  side: const BorderSide(color: OrthoqColors.navy),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             Row(
               children: [
-                if (onViewReferral != null) ...[
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: onViewReferral,
-                      icon: const Icon(Icons.description_outlined, size: 18),
-                      label: const Text('View Referral'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: OrthoqColors.navy,
-                        side: const BorderSide(color: OrthoqColors.navy),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                ],
                 Expanded(
-                  child: OutlinedButton(
+                  child: ElevatedButton(
                     onPressed: onReject,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red,
-                      side: const BorderSide(color: Colors.red),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: const Text('Reject'),
+                    child: const Text('Decline'),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: onApprove,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                     child: const Text('Approve'),
                   ),
@@ -1244,6 +1225,7 @@ class _PatientVerificationPageState extends State<PatientVerificationPage> {
             final appointmentTimeLabel = _formatAppointmentTimeLabel(data);
             final hasScheduledSlot = appointmentDateLabel != 'Not yet scheduled' ||
                 appointmentTimeLabel != 'Not yet scheduled';
+            final paymentMethodLabel = staffCalendarPaymentLabel(data);
 
             return KeyedSubtree(
               key: ValueKey<String>('verification_$appointmentId'),
@@ -1257,6 +1239,7 @@ class _PatientVerificationPageState extends State<PatientVerificationPage> {
               doctorLabel: doctorLabel,
               appointmentDateLabel: appointmentDateLabel,
               appointmentTimeLabel: appointmentTimeLabel,
+              paymentMethodLabel: paymentMethodLabel,
               hasScheduledSlot: hasScheduledSlot,
               createdAt: createdAt,
               referralUrl: referralUrl,
