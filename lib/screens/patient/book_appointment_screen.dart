@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -113,7 +114,8 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
 
     if (userData != null) {
       _fullNameController.text = userData.fullName;
-      _phoneNumberController.text = userData.phoneNumber;
+      _phoneNumberController.text =
+          ValidationUtils.phoneDigitsForPrefixDisplay(userData.phoneNumber);
       _emailController.text = userData.email;
       _icNumberController.text = userData.icNumber ?? '';
     }
@@ -130,7 +132,9 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
         }
         if (_phoneNumberController.text.trim().isEmpty) {
           _phoneNumberController.text =
-              profileData['phoneNumber']?.toString() ?? '';
+              ValidationUtils.phoneDigitsForPrefixDisplay(
+            profileData['phoneNumber']?.toString(),
+          );
         }
         if (_emailController.text.trim().isEmpty) {
           _emailController.text = profileData['email']?.toString() ?? '';
@@ -150,7 +154,10 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
           _fullNameController.text = p['fullName']?.toString() ?? '';
         }
         if (_phoneNumberController.text.trim().isEmpty) {
-          _phoneNumberController.text = p['phoneNumber']?.toString() ?? '';
+          _phoneNumberController.text =
+              ValidationUtils.phoneDigitsForPrefixDisplay(
+            p['phoneNumber']?.toString(),
+          );
         }
         if (_emailController.text.trim().isEmpty) {
           _emailController.text = p['email']?.toString() ?? '';
@@ -310,7 +317,10 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
 
     // Validate and normalize phone and IC numbers before passing to next page
     // Validation already passed in form, but ensure data is clean
-    final phoneValidationError = ValidationUtils.validateMalaysianPhone(_phoneNumberController.text);
+    final phoneValidationError =
+        ValidationUtils.validateMalaysianPhoneAfterPrefix(
+      _phoneNumberController.text,
+    );
     final icValidationError = ValidationUtils.validateMalaysianIC(_icNumberController.text);
     
     if (phoneValidationError != null || icValidationError != null) {
@@ -326,7 +336,9 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
     }
     
     // Normalize phone and IC numbers (strip hyphens)
-    final normalizedPhone = ValidationUtils.normalizePhoneNumber(_phoneNumberController.text);
+    final normalizedPhone = ValidationUtils.normalizePhoneWithCountryCode(
+      _phoneNumberController.text,
+    );
     final normalizedIC = ValidationUtils.normalizeICNumber(_icNumberController.text);
     
     // Extract gender from IC number (must be done before normalization, but extractGenderFromIC handles it)
@@ -1152,6 +1164,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
       padding: const EdgeInsets.all(24.0),
       child: Form(
         key: _formKey,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1260,13 +1273,18 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
               controller: _phoneNumberController,
               readOnly: _patientInfoReadOnly,
               keyboardType: TextInputType.phone,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(10),
+              ],
               decoration: const InputDecoration(
                 labelText: 'Phone Number',
+                prefixText: '+60 ',
                 prefixIcon: Icon(Icons.phone),
                 border: OutlineInputBorder(),
-                hintText: 'e.g., 012-3456789 or 0123456789',
               ),
-              validator: ValidationUtils.validateMalaysianPhone,
+              validator: ValidationUtils.validateMalaysianPhoneAfterPrefix,
             ),
             const SizedBox(height: 20),
 

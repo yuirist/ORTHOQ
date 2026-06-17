@@ -113,6 +113,24 @@ class DoctorRecommendationService {
     return _determineCategory(normalizedText) != null;
   }
 
+  /// Live list of all active doctors for a Firestore specialization value.
+  Stream<List<DoctorModel>> watchMatchingDoctors(String specialization) {
+    return _firestore
+        .collection('doctors')
+        .where('specialization', isEqualTo: specialization)
+        .where('isActive', isEqualTo: true)
+        .snapshots()
+        .map((snapshot) {
+          final doctors = snapshot.docs
+              .map((doc) => DoctorModel.fromMap(doc.data(), doc.id))
+              .toList();
+          doctors.sort(
+            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+          );
+          return doctors;
+        });
+  }
+
   /// Queries Firestore for the first active doctor in the given specialization.
   Future<DoctorModel?> _fetchAvailableDoctor(String specialization) async {
     try {

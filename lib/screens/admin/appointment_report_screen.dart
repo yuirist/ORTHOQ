@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:orthoq_app/theme/orthoq_colors.dart';
 
 import '../../models/doctor_model.dart';
+import 'admin_report_preview_page.dart';
 import 'appointment_report_aggregator.dart';
 
 /// Admin reports — appointment volume charts with optional doctor filter.
@@ -146,13 +147,22 @@ class _AppointmentReportScreenState extends State<AppointmentReportScreen> {
                                   const SizedBox(height: 28),
                                   OutlinedButton.icon(
                                     onPressed: () {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Print / Export PDF — coming soon.',
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute<void>(
+                                          builder: (context) =>
+                                              AdminReportPreviewPage(
+                                            period: _period,
+                                            subtitle: periodSubtitle(
+                                              _period,
+                                              now,
+                                              doctorScopeLabel:
+                                                  doctorScopeLabel,
+                                            ),
+                                            buckets: buckets,
+                                            doctorScopeLabel:
+                                                doctorScopeLabel,
                                           ),
-                                          backgroundColor: OrthoqColors.navy,
                                         ),
                                       );
                                     },

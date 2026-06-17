@@ -1,12 +1,13 @@
 import 'dart:io';
 
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:orthoq_app/theme/orthoq_colors.dart';
 
 import '../../services/doctor_service.dart';
+import '../../utils/doctor_name_format.dart';
 
 class AddDoctorScreen extends StatefulWidget {
   const AddDoctorScreen({super.key});
@@ -18,12 +19,9 @@ class AddDoctorScreen extends StatefulWidget {
 class _AddDoctorScreenState extends State<AddDoctorScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
   final _specializationController = TextEditingController();
   final _credentialsController = TextEditingController();
   final _imagePicker = ImagePicker();
-  final DoctorService _doctorService = DoctorService();
 
   File? _selectedImage;
   bool _submitting = false;
@@ -32,8 +30,6 @@ class _AddDoctorScreenState extends State<AddDoctorScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
     _specializationController.dispose();
     _credentialsController.dispose();
     super.dispose();
@@ -91,25 +87,37 @@ class _AddDoctorScreenState extends State<AddDoctorScreen> {
     });
 
     try {
-      String? downloadUrl;
+      final doctorRef = FirebaseFirestore.instance.collection('doctors').doc();
+      final generatedId = doctorRef.id;
 
+      String uploadedImageUrl = DoctorService.defaultDoctorImageUrl;
       if (_selectedImage != null) {
-        downloadUrl = await _uploadDoctorImage(_selectedImage!);
+        uploadedImageUrl = await _uploadDoctorImage(_selectedImage!);
         if (mounted) {
           setState(() => _loadingMessage = 'Saving doctor…');
         }
       }
+      uploadedImageUrl =
+          DoctorService.normalizeDoctorImageUrl(uploadedImageUrl);
 
-      await _doctorService.createDoctorAccount(
-        email: _emailController.text,
-        password: _passwordController.text,
-        name: _nameController.text,
-        specialization: _specializationController.text,
-        credentials: _credentialsController.text,
-        imageUrl: downloadUrl,
-      );
+      final credentials = _credentialsController.text.trim();
 
-      await FirebaseAuth.instance.signOut();
+      await doctorRef.set({
+        'id': generatedId,
+        'uid': generatedId,
+        'userId': generatedId,
+        'name': stripDoctorPrefix(_nameController.text),
+        'specialization': _specializationController.text.trim(),
+        'credentials': credentials,
+        'Credentials': credentials,
+        'imageUrl': uploadedImageUrl,
+        'isActive': true,
+        'hospital': 'Hospital Kajang',
+        'email': '',
+        'phoneNumber': '',
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -118,7 +126,7 @@ class _AddDoctorScreenState extends State<AddDoctorScreen> {
           backgroundColor: Colors.green,
         ),
       );
-      Navigator.of(context).pushNamedAndRemoveUntil('/welcome', (route) => false);
+      Navigator.pop(context);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -216,47 +224,6 @@ class _AddDoctorScreenState extends State<AddDoctorScreen> {
                       validator: (v) => v == null || v.trim().isEmpty
                           ? 'Please enter the doctor name'
                           : null,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      autocorrect: false,
-                      decoration: const InputDecoration(
-                        labelText: 'Login email',
-                        prefixIcon: Icon(Icons.email_outlined),
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (v) {
-                        final email = v?.trim() ?? '';
-                        if (email.isEmpty) {
-                          return 'Please enter the doctor login email';
-                        }
-                        if (!email.contains('@')) {
-                          return 'Please enter a valid email address';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Temporary password',
-                        prefixIcon: Icon(Icons.lock_outline),
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (v) {
-                        final password = v ?? '';
-                        if (password.isEmpty) {
-                          return 'Please enter a temporary password';
-                        }
-                        if (password.length < 6) {
-                          return 'Password must be at least 6 characters';
-                        }
-                        return null;
-                      },
                     ),
                     const SizedBox(height: 16),
                     TextFormField(

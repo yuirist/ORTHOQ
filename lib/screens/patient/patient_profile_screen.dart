@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:provider/provider.dart';
@@ -38,12 +39,15 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
 
   void _loadUserData() {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final userData = authProvider.currentUserData;
-    if (userData != null) {
-      _fullNameController.text = userData.fullName;
-      _phoneNumberController.text = userData.phoneNumber;
-      _emailController.text = userData.email;
-    }
+    _syncControllersFromUser(authProvider.currentUserData);
+  }
+
+  void _syncControllersFromUser(userData) {
+    if (userData == null || _isEditing) return;
+    _fullNameController.text = userData.fullName;
+    _phoneNumberController.text =
+        ValidationUtils.phoneDigitsForPrefixDisplay(userData.phoneNumber);
+    _emailController.text = userData.email;
   }
 
   @override
@@ -134,8 +138,9 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final normalizedPhone =
-          ValidationUtils.normalizePhoneNumber(_phoneNumberController.text);
+      final normalizedPhone = ValidationUtils.normalizePhoneWithCountryCode(
+        _phoneNumberController.text,
+      );
 
       await authProvider.updateProfile(
         fullName: _fullNameController.text.trim(),
@@ -212,6 +217,7 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, _) {
         final userData = authProvider.currentUserData;
+        _syncControllersFromUser(userData);
 
         return Scaffold(
           appBar: AppBar(
@@ -255,6 +261,7 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
             padding: const EdgeInsets.all(16.0),
             child: Form(
               key: _formKey,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
               child: Column(
                 children: [
                   _ProfileAvatar(
@@ -293,12 +300,18 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
                     controller: _phoneNumberController,
                     enabled: _isEditing,
                     keyboardType: TextInputType.phone,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(10),
+                    ],
                     decoration: const InputDecoration(
                       labelText: 'Phone Number',
+                      prefixText: '+60 ',
                       prefixIcon: Icon(Icons.phone),
                       border: OutlineInputBorder(),
                     ),
-                    validator: ValidationUtils.validateMalaysianPhone,
+                    validator: ValidationUtils.validateMalaysianPhoneAfterPrefix,
                   ),
                   const SizedBox(height: 16),
 

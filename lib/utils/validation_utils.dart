@@ -117,6 +117,18 @@ class ValidationUtils {
     return '60$trimmed';
   }
 
+  /// Digits shown in a `+60 ` prefixed field (strips stored `60` / leading `0`).
+  static String phoneDigitsForPrefixDisplay(String? storedPhone) {
+    final raw = normalizePhoneNumber(storedPhone ?? '');
+    if (raw.startsWith('60') && raw.length > 2) {
+      return raw.substring(2);
+    }
+    if (raw.startsWith('0') && raw.length > 1) {
+      return raw.substring(1);
+    }
+    return raw;
+  }
+
   /// Validates a Malaysian IC (MyKad) number.
   /// 
   /// Format: YYMMDD-SS-#### (12 numeric digits ignoring optional hyphens)

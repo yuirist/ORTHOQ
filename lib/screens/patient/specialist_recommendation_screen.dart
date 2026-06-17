@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../models/doctor_model.dart';
 import '../../models/recommendation_model.dart';
 import '../../services/doctor_recommendation_service.dart';
 import '../../theme/orthoq_colors.dart';
@@ -64,17 +65,14 @@ class _SpecialistRecommendationScreenState
     }
   }
 
-  /// Opens booking with the recommended doctor pre-selected.
-  void _bookRecommendedDoctor(SpecialistRecommendation recommendation) {
-    final doctor = recommendation.doctor;
-    if (doctor == null) return;
-
+  /// Opens booking with a matching specialist pre-selected.
+  void _bookDoctor(DoctorModel doctor, String specialization) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => BookAppointmentScreen(
           preselectedDoctorId: doctor.id,
           preselectedDoctorName: doctor.name,
-          preselectedSpecialization: recommendation.firestoreSpecialization,
+          preselectedSpecialization: specialization,
         ),
       ),
     );
@@ -176,9 +174,12 @@ class _SpecialistRecommendationScreenState
                 const SizedBox(height: OrthoqSpacing.lg),
                 _ResultSection(
                   result: _result!,
-                  onBook: _result!.doctor != null
-                      ? () => _bookRecommendedDoctor(_result!)
-                      : null,
+                  recommendationService: _recommendationService,
+                  onBookDoctor: (doctor) {
+                    final spec = _result!.firestoreSpecialization;
+                    if (spec == null) return;
+                    _bookDoctor(doctor, spec);
+                  },
                 ),
               ],
             ],
@@ -192,15 +193,27 @@ class _SpecialistRecommendationScreenState
 class _ResultSection extends StatelessWidget {
   const _ResultSection({
     required this.result,
-    required this.onBook,
+    required this.recommendationService,
+    required this.onBookDoctor,
   });
 
   final SpecialistRecommendation result;
-  final VoidCallback? onBook;
+  final DoctorRecommendationService recommendationService;
+  final void Function(DoctorModel doctor) onBookDoctor;
 
   @override
   Widget build(BuildContext context) {
     if (!result.isMatchFound) {
+      return _InfoBanner(
+        message: SpecialistRecommendation.noMatchMessage,
+        icon: Icons.info_outline_rounded,
+        color: OrthoqColors.navy,
+        background: OrthoqColors.navy.withValues(alpha: 0.06),
+      );
+    }
+
+    final firestoreSpec = result.firestoreSpecialization;
+    if (firestoreSpec == null || firestoreSpec.isEmpty) {
       return _InfoBanner(
         message: SpecialistRecommendation.noMatchMessage,
         icon: Icons.info_outline_rounded,
@@ -221,13 +234,6 @@ class _ResultSection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _ResultRow(
-                label: 'Recommended Doctor',
-                value: result.doctor != null
-                    ? _formatDoctorName(result.doctor!.name)
-                    : 'No doctor currently available',
-              ),
-              const SizedBox(height: OrthoqSpacing.sm),
-              _ResultRow(
                 label: 'Specialization',
                 value: result.displaySpecialization ?? '—',
               ),
@@ -240,14 +246,59 @@ class _ResultSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: OrthoqSpacing.md),
-        if (result.doctor != null)
-          _RecommendedDoctorCard(
-            doctorName: result.doctor!.name,
-            specialization: result.displaySpecialization ?? '',
-            imageUrl: result.doctor!.imageUrl,
-            isAvailable: result.doctor!.isActive,
-            onBook: onBook,
-          ),
+        StreamBuilder<List<DoctorModel>>(
+          stream: recommendationService.watchMatchingDoctors(firestoreSpec),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            if (snapshot.hasError) {
+              return _InfoBanner(
+                message:
+                    'Could not load matching specialists. Please try again.',
+                icon: Icons.error_outline_rounded,
+                color: Colors.red.shade700,
+                background: Colors.red.shade50,
+              );
+            }
+
+            final doctors = snapshot.data ?? const <DoctorModel>[];
+
+            if (doctors.isEmpty) {
+              return _InfoBanner(
+                message:
+                    'No specialist is currently available for this category. '
+                    'Please contact the clinic for assistance.',
+                icon: Icons.info_outline_rounded,
+                color: OrthoqColors.navy,
+                background: OrthoqColors.navy.withValues(alpha: 0.06),
+              );
+            }
+
+            return ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: doctors.length,
+              itemBuilder: (context, index) {
+                final doctor = doctors[index];
+                return Padding(
+                  padding: EdgeInsets.only(
+                    bottom: index < doctors.length - 1 ? OrthoqSpacing.md : 0,
+                  ),
+                  child: _RecommendedDoctorCard(
+                    doctor: doctor,
+                    specialization: result.displaySpecialization ?? '',
+                    onBook: () => onBookDoctor(doctor),
+                  ),
+                );
+              },
+            );
+          },
+        ),
         const SizedBox(height: OrthoqSpacing.sm),
         _InfoBanner(
           message: SpecialistRecommendation.disclaimer,
@@ -257,12 +308,6 @@ class _ResultSection extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  String _formatDoctorName(String name) {
-    final trimmed = name.trim();
-    if (trimmed.toLowerCase().startsWith('dr')) return trimmed;
-    return 'Dr. $trimmed';
   }
 }
 
@@ -290,18 +335,20 @@ class _ResultRow extends StatelessWidget {
 
 class _RecommendedDoctorCard extends StatelessWidget {
   const _RecommendedDoctorCard({
-    required this.doctorName,
+    required this.doctor,
     required this.specialization,
-    required this.imageUrl,
-    required this.isAvailable,
     required this.onBook,
   });
 
-  final String doctorName;
+  final DoctorModel doctor;
   final String specialization;
-  final String? imageUrl;
-  final bool isAvailable;
   final VoidCallback? onBook;
+
+  String get _displayName {
+    final name = doctor.name.trim();
+    if (name.toLowerCase().startsWith('dr')) return name;
+    return 'Dr. $name';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -312,16 +359,14 @@ class _RecommendedDoctorCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              _DoctorAvatar(imageUrl: imageUrl),
+              _DoctorAvatar(imageUrl: doctor.imageUrl),
               const SizedBox(width: OrthoqSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      doctorName.toLowerCase().startsWith('dr')
-                          ? doctorName
-                          : 'Dr. $doctorName',
+                      _displayName,
                       style: OrthoqTypography.sectionTitle(),
                     ),
                     const SizedBox(height: 4),
@@ -335,17 +380,18 @@ class _RecommendedDoctorCard extends StatelessWidget {
                     Row(
                       children: [
                         Icon(
-                          isAvailable
+                          doctor.isActive
                               ? Icons.check_circle_rounded
                               : Icons.cancel_rounded,
                           size: 16,
-                          color: isAvailable ? Colors.green.shade700 : Colors.red,
+                          color:
+                              doctor.isActive ? Colors.green.shade700 : Colors.red,
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          isAvailable ? 'Available' : 'Not available',
+                          doctor.isActive ? 'Available' : 'Not available',
                           style: OrthoqTypography.bodySmall(
-                            color: isAvailable
+                            color: doctor.isActive
                                 ? Colors.green.shade700
                                 : Colors.red.shade700,
                           ),
