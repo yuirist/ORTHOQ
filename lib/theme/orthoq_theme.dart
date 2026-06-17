@@ -189,6 +189,7 @@ abstract final class OrthoqTheme {
   static InputDecoration field({
     required String labelText,
     String? hintText,
+    String? prefixText,
     Widget? prefixIcon,
     Widget? suffixIcon,
     bool alignLabelWithHint = false,
@@ -196,6 +197,7 @@ abstract final class OrthoqTheme {
     return InputDecoration(
       labelText: labelText,
       hintText: hintText,
+      prefixText: prefixText,
       prefixIcon: prefixIcon,
       suffixIcon: suffixIcon,
       alignLabelWithHint: alignLabelWithHint,

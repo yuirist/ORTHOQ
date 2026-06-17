@@ -182,7 +182,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       // Register user using AuthService
       // Normalize phone number before saving (strip hyphens)
-      final normalizedPhone = ValidationUtils.normalizePhoneNumber(_phoneNumberController.text);
+      final normalizedPhone = ValidationUtils.normalizePhoneWithCountryCode(
+        _phoneNumberController.text,
+      );
       final registrationEmail = _emailController.text.trim();
       final String? normalizedIC = widget.userType == 'patient'
           ? ValidationUtils.normalizeICNumber(_icNumberController.text)
@@ -481,9 +483,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   keyboardType: TextInputType.phone,
                   decoration: OrthoqTheme.field(
                     labelText: 'Phone Number',
+                    prefixText: '+60 ',
                     prefixIcon: const Icon(Icons.phone),
                   ),
-                  validator: ValidationUtils.validateMalaysianPhone,
+                  validator: ValidationUtils.validateMalaysianPhoneAfterPrefix,
                 ),
                 const SizedBox(height: OrthoqSpacing.md),
 

@@ -80,6 +80,28 @@ class ValidationUtils {
     return phoneNumber.trim().replaceAll(RegExp(r'[\s-]'), '');
   }
 
+  /// Validates digits typed after a visible `+60 ` field prefix.
+  static String? validateMalaysianPhoneAfterPrefix(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter your phone number';
+    }
+
+    final trimmed = normalizePhoneNumber(value);
+    if (trimmed.startsWith('0') || trimmed.startsWith('60')) {
+      return 'Start typing directly after the +60 prefix (e.g., 123456789)';
+    }
+
+    return validateMalaysianPhone('+60$trimmed');
+  }
+
+  /// Stores Malaysian numbers as `60XXXXXXXXX` (no plus sign).
+  static String normalizePhoneWithCountryCode(String value) {
+    final trimmed = normalizePhoneNumber(value);
+    if (trimmed.startsWith('60')) return trimmed;
+    if (trimmed.startsWith('0')) return '60${trimmed.substring(1)}';
+    return '60$trimmed';
+  }
+
   /// Validates a Malaysian IC (MyKad) number.
   /// 
   /// Format: YYMMDD-SS-#### (12 numeric digits ignoring optional hyphens)

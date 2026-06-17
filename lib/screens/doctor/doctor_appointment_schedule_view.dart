@@ -26,7 +26,7 @@ class _DoctorAppointmentScheduleViewState
     extends State<DoctorAppointmentScheduleView> {
   static const _navy = OrthoqColors.navy;
   static const _summaryBlue = Color(0xFFE3F2FD);
-  static const _slotHeight = 56.0;
+  static const _slotHeight = 72.0;
   static const _timeColumnWidth = 72.0;
   static const _statusRed = Color(0xFFEF4444);
   static const _statusGreen = Color(0xFF22C55E);
@@ -696,8 +696,8 @@ class _DoctorAppointmentScheduleViewState
               borderRadius: BorderRadius.circular(10),
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
                   vertical: 6,
+                  horizontal: 12,
                 ),
                 decoration: BoxDecoration(
                   color: palette.bg,
@@ -707,6 +707,7 @@ class _DoctorAppointmentScheduleViewState
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Text(
                       meta.patientName,
@@ -716,7 +717,7 @@ class _DoctorAppointmentScheduleViewState
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
                         color: palette.text,
-                        height: 1.1,
+                        height: 1.05,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -727,7 +728,7 @@ class _DoctorAppointmentScheduleViewState
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade700,
-                        height: 1.1,
+                        height: 1.05,
                       ),
                     ),
                     Text(
@@ -737,7 +738,7 @@ class _DoctorAppointmentScheduleViewState
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade600,
-                        height: 1.1,
+                        height: 1.05,
                       ),
                     ),
                   ],
