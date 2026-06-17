@@ -4,7 +4,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'screens/auth/welcome_screen.dart';
-import 'utils/auth_navigation.dart';
 import 'widgets/auth_gate.dart';
 
 import 'firebase_options.dart';
@@ -53,26 +52,19 @@ class OrthoQApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: OrthoqTheme.light,
         home: const AuthGate(),
+        // Profile-aware route gates (replaces legacy _homeFromProvider).
         routes: {
           '/welcome': (context) => const WelcomeScreen(),
-          '/patient-home': (context) => _homeFromProvider(context, 'patient'),
-          '/doctor-home': (context) => _homeFromProvider(context, 'doctor'),
-          '/staff-home': (context) => _homeFromProvider(context, 'staff'),
-          '/admin-home': (context) => _homeFromProvider(context, 'admin'),
+          '/patient-home': (context) =>
+              const ProfileRouteGate(fallbackRole: 'patient'),
+          '/doctor-home': (context) =>
+              const ProfileRouteGate(fallbackRole: 'doctor'),
+          '/staff-home': (context) =>
+              const ProfileRouteGate(fallbackRole: 'staff'),
+          '/admin-home': (context) =>
+              const ProfileRouteGate(fallbackRole: 'admin'), // admin bypass in AuthGate
         },
       ),
     );
   }
-}
-
-Widget _homeFromProvider(BuildContext context, String role) {
-  final auth = context.read<AuthProvider>();
-  final user = auth.currentUser;
-  final profile = auth.currentUserData;
-  if (user == null || profile == null) {
-    return const WelcomeScreen();
-  }
-  final resolved =
-      ensureUserProfile(user: user, profile: profile, fallbackRole: role);
-  return homeScreenForRole(role, uid: user.uid, userData: resolved);
 }

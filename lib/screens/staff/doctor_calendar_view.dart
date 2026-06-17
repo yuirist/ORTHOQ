@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
+import '../../utils/doctor_name_format.dart';
 import 'staff_appointment_calendar_mapper.dart';
 import 'staff_calendar_appointment_tile.dart';
 import 'staff_calendar_slot_settings.dart';
@@ -242,7 +243,7 @@ class _DoctorCalendarViewState extends State<DoctorCalendarView> {
         backgroundColor: OrthoqColors.scaffoldBg,
         appBar: AppBar(
           title: Text(
-            'Dr. ${widget.doctorName}',
+            formatDoctorDisplayName(widget.doctorName),
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: Colors.white,

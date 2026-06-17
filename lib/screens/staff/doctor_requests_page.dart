@@ -1,16 +1,25 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:orthoq_app/theme/orthoq_theme.dart';
 import 'package:orthoq_app/theme/orthoq_widgets.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../models/doctor_model.dart';
+import '../../models/user_model.dart';
+import '../../providers/auth_provider.dart';
 import '../../services/doctor_delay_notification_service.dart';
 import '../../services/doctor_service.dart';
+import '../../utils/staff_scope.dart';
 import 'delay_notifications_page.dart';
 
 class DoctorRequestsPage extends StatefulWidget {
-  const DoctorRequestsPage({super.key});
+  const DoctorRequestsPage({super.key, this.userProfile});
+
+  final UserModel? userProfile;
 
   @override
   State<DoctorRequestsPage> createState() => _DoctorRequestsPageState();
@@ -21,23 +30,118 @@ class _DoctorRequestsPageState extends State<DoctorRequestsPage> {
 
   final DoctorService _doctorService = DoctorService();
   String? _selectedDoctorId;
+  List<String> _assignedDoctorIds = [];
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _userSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _assignedDoctorIds = widget.userProfile?.assignedDoctorIds ?? const [];
+    _listenForAssignmentUpdates();
+  }
+
+  @override
+  void dispose() {
+    _userSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _listenForAssignmentUpdates() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    _userSubscription = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .snapshots()
+        .listen((snap) {
+      if (!mounted) return;
+      final profileIds = widget.userProfile?.assignedDoctorIds ?? const [];
+      final assigned = profileIds.isNotEmpty
+          ? profileIds
+          : StaffScope.assignedDoctorIds(snap.data());
+      setState(() => _assignedDoctorIds = assigned);
+    });
+  }
+
+  List<String> _resolveAssignedDoctorIds(BuildContext context) {
+    if (_assignedDoctorIds.isNotEmpty) return _assignedDoctorIds;
+    final authProfile = context.read<AuthProvider>().currentUserData;
+    return authProfile?.assignedDoctorIds ?? const [];
+  }
+
+  List<DoctorModel> _filterDoctors(
+    List<DoctorModel> all,
+    List<String> assignedDoctorIds,
+  ) {
+    if (assignedDoctorIds.isEmpty) return all;
+    return all
+        .where(
+          (doctor) =>
+              assignedDoctorIds.contains(doctor.id) ||
+              (doctor.userId.isNotEmpty &&
+                  assignedDoctorIds.contains(doctor.userId)),
+        )
+        .toList();
+  }
+
+  String? _effectiveDoctorId(
+    List<DoctorModel> visibleDoctors,
+    List<String> assignedDoctorIds,
+  ) {
+    if (_selectedDoctorId != null && _selectedDoctorId!.isNotEmpty) {
+      return _selectedDoctorId;
+    }
+    if (assignedDoctorIds.isNotEmpty && visibleDoctors.isNotEmpty) {
+      return _doctorFilterId(visibleDoctors.first);
+    }
+    return null;
+  }
+
+  void _ensureDefaultDoctorSelection(
+    List<DoctorModel> visibleDoctors,
+    List<String> assignedDoctorIds,
+  ) {
+    if (assignedDoctorIds.isEmpty || visibleDoctors.isEmpty) return;
+
+    final targetId = _effectiveDoctorId(visibleDoctors, assignedDoctorIds);
+    if (targetId == null || _selectedDoctorId == targetId) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() => _selectedDoctorId = targetId);
+    });
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> _delayAlertsStream({
+    String? doctorId,
+    List<String> assignedDoctorIds = const [],
+  }) {
+    if (doctorId != null && doctorId.isNotEmpty) {
+      return FirebaseFirestore.instance
+          .collection(DoctorDelayNotificationService.collection)
+          .where('status', isEqualTo: DoctorDelayNotificationService.pendingStatus)
+          .where('doctorId', isEqualTo: doctorId)
+          .orderBy('createdAt', descending: true)
+          .snapshots();
+    }
+
+    if (assignedDoctorIds.isNotEmpty) {
+      final ids = assignedDoctorIds.take(10).toList();
+      return FirebaseFirestore.instance
+          .collection(DoctorDelayNotificationService.collection)
+          .where('status', isEqualTo: DoctorDelayNotificationService.pendingStatus)
+          .where('doctorId', whereIn: ids)
+          .orderBy('createdAt', descending: true)
+          .snapshots();
+    }
+
+    return DoctorDelayNotificationService.getPendingDoctorDelaysStream();
+  }
 
   String _doctorFilterId(DoctorModel doctor) {
     if (doctor.userId.trim().isNotEmpty) return doctor.userId.trim();
     return doctor.id;
-  }
-
-  Stream<QuerySnapshot<Map<String, dynamic>>> _delayAlertsStream() {
-    if (_selectedDoctorId == null || _selectedDoctorId!.isEmpty) {
-      return DoctorDelayNotificationService.getPendingDoctorDelaysStream();
-    }
-
-    return FirebaseFirestore.instance
-        .collection(DoctorDelayNotificationService.collection)
-        .where('status', isEqualTo: DoctorDelayNotificationService.pendingStatus)
-        .where('doctorId', isEqualTo: _selectedDoctorId)
-        .orderBy('createdAt', descending: true)
-        .snapshots();
   }
 
   DoctorModel? _findDoctorForAlert(
@@ -331,7 +435,16 @@ class _DoctorRequestsPageState extends State<DoctorRequestsPage> {
             child: StreamBuilder<List<DoctorModel>>(
               stream: _doctorService.getActiveDoctors(),
               builder: (context, doctorsSnap) {
-                final doctors = doctorsSnap.data ?? [];
+                final assignedDoctorIds = _resolveAssignedDoctorIds(context);
+                final allDoctors = doctorsSnap.data ?? [];
+                final doctors = _filterDoctors(allDoctors, assignedDoctorIds);
+                final hasAssignedDoctors = assignedDoctorIds.isNotEmpty;
+                _ensureDefaultDoctorSelection(doctors, assignedDoctorIds);
+
+                final dropdownValue = hasAssignedDoctors
+                    ? _effectiveDoctorId(doctors, assignedDoctorIds)
+                    : (_selectedDoctorId ?? _allDoctorsKey);
+
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
@@ -340,16 +453,22 @@ class _DoctorRequestsPageState extends State<DoctorRequestsPage> {
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
-                      value: _selectedDoctorId ?? _allDoctorsKey,
+                      value: doctors.isEmpty ? null : dropdownValue,
                       isExpanded: true,
+                      hint: Text(
+                        doctors.isEmpty
+                            ? 'No assigned doctors'
+                            : 'Select doctor',
+                      ),
                       items: [
-                        const DropdownMenuItem<String>(
-                          value: _allDoctorsKey,
-                          child: Text(
-                            'All doctors',
-                            overflow: TextOverflow.ellipsis,
+                        if (!hasAssignedDoctors)
+                          const DropdownMenuItem<String>(
+                            value: _allDoctorsKey,
+                            child: Text(
+                              'All doctors',
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                        ),
                         ...doctors.map(
                           (doctor) => DropdownMenuItem<String>(
                             value: _doctorFilterId(doctor),
@@ -364,14 +483,20 @@ class _DoctorRequestsPageState extends State<DoctorRequestsPage> {
                       onChanged: doctorsSnap.connectionState ==
                               ConnectionState.waiting
                           ? null
-                          : (value) {
-                              setState(() {
-                                _selectedDoctorId =
-                                    value == null || value == _allDoctorsKey
-                                        ? null
-                                        : value;
-                              });
-                            },
+                          : doctors.isEmpty
+                              ? null
+                              : (value) {
+                                  setState(() {
+                                    if (hasAssignedDoctors) {
+                                      _selectedDoctorId = value;
+                                    } else {
+                                      _selectedDoctorId =
+                                          value == null || value == _allDoctorsKey
+                                              ? null
+                                              : value;
+                                    }
+                                  });
+                                },
                     ),
                   ),
                 );
@@ -382,10 +507,21 @@ class _DoctorRequestsPageState extends State<DoctorRequestsPage> {
             child: StreamBuilder<List<DoctorModel>>(
               stream: _doctorService.getActiveDoctors(),
               builder: (context, doctorsSnap) {
-                final doctors = doctorsSnap.data ?? const <DoctorModel>[];
+                final assignedDoctorIds = _resolveAssignedDoctorIds(context);
+                final doctors = _filterDoctors(
+                  doctorsSnap.data ?? const <DoctorModel>[],
+                  assignedDoctorIds,
+                );
+                final hasAssignedDoctors = assignedDoctorIds.isNotEmpty;
+                final activeDoctorId =
+                    _effectiveDoctorId(doctors, assignedDoctorIds);
 
                 return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                  stream: _delayAlertsStream(),
+                  stream: _delayAlertsStream(
+                    doctorId: activeDoctorId,
+                    assignedDoctorIds:
+                        hasAssignedDoctors ? assignedDoctorIds : const [],
+                  ),
                   builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
@@ -420,9 +556,11 @@ class _DoctorRequestsPageState extends State<DoctorRequestsPage> {
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 24),
                           child: Text(
-                            _selectedDoctorId == null
-                                ? 'No active delay alerts from any doctor.'
-                                : 'No active delay alerts for this doctor.',
+                            hasAssignedDoctors
+                                ? 'No active delay alerts for your assigned doctors.'
+                                : activeDoctorId == null
+                                    ? 'No active delay alerts from any doctor.'
+                                    : 'No active delay alerts for this doctor.',
                             style: TextStyle(
                               fontSize: 18,
                               color: Colors.grey.shade600,

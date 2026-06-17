@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:orthoq_app/theme/orthoq_colors.dart';
 
 import '../../services/email_service.dart';
+import '../../utils/doctor_name_format.dart';
 
 /// Quick-add or reschedule form for staff on a doctor's calendar.
 /// Returns `true` when an appointment was saved successfully.
@@ -32,6 +33,7 @@ Future<bool> showStaffManualAppointmentSheet({
 
   final trimmedAppointmentId = appointmentId?.trim() ?? '';
   final isReschedule = trimmedAppointmentId.isNotEmpty;
+  final storedDoctorName = stripDoctorPrefix(doctorName);
 
   final originalDateLabel = originalAppointmentDate != null
       ? DateFormat('EEEE, MMMM d, y').format(originalAppointmentDate)
@@ -170,7 +172,7 @@ Future<bool> showStaffManualAppointmentSheet({
                       .collection('appointments')
                       .add({
                     'doctorId': doctorId,
-                    'doctorName': doctorName,
+                    'doctorName': storedDoctorName,
                     if (initialPatientId != null &&
                         initialPatientId.trim().isNotEmpty)
                       'patientId': initialPatientId.trim(),
@@ -258,7 +260,7 @@ Future<bool> showStaffManualAppointmentSheet({
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Dr. $doctorName',
+                      formatDoctorDisplayName(storedDoctorName),
                       style: TextStyle(color: Colors.grey.shade600),
                     ),
                     if (isReschedule &&

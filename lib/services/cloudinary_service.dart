@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:cloudinary_public/cloudinary_public.dart';
 import 'package:dio/dio.dart';
@@ -62,6 +63,35 @@ class CloudinaryService {
       'file': multipart,
       'upload_preset': _uploadPreset,
       'resource_type': 'auto',
+    });
+
+    final response = await _dio.post<Map<String, dynamic>>(
+      _autoUploadUrl,
+      data: formData,
+    );
+
+    if (response.statusCode != 200 || response.data == null) {
+      throw CloudinaryException(
+        jsonEncode(response.data),
+        response.statusCode ?? 0,
+      );
+    }
+
+    return secureUrlFromMap(response.data!);
+  }
+
+  /// Uploads a doctor profile photo and returns the HTTPS delivery URL.
+  Future<String> uploadDoctorProfileImage(File file) async {
+    final pathSegments = file.path.split(Platform.pathSeparator);
+    final filename = pathSegments.isNotEmpty && pathSegments.last.isNotEmpty
+        ? pathSegments.last
+        : 'doctor_profile.jpg';
+
+    final formData = FormData.fromMap({
+      'file': await MultipartFile.fromFile(file.path, filename: filename),
+      'upload_preset': _uploadPreset,
+      'resource_type': 'image',
+      'folder': 'doctors',
     });
 
     final response = await _dio.post<Map<String, dynamic>>(

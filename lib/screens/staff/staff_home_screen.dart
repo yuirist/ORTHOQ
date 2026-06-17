@@ -96,8 +96,8 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
         children: [
           StaffDashboardPage(userProfile: widget.userProfile),
           PatientVerificationPage(onRejectionComplete: _onRejectionComplete),
-          const DoctorRequestsPage(),
-          const DelayNotificationsPage(),
+          DoctorRequestsPage(userProfile: widget.userProfile),
+          DelayNotificationsPage(userProfile: widget.userProfile),
           StaffPatientPage(userProfile: widget.userProfile),
         ],
       ),

@@ -1,4 +1,8 @@
+import 'dart:io';
+
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:orthoq_app/theme/orthoq_colors.dart';
 
 import '../../models/doctor_model.dart';
@@ -18,15 +22,16 @@ class _AdminEditDoctorScreenState extends State<AdminEditDoctorScreen> {
   late final TextEditingController _nameController;
   late final TextEditingController _specializationController;
   late final TextEditingController _credentialsController;
-  late final TextEditingController _imageUrlController;
+  late final String _imageUrl;
+  late final String _hospital;
   late bool _isActive;
+
+  File? _selectedImageFile;
+  final ImagePicker _picker = ImagePicker();
 
   final DoctorService _doctorService = DoctorService();
   bool _saving = false;
-
-  void _onUrlChanged() {
-    if (mounted) setState(() {});
-  }
+  String _loadingMessage = 'Saving changes…';
 
   @override
   void initState() {
@@ -35,19 +40,54 @@ class _AdminEditDoctorScreenState extends State<AdminEditDoctorScreen> {
     _nameController = TextEditingController(text: d.name);
     _specializationController = TextEditingController(text: d.specialization);
     _credentialsController = TextEditingController(text: d.credentials ?? '');
-    _imageUrlController = TextEditingController(text: d.imageUrl ?? '');
+    _imageUrl = d.imageUrl ?? '';
+    _hospital = d.hospital?.trim().isNotEmpty == true
+        ? d.hospital!.trim()
+        : 'Hospital Kajang';
     _isActive = d.isActive;
-    _imageUrlController.addListener(_onUrlChanged);
   }
 
   @override
   void dispose() {
-    _imageUrlController.removeListener(_onUrlChanged);
     _nameController.dispose();
     _specializationController.dispose();
     _credentialsController.dispose();
-    _imageUrlController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    if (_saving) return;
+
+    try {
+      final pickedFile = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 85,
+      );
+      if (pickedFile == null || !mounted) return;
+
+      setState(() {
+        _selectedImageFile = File(pickedFile.path);
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not open gallery: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<String> _uploadDoctorImage(File imageFile) async {
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final storageRef =
+        FirebaseStorage.instance.ref().child('doctors').child(fileName);
+
+    final snapshot = await storageRef.putFile(imageFile);
+    return snapshot.ref.getDownloadURL();
   }
 
   static bool _looksLikeHttpUrl(String raw) {
@@ -58,18 +98,46 @@ class _AdminEditDoctorScreenState extends State<AdminEditDoctorScreen> {
     return u.isScheme('https') || u.isScheme('http');
   }
 
+  Widget _previewPlaceholder() {
+    return SizedBox(
+      height: 160,
+      width: double.infinity,
+      child: ColoredBox(
+        color: Colors.grey.shade200,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.add_a_photo_outlined, size: 48, color: Colors.grey.shade500),
+            const SizedBox(height: 8),
+            Text(
+              'Tap to select photo',
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _preview() {
-    final url = DoctorService.normalizeDoctorImageUrl(_imageUrlController.text);
-    if (!_looksLikeHttpUrl(url)) {
-      return SizedBox(
-        height: 140,
-        width: double.infinity,
-        child: ColoredBox(
-          color: Colors.grey.shade200,
-          child: Icon(Icons.image_outlined, size: 48, color: Colors.grey.shade500),
+    if (_selectedImageFile != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.file(
+          _selectedImageFile!,
+          height: 160,
+          width: double.infinity,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _previewPlaceholder(),
         ),
       );
     }
+
+    final url = DoctorService.normalizeDoctorImageUrl(_imageUrl);
+    if (!_looksLikeHttpUrl(url)) {
+      return _previewPlaceholder();
+    }
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: Image.network(
@@ -81,7 +149,11 @@ class _AdminEditDoctorScreenState extends State<AdminEditDoctorScreen> {
           height: 160,
           child: ColoredBox(
             color: Colors.grey.shade200,
-            child: Icon(Icons.broken_image_outlined, size: 48, color: Colors.grey.shade500),
+            child: Icon(
+              Icons.broken_image_outlined,
+              size: 48,
+              color: Colors.grey.shade500,
+            ),
           ),
         ),
       ),
@@ -94,19 +166,38 @@ class _AdminEditDoctorScreenState extends State<AdminEditDoctorScreen> {
     await Future<void>.delayed(const Duration(milliseconds: 60));
     if (!mounted) return;
 
-    setState(() => _saving = true);
+    setState(() {
+      _saving = true;
+      _loadingMessage = _selectedImageFile != null
+          ? 'Uploading photo…'
+          : 'Saving changes…';
+    });
+
     try {
+      var imageUrlToSave = _imageUrl;
+
+      if (_selectedImageFile != null) {
+        imageUrlToSave = await _uploadDoctorImage(_selectedImageFile!);
+        if (mounted) {
+          setState(() => _loadingMessage = 'Saving changes…');
+        }
+      }
+
       await _doctorService.updateDoctorFromAdmin(
         doctorId: widget.doctor.id,
         name: _nameController.text,
         specialization: _specializationController.text,
         credentials: _credentialsController.text,
-        imageUrl: _imageUrlController.text,
+        imageUrl: imageUrlToSave,
+        hospital: _hospital,
         isActive: _isActive,
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Doctor updated'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('Doctor updated'),
+            backgroundColor: Colors.green,
+          ),
         );
         Navigator.pop(context);
       }
@@ -117,7 +208,12 @@ class _AdminEditDoctorScreenState extends State<AdminEditDoctorScreen> {
         );
       }
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _loadingMessage = 'Saving changes…';
+        });
+      }
     }
   }
 
@@ -139,11 +235,6 @@ class _AdminEditDoctorScreenState extends State<AdminEditDoctorScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      'Hospital: Hospital Kajang',
-                      style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
-                    ),
-                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _nameController,
                       decoration: const InputDecoration(
@@ -175,28 +266,41 @@ class _AdminEditDoctorScreenState extends State<AdminEditDoctorScreen> {
                           v == null || v.trim().isEmpty ? 'Required' : null,
                     ),
                     const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _imageUrlController,
-                      keyboardType: TextInputType.url,
-                      decoration: const InputDecoration(
-                        labelText: 'Doctor Image URL (Cloudinary Link)',
-                        hintText: 'https://res.cloudinary.com/...',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
                     const Align(
                       alignment: Alignment.centerLeft,
-                      child: Text('Preview', style: TextStyle(fontWeight: FontWeight.w600)),
+                      child: Text(
+                        'Preview',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
                     ),
                     const SizedBox(height: 6),
-                    _preview(),
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: _saving ? null : _pickImage,
+                        borderRadius: BorderRadius.circular(12),
+                        child: _preview(),
+                      ),
+                    ),
+                    if (_selectedImageFile != null) ...[
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed: _saving
+                              ? null
+                              : () => setState(() => _selectedImageFile = null),
+                          icon: const Icon(Icons.delete_outline, size: 18),
+                          label: const Text('Remove new photo'),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 8),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Active (visible to patients)'),
                       value: _isActive,
-                      onChanged: (v) => setState(() => _isActive = v),
+                      onChanged: _saving ? null : (v) => setState(() => _isActive = v),
                     ),
                     const SizedBox(height: 20),
                     ElevatedButton(
@@ -221,7 +325,43 @@ class _AdminEditDoctorScreenState extends State<AdminEditDoctorScreen> {
           if (_saving)
             const ModalBarrier(dismissible: false, color: Colors.black26),
           if (_saving)
-            const Center(child: CircularProgressIndicator()),
+            Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
+                margin: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x33000000),
+                      blurRadius: 16,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(
+                      width: 48,
+                      height: 48,
+                      child: CircularProgressIndicator(strokeWidth: 3),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      _loadingMessage,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );

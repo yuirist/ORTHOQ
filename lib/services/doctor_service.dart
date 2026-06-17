@@ -1,8 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
+import '../firebase_options.dart';
 import '../models/doctor_model.dart';
+import '../models/user_model.dart';
+import '../utils/doctor_name_format.dart';
 
 class DoctorService {
+  static const _secondaryAuthAppName = 'doctorAccountCreation';
+
+  /// Used when no profile photo is uploaded during doctor registration.
+  static const String defaultDoctorImageUrl = '';
+
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   /// Trims pasted URLs and strips common wrappers (quotes, BOM) so Cloudinary links save reliably.
@@ -24,8 +34,105 @@ class DoctorService {
     return s;
   }
 
+  /// Creates a Firebase Auth account and aligned `users/{uid}` + `doctors/{uid}` docs.
+  Future<String> createDoctorAccount({
+    required String email,
+    required String password,
+    required String name,
+    required String specialization,
+    required String credentials,
+    String? imageUrl,
+    String phoneNumber = '',
+  }) async {
+    final cleanName = stripDoctorPrefix(name);
+    if (cleanName.isEmpty) {
+      throw 'Please enter the doctor name.';
+    }
+
+    FirebaseApp secondaryApp;
+    try {
+      secondaryApp = Firebase.app(_secondaryAuthAppName);
+    } catch (_) {
+      secondaryApp = await Firebase.initializeApp(
+        name: _secondaryAuthAppName,
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
+
+    final secondaryAuth = FirebaseAuth.instanceFor(app: secondaryApp);
+    UserCredential userCredential;
+    try {
+      userCredential = await secondaryAuth.createUserWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
+    } on FirebaseAuthException catch (e) {
+      throw _authErrorMessage(e);
+    } finally {
+      try {
+        await secondaryAuth.signOut();
+      } catch (_) {}
+    }
+
+    final uid = userCredential.user!.uid;
+    final normalizedImage = normalizeDoctorImageUrl(imageUrl);
+    final now = DateTime.now();
+
+    final userModel = UserModel(
+      id: uid,
+      fullName: cleanName,
+      email: email.trim(),
+      phoneNumber: phoneNumber.trim(),
+      role: 'doctor',
+      createdAt: now,
+      specialization: specialization.trim(),
+      doctorId: uid,
+    );
+
+    try {
+      await _firestore.collection('users').doc(uid).set({
+        ...userModel.toMap(),
+        'uid': uid,
+      });
+
+      await _firestore.collection('doctors').doc(uid).set({
+        'id': uid,
+        'uid': uid,
+        'userId': uid,
+        'name': cleanName,
+        'specialization': specialization.trim(),
+        'credentials': credentials.trim(),
+        'Credentials': credentials.trim(),
+        'hospital': 'Hospital Kajang',
+        'email': email.trim(),
+        'phoneNumber': phoneNumber.trim(),
+        'imageUrl': normalizedImage,
+        'isActive': true,
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      throw 'Doctor account created in Auth but Firestore save failed: $e';
+    }
+
+    return uid;
+  }
+
+  String _authErrorMessage(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'email-already-in-use':
+        return 'That email is already registered.';
+      case 'invalid-email':
+        return 'Please enter a valid email address.';
+      case 'weak-password':
+        return 'Password must be at least 6 characters.';
+      default:
+        return e.message ?? 'Could not create doctor account (${e.code}).';
+    }
+  }
+
   /// Adds a doctor from the admin console (no linked Firebase Auth user).
-  /// Appears in [getActiveDoctors] for patients as soon as Firestore syncs.
+  /// Prefer [createDoctorAccount] so doctor and auth UIDs stay aligned.
   Future<String> addDoctorFromAdmin({
     required String name,
     required String specialization,
@@ -34,7 +141,7 @@ class DoctorService {
   }) async {
     try {
       final data = <String, dynamic>{
-        'name': name.trim(),
+        'name': stripDoctorPrefix(name),
         'specialization': specialization.trim(),
         'credentials': credentials.trim(),
         'Credentials': credentials.trim(),
@@ -55,16 +162,62 @@ class DoctorService {
     }
   }
 
-  // Create doctor profile
+  // Create doctor profile using a known document ID (typically Firebase Auth uid).
   Future<String> createDoctor(DoctorModel doctor) async {
     try {
-      DocumentReference docRef = await _firestore
-          .collection('doctors')
-          .add(doctor.toMap());
-      return docRef.id;
+      final docId = doctor.id.trim().isNotEmpty
+          ? doctor.id.trim()
+          : doctor.userId.trim();
+      if (docId.isEmpty) {
+        throw 'Doctor document id is required.';
+      }
+
+      await _firestore.collection('doctors').doc(docId).set(doctor.toMap());
+      return docId;
     } catch (e) {
       throw 'Error creating doctor: $e';
     }
+  }
+
+  /// Creates `doctors/{uid}` aligned with the Firebase Auth user id.
+  Future<void> createDoctorProfileForAuthUser({
+    required String uid,
+    required String name,
+    required String email,
+    required String phoneNumber,
+    String? specialization,
+    String? credentials,
+    String? imageUrl,
+  }) async {
+    final docId = uid.trim();
+    if (docId.isEmpty) {
+      throw 'Doctor auth uid is required.';
+    }
+
+    final cleanName = stripDoctorPrefix(name);
+    final creds = credentials?.trim() ?? '';
+    final normalizedImage = normalizeDoctorImageUrl(
+      (imageUrl == null || imageUrl.trim().isEmpty)
+          ? defaultDoctorImageUrl
+          : imageUrl,
+    );
+
+    await _firestore.collection('doctors').doc(docId).set({
+      'id': docId,
+      'uid': docId,
+      'userId': docId,
+      'name': cleanName,
+      'specialization': specialization?.trim() ?? '',
+      'credentials': creds,
+      'Credentials': creds,
+      'email': email.trim(),
+      'phoneNumber': phoneNumber,
+      'imageUrl': normalizedImage,
+      'isActive': true,
+      'hospital': 'Hospital Kajang',
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
   }
 
   // Get all active doctors
@@ -172,15 +325,18 @@ class DoctorService {
     required String credentials,
     required String imageUrl,
     required bool isActive,
+    String? hospital,
   }) async {
     try {
       final normalized = normalizeDoctorImageUrl(imageUrl);
       await _firestore.collection('doctors').doc(doctorId).update({
-        'name': name.trim(),
+        'name': stripDoctorPrefix(name),
         'specialization': specialization.trim(),
         'credentials': credentials.trim(),
         'Credentials': credentials.trim(),
         'imageUrl': normalized,
+        if (hospital != null && hospital.trim().isNotEmpty)
+          'hospital': hospital.trim(),
         'isActive': isActive,
         'updatedAt': FieldValue.serverTimestamp(),
       });

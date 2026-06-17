@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../models/user_model.dart';
+import '../services/auth_service.dart';
 import '../theme/orthoq_colors.dart';
 import '../screens/admin/admin_home_screen.dart';
 import '../screens/doctor/doctor_home_screen.dart';
@@ -33,6 +34,43 @@ bool isStaffOrAdminPortal(String loginUserType) {
 bool isStaffOrAdminRole(String? role) {
   final r = normalizeRole(role);
   return r == 'staff' || r == 'admin';
+}
+
+/// Roles that must verify email before accessing their dashboard.
+/// Doctors are excluded — they may sign in immediately after registration.
+bool requiresEmailVerification(String? role) {
+  final r = normalizeRole(role);
+  if (r == 'doctor') return false;
+  return r == 'patient' || r == 'staff';
+}
+
+/// Login/registration portals that require email verification before dashboard access.
+/// Doctors are excluded — no verification email or gate after registration.
+bool requiresEmailVerificationPortal(String? portal, {String? email}) {
+  if (isAdminBypassEmail(email)) return false;
+  final p = normalizeRole(portal);
+  if (p == 'doctor') return false;
+  return p == 'patient' || p == 'staff' || p == 'admin';
+}
+
+/// Hardcoded admin bypass account — skips email verification and missing-profile sign-out.
+bool isAdminBypassEmail(String? email) {
+  return email?.trim().toLowerCase() ==
+      AuthService.kAdminBypassEmail.toLowerCase();
+}
+
+/// Minimal admin profile when Firestore has no users/staff document yet.
+UserModel syntheticAdminProfile(User user) {
+  return UserModel(
+    id: user.uid,
+    fullName: user.displayName?.trim().isNotEmpty == true
+        ? user.displayName!.trim()
+        : 'Administrator',
+    email: user.email ?? AuthService.kAdminBypassEmail,
+    phoneNumber: '',
+    role: 'admin',
+    createdAt: DateTime.now(),
+  );
 }
 
 String roleDashboardName(String role) {

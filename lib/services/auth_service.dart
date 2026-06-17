@@ -2,7 +2,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
+import 'dart:io';
+
 import '../models/user_model.dart';
+import '../utils/doctor_name_format.dart';
+import 'cloudinary_service.dart';
+import 'doctor_service.dart';
 
 class AuthService {
   /// Temporary admin bypass credentials (must match Firebase Auth + Firestore).
@@ -204,20 +209,36 @@ class AuthService {
     String? homeAddress,
     required String role,
     String? specialization,
+    String? credentials,
+    String? imageUrl,
+    File? profileImageFile,
     String? doctorId,
     String? staffId,
   }) async {
     try {
-      // Create user in Firebase Auth
+      // Step A: Create user in Firebase Auth
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
         email: email.trim(),
         password: password,
       );
 
-      // Create user document in Firestore
+      final docId = userCredential.user!.uid;
+      final isDoctor = normalizeRole(role) == 'doctor';
+      final displayName = isDoctor ? stripDoctorPrefix(fullName) : fullName.trim();
+
+      // Step B: Upload doctor profile photo to Cloudinary when provided
+      var doctorImageUrl = DoctorService.normalizeDoctorImageUrl(
+        imageUrl ?? DoctorService.defaultDoctorImageUrl,
+      );
+      if (isDoctor && profileImageFile != null) {
+        doctorImageUrl = await CloudinaryService()
+            .uploadDoctorProfileImage(profileImageFile);
+      }
+
+      // Step C: Create user document in Firestore
       UserModel userModel = UserModel(
-        id: userCredential.user!.uid,
-        fullName: fullName,
+        id: docId,
+        fullName: displayName,
         email: email.trim(),
         phoneNumber: phoneNumber,
         icNumber: icNumber,
@@ -227,17 +248,27 @@ class AuthService {
         role: role,
         createdAt: DateTime.now(),
         specialization: specialization,
-        doctorId: doctorId,
+        doctorId: isDoctor ? docId : doctorId,
         staffId: staffId,
       );
 
-      await _firestore
-          .collection('users')
-          .doc(userCredential.user!.uid)
-          .set(userModel.toMap());
+      await _firestore.collection('users').doc(docId).set({
+        ...userModel.toMap(),
+        'uid': docId,
+        if (isDoctor) 'role': 'doctor',
+      });
 
-      if (normalizeRole(role) == 'patient') {
-        await userCredential.user!.sendEmailVerification();
+      // Step D: Create aligned doctors/{uid} document
+      if (isDoctor) {
+        await DoctorService().createDoctorProfileForAuthUser(
+          uid: docId,
+          name: displayName,
+          email: email.trim(),
+          phoneNumber: phoneNumber,
+          specialization: specialization,
+          credentials: credentials,
+          imageUrl: doctorImageUrl,
+        );
       }
 
       return userCredential;

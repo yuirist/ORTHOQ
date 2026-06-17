@@ -1,11 +1,18 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../models/doctor_model.dart';
+import '../../models/user_model.dart';
+import '../../providers/auth_provider.dart';
 import '../../services/doctor_delay_notification_service.dart';
 import '../../services/doctor_service.dart';
 import '../../services/email_service.dart';
+import '../../utils/staff_scope.dart';
 
 class DelayNotificationsPage extends StatefulWidget {
   final String? initialDoctor;
@@ -19,8 +26,11 @@ class DelayNotificationsPage extends StatefulWidget {
   /// Pop this route after send only when opened via [Navigator.push], not as a staff tab.
   final bool popOnSuccess;
 
+  final UserModel? userProfile;
+
   const DelayNotificationsPage({
     super.key,
+    this.userProfile,
     this.initialDoctor,
     this.initialDoctorId,
     this.initialDate,
@@ -42,6 +52,8 @@ class _DelayNotificationsPageState extends State<DelayNotificationsPage> {
   String? _selectedDoctorName;
   DateTime _selectedDate = DateTime.now();
   bool _isSending = false;
+  List<String> _assignedDoctorIds = [];
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _userSubscription;
 
   String get _emailDoctorName {
     final name = _selectedDoctorName?.trim() ?? '';
@@ -98,6 +110,8 @@ class _DelayNotificationsPageState extends State<DelayNotificationsPage> {
   @override
   void initState() {
     super.initState();
+    _assignedDoctorIds = widget.userProfile?.assignedDoctorIds ?? const [];
+    _listenForAssignmentUpdates();
     _selectedDoctorId = widget.initialDoctorId;
     final rawDoctor = widget.initialDoctor?.trim();
     if (rawDoctor != null && rawDoctor.isNotEmpty) {
@@ -122,8 +136,67 @@ class _DelayNotificationsPageState extends State<DelayNotificationsPage> {
 
   @override
   void dispose() {
+    _userSubscription?.cancel();
     _delayMessageController.dispose();
     super.dispose();
+  }
+
+  void _listenForAssignmentUpdates() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    _userSubscription = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .snapshots()
+        .listen((snap) {
+      if (!mounted) return;
+      final profileIds = widget.userProfile?.assignedDoctorIds ?? const [];
+      final assigned = profileIds.isNotEmpty
+          ? profileIds
+          : StaffScope.assignedDoctorIds(snap.data());
+      setState(() => _assignedDoctorIds = assigned);
+    });
+  }
+
+  List<String> _resolveAssignedDoctorIds(BuildContext context) {
+    if (_assignedDoctorIds.isNotEmpty) return _assignedDoctorIds;
+    final authProfile = context.read<AuthProvider>().currentUserData;
+    return authProfile?.assignedDoctorIds ?? const [];
+  }
+
+  List<DoctorModel> _filterDoctors(
+    List<DoctorModel> all,
+    List<String> assignedDoctorIds,
+  ) {
+    if (assignedDoctorIds.isEmpty) return all;
+    return all
+        .where(
+          (doctor) =>
+              assignedDoctorIds.contains(doctor.id) ||
+              (doctor.userId.isNotEmpty &&
+                  assignedDoctorIds.contains(doctor.userId)),
+        )
+        .toList();
+  }
+
+  void _ensureDefaultDoctorSelection(List<DoctorModel> visibleDoctors) {
+    if (visibleDoctors.isEmpty) return;
+
+    final selectedValid = _selectedDoctorId != null &&
+        visibleDoctors.any((doctor) => doctor.id == _selectedDoctorId);
+    if (selectedValid) return;
+
+    final firstDoctor = visibleDoctors.first;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _selectedDoctorId = firstDoctor.id;
+        _selectedDoctorName = firstDoctor.name;
+        _selectedAppointmentIds.clear();
+      });
+      _applyAutoMessageTemplate();
+    });
   }
 
   Future<void> _selectDate() async {
@@ -393,12 +466,29 @@ class _DelayNotificationsPageState extends State<DelayNotificationsPage> {
                         StreamBuilder<List<DoctorModel>>(
                           stream: _doctorService.getActiveDoctors(),
                           builder: (context, doctorsSnap) {
-                            final doctors = doctorsSnap.data ?? [];
+                            final assignedDoctorIds =
+                                _resolveAssignedDoctorIds(context);
+                            final doctors = _filterDoctors(
+                              doctorsSnap.data ?? [],
+                              assignedDoctorIds,
+                            );
+                            if (assignedDoctorIds.isNotEmpty) {
+                              _ensureDefaultDoctorSelection(doctors);
+                            }
+
+                            final dropdownValue = doctors.any(
+                              (doctor) => doctor.id == _selectedDoctorId,
+                            )
+                                ? _selectedDoctorId
+                                : null;
+
                             return DropdownButtonFormField<String>(
-                              value: _selectedDoctorId,
-                              decoration: const InputDecoration(
-                                border: OutlineInputBorder(),
-                                hintText: 'Select doctor',
+                              value: dropdownValue,
+                              decoration: InputDecoration(
+                                border: const OutlineInputBorder(),
+                                hintText: doctors.isEmpty
+                                    ? 'No assigned doctors'
+                                    : 'Select doctor',
                               ),
                               items: doctors
                                   .map(
@@ -412,7 +502,7 @@ class _DelayNotificationsPageState extends State<DelayNotificationsPage> {
                                     ),
                                   )
                                   .toList(),
-                              onChanged: _isSending
+                              onChanged: _isSending || doctors.isEmpty
                                   ? null
                                   : (value) {
                                       setState(() {
@@ -426,6 +516,25 @@ class _DelayNotificationsPageState extends State<DelayNotificationsPage> {
                                       });
                                       _applyAutoMessageTemplate();
                                     },
+                            );
+                          },
+                        ),
+                        Builder(
+                          builder: (context) {
+                            final assignedDoctorIds =
+                                _resolveAssignedDoctorIds(context);
+                            if (assignedDoctorIds.isEmpty) {
+                              return const SizedBox.shrink();
+                            }
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Text(
+                                'Showing your assigned doctors only.',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
                             );
                           },
                         ),

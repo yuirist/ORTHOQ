@@ -4,6 +4,7 @@ import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 import '../../models/doctor_model.dart';
+import '../../utils/doctor_name_format.dart';
 import 'doctor_calendar_view.dart';
 import 'staff_appointment_calendar_mapper.dart';
 import 'staff_calendar_appointment_tile.dart';
@@ -41,7 +42,7 @@ class DoctorSchedulePreviewCard extends StatelessWidget {
                 MaterialPageRoute<void>(
                   builder: (context) => DoctorCalendarView(
                     doctorId: doctor.id,
-                    doctorName: doctor.name,
+                    doctorName: stripDoctorPrefix(doctor.name),
                   ),
                 ),
               );
@@ -82,7 +83,7 @@ class DoctorSchedulePreviewCard extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Dr. ${doctor.name}',
+                                formatDoctorDisplayName(doctor.name),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(

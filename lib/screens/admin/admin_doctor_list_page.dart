@@ -5,6 +5,7 @@ import '../../services/doctor_service.dart';
 import '../../theme/orthoq_colors.dart';
 import '../../theme/orthoq_widgets.dart';
 import '../../widgets/doctor_avatar.dart';
+import '../../utils/doctor_name_format.dart';
 import '../staff/doctor_calendar_view.dart';
 import 'add_doctor_screen.dart';
 import 'admin_edit_doctor_screen.dart';
@@ -98,7 +99,7 @@ class AdminDoctorListPage extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    d.name,
+                                    formatDoctorDisplayName(d.name),
                                     style: Theme.of(context).textTheme.titleMedium,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -137,7 +138,7 @@ class AdminDoctorListPage extends StatelessWidget {
                                         MaterialPageRoute(
                                           builder: (_) => DoctorCalendarView(
                                             doctorId: d.id,
-                                            doctorName: d.name,
+                                            doctorName: stripDoctorPrefix(d.name),
                                           ),
                                         ),
                                       );

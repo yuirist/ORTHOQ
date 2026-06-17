@@ -1,23 +1,21 @@
-import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import '../../providers/auth_provider.dart';
 import '../../services/auth_service.dart';
 import '../../theme/orthoq_colors.dart';
-import '../../theme/orthoq_theme.dart';
 import '../../theme/orthoq_widgets.dart';
-import '../../utils/auth_navigation.dart';
 import 'login_screen.dart';
 
-/// Patient-only email verification gate after registration or blocked login.
+/// Email verification gate after registration or blocked login.
 class EmailVerificationPage extends StatefulWidget {
   const EmailVerificationPage({
     super.key,
     required this.email,
+    this.loginPortal = 'patient',
   });
 
   final String email;
+  final String loginPortal;
 
   @override
   State<EmailVerificationPage> createState() => _EmailVerificationPageState();
@@ -25,58 +23,7 @@ class EmailVerificationPage extends StatefulWidget {
 
 class _EmailVerificationPageState extends State<EmailVerificationPage> {
   final AuthService _authService = AuthService();
-  bool _isChecking = false;
   bool _isResending = false;
-
-  Future<void> _checkVerificationStatus() async {
-    setState(() => _isChecking = true);
-    try {
-      final verified = await _authService.reloadAndCheckEmailVerified();
-      if (!mounted) return;
-
-      if (verified) {
-        final user = FirebaseAuth.instance.currentUser;
-        if (user == null) {
-          _showMessage('Session expired. Please sign in again.', isError: true);
-          return;
-        }
-
-        final profile = await context.read<AuthProvider>().applyLoginSession(
-              firebaseUser: user,
-            );
-
-        if (profile == null) {
-          await FirebaseAuth.instance.signOut();
-          _showMessage(
-            'Profile not found. Please contact support.',
-            isError: true,
-          );
-          return;
-        }
-
-        if (!mounted) return;
-        await navigateAfterLogin(
-          context: context,
-          user: user,
-          profile: profile,
-          loginPortal: 'patient',
-        );
-        return;
-      }
-
-      _showMessage(
-        'Email not verified yet. Please check your inbox and click the link.',
-      );
-    } catch (e) {
-      if (mounted) {
-        _showMessage('$e', isError: true);
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isChecking = false);
-      }
-    }
-  }
 
   Future<void> _resendEmail() async {
     setState(() => _isResending = true);
@@ -111,7 +58,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(
-        builder: (context) => const LoginScreen(userType: 'patient'),
+        builder: (context) => LoginScreen(userType: widget.loginPortal),
       ),
       (route) => false,
     );
@@ -164,21 +111,6 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                 ),
               ],
               const Spacer(),
-              ElevatedButton(
-                onPressed: _isChecking ? null : _checkVerificationStatus,
-                style: OrthoqTheme.primaryButton,
-                child: _isChecking
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('Check Status & Login'),
-              ),
-              const SizedBox(height: OrthoqSpacing.sm),
               OutlinedButton(
                 onPressed: _isResending ? null : _resendEmail,
                 child: _isResending
@@ -192,12 +124,12 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                       )
                     : const Text('Resend Email'),
               ),
-              const SizedBox(height: OrthoqSpacing.sm),
+              const SizedBox(height: OrthoqSpacing.md),
               TextButton(
                 onPressed: _backToLogin,
                 child: const Text('Back to Login'),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: OrthoqSpacing.xs),
             ],
           ),
         ),

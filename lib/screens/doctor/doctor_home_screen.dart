@@ -120,7 +120,10 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                     icon: Icons.today_rounded,
                     label: "Today's\nSchedule",
                     onTap: () {
-                      pushOrthoQPage(context, const DoctorSchedulePage());
+                      pushOrthoQPage(
+                        context,
+                        DoctorSchedulePage(userProfile: widget.userProfile),
+                      );
                     },
                   ),
                   _QuickActionCard(

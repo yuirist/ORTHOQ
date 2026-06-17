@@ -2,13 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:orthoq_app/theme/orthoq_colors.dart';
 import 'package:orthoq_app/theme/orthoq_theme.dart';
 import 'package:orthoq_app/theme/orthoq_widgets.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'package:provider/provider.dart';
 import 'email_verification_page.dart';
 import 'login_screen.dart';
+import '../../providers/auth_provider.dart';
 import '../../services/auth_service.dart';
+import '../../utils/auth_navigation.dart';
 import '../../utils/validation_utils.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -32,6 +37,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   
   // Doctor-specific fields
   final _specializationController = TextEditingController();
+  final _credentialsController = TextEditingController();
+  File? _pickedImageFile;
+  final ImagePicker _imagePicker = ImagePicker();
   
   // Staff-specific fields
   final _staffIdController = TextEditingController();
@@ -54,8 +62,75 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _specializationController.dispose();
+    _credentialsController.dispose();
     _staffIdController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickProfileImage() async {
+    if (_isLoading) return;
+
+    try {
+      final pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 85,
+      );
+      if (pickedFile == null || !mounted) return;
+
+      setState(() {
+        _pickedImageFile = File(pickedFile.path);
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not open gallery: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Widget _doctorProfilePreview() {
+    if (_pickedImageFile != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.file(
+          _pickedImageFile!,
+          height: 140,
+          width: double.infinity,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _doctorProfilePlaceholder(),
+        ),
+      );
+    }
+
+    return _doctorProfilePlaceholder();
+  }
+
+  Widget _doctorProfilePlaceholder() {
+    return Container(
+      height: 140,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.add_a_photo_outlined, size: 48, color: Colors.grey.shade500),
+          const SizedBox(height: 8),
+          Text(
+            'Tap to add profile photo',
+            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _handleRegister() async {
@@ -129,6 +204,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ? _specializationController.text.trim() 
                 : null
             : null,
+        credentials: widget.userType == 'doctor'
+            ? _credentialsController.text.trim()
+            : null,
+        profileImageFile:
+            widget.userType == 'doctor' ? _pickedImageFile : null,
         staffId: widget.userType == 'staff' || widget.userType == 'admin'
             ? _staffIdController.text.trim().isNotEmpty
                 ? _staffIdController.text.trim()
@@ -156,12 +236,55 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
 
       if (mounted) {
-        if (widget.userType == 'patient') {
+        if (widget.userType == 'doctor') {
+          final user = FirebaseAuth.instance.currentUser;
+          if (user != null) {
+            final profile = await context.read<AuthProvider>().applyLoginSession(
+                  firebaseUser: user,
+                );
+            if (!mounted) return;
+            if (profile != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Registration successful!'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+              await navigateAfterLogin(
+                context: context,
+                user: user,
+                profile: profile,
+                loginPortal: 'doctor',
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Account created but profile could not be loaded. Please log in.',
+                  ),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => LoginScreen(userType: widget.userType),
+                ),
+              );
+            }
+          }
+        } else if (requiresEmailVerificationPortal(widget.userType)) {
+          final user = FirebaseAuth.instance.currentUser;
+          if (user != null && !user.emailVerified) {
+            await authService.sendEmailVerification();
+          }
+
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => EmailVerificationPage(
                 email: registrationEmail,
+                loginPortal: widget.userType,
               ),
             ),
           );
@@ -432,6 +555,58 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       return null;
                     },
                   ),
+                  const SizedBox(height: OrthoqSpacing.md),
+                  TextFormField(
+                    controller: _credentialsController,
+                    maxLines: 2,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: OrthoqTheme.field(
+                      labelText: 'Credentials',
+                      hintText: 'e.g., MBBCh, MS Ortho',
+                      alignLabelWithHint: true,
+                      prefixIcon: const Icon(Icons.school_outlined),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter your credentials';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: OrthoqSpacing.md),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Profile photo',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade800,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: _isLoading ? null : _pickProfileImage,
+                      borderRadius: BorderRadius.circular(12),
+                      child: _doctorProfilePreview(),
+                    ),
+                  ),
+                  if (_pickedImageFile != null) ...[
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: _isLoading
+                            ? null
+                            : () => setState(() => _pickedImageFile = null),
+                        icon: const Icon(Icons.delete_outline, size: 18),
+                        label: const Text('Remove photo'),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: OrthoqSpacing.md),
                 ],
                 

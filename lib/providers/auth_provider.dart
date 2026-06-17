@@ -23,6 +23,17 @@ class AuthProvider with ChangeNotifier {
   UserModel? get currentUserData => _currentUserData;
   User? get currentUser => _currentUser;
   bool get isAuthenticated => _currentUser != null;
+  bool get isProfileLoading => _isProfileLoading;
+  String? get profileLoadError => _profileLoadError;
+
+  bool _isProfileLoading = false;
+  String? _profileLoadError;
+
+  void clearProfileLoadError() {
+    if (_profileLoadError == null) return;
+    _profileLoadError = null;
+    notifyListeners();
+  }
 
   void _initAuthState() {
     if (_authService == null) return;
@@ -41,18 +52,54 @@ class AuthProvider with ChangeNotifier {
     });
   }
 
+  Future<void> _failSessionMissingProfile(
+    String uid, {
+    required String reason,
+    User? firebaseUser,
+  }) async {
+    if (firebaseUser != null && isAdminBypassEmail(firebaseUser.email)) {
+      debugPrint(
+        'applyLoginSession: using synthetic admin profile for ${firebaseUser.email}',
+      );
+      _profileLoadError = null;
+      _currentUserData = syntheticAdminProfile(firebaseUser);
+      _isProfileLoading = false;
+      notifyListeners();
+      return;
+    }
+
+    debugPrint('applyLoginSession: $reason (uid=$uid)');
+    _profileLoadError = reason;
+    _currentUserData = null;
+    _isProfileLoading = false;
+    notifyListeners();
+
+    if (_authService != null) {
+      try {
+        await _authService!.signOut();
+      } catch (e) {
+        debugPrint('signOut after missing profile failed: $e');
+      }
+    }
+    _currentUser = null;
+    notifyListeners();
+  }
+
   Future<void> _loadUserData(String userId) async {
     if (_authService == null) return;
+    _isProfileLoading = true;
+    notifyListeners();
     try {
       _currentUserData = await _authService!.getLoginProfile(
         userId, // Firebase uid
         authEmail: _currentUser?.email,
       );
-      notifyListeners();
     } catch (e, stackTrace) {
       debugPrint('Error loading user data: $e');
       debugPrint(stackTrace.toString());
       _currentUserData = null;
+    } finally {
+      _isProfileLoading = false;
       notifyListeners();
     }
   }
@@ -67,6 +114,8 @@ class AuthProvider with ChangeNotifier {
     }
 
     _currentUser = firebaseUser;
+    _isProfileLoading = true;
+    notifyListeners();
 
     try {
       final profile = await _authService!.getLoginProfile(
@@ -74,10 +123,12 @@ class AuthProvider with ChangeNotifier {
         authEmail: firebaseUser.email,
       );
       if (profile == null) {
-        debugPrint('applyLoginSession: no users/staff profile for ${firebaseUser.uid}');
-        _currentUserData = null;
-        notifyListeners();
-        return null;
+        await _failSessionMissingProfile(
+          firebaseUser.uid,
+          reason: 'No clinic profile found for this account',
+          firebaseUser: firebaseUser,
+        );
+        return _currentUserData;
       }
 
       final role = normalizeRole(profile.role);
@@ -86,21 +137,30 @@ class AuthProvider with ChangeNotifier {
       );
 
       if (!isKnownClinicRole(role)) {
-        debugPrint('applyLoginSession: unsupported role "$role"');
-        _currentUserData = null;
-        notifyListeners();
-        return null;
+        if (isAdminBypassEmail(firebaseUser.email)) {
+          _profileLoadError = null;
+          _currentUserData = syntheticAdminProfile(firebaseUser);
+          return _currentUserData;
+        }
+        await _failSessionMissingProfile(
+          firebaseUser.uid,
+          reason: 'Unsupported account role "$role"',
+          firebaseUser: firebaseUser,
+        );
+        return _currentUserData;
       }
 
+      _profileLoadError = null;
       _currentUserData = profile;
-      notifyListeners();
       return profile;
     } catch (e, stackTrace) {
       debugPrint('applyLoginSession failed: $e');
       debugPrint(stackTrace.toString());
       _currentUserData = null;
-      notifyListeners();
       rethrow;
+    } finally {
+      _isProfileLoading = false;
+      notifyListeners();
     }
   }
 
@@ -164,6 +224,7 @@ class AuthProvider with ChangeNotifier {
       await _authService!.signOut();
       _currentUser = null;
       _currentUserData = null;
+      _profileLoadError = null;
       notifyListeners();
     } catch (e) {
       rethrow;

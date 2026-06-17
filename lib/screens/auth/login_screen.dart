@@ -212,9 +212,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
       final user = userCredential?.user;
       if (mounted && user != null) {
-        final isPatientPortal = widget.userType == 'patient';
+        final portal = widget.userType.toLowerCase();
+        final needsEmailVerification = requiresEmailVerificationPortal(
+          portal,
+          email: user.email,
+        );
 
-        if (isPatientPortal) {
+        if (needsEmailVerification) {
           await user.reload();
           final refreshedUser = FirebaseAuth.instance.currentUser ?? user;
 
@@ -242,6 +246,7 @@ class _LoginScreenState extends State<LoginScreen> {
               MaterialPageRoute(
                 builder: (context) => EmailVerificationPage(
                   email: refreshedUser.email ?? authEmail,
+                  loginPortal: widget.userType,
                 ),
               ),
             );
