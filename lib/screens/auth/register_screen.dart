@@ -8,10 +8,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:provider/provider.dart';
 import 'email_verification_page.dart';
 import 'login_screen.dart';
-import '../../providers/auth_provider.dart';
 import '../../services/auth_service.dart';
 import '../../utils/auth_navigation.dart';
 import '../../utils/validation_utils.dart';
@@ -239,42 +237,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (mounted) {
         if (widget.userType == 'doctor') {
-          final user = FirebaseAuth.instance.currentUser;
-          if (user != null) {
-            final profile = await context.read<AuthProvider>().applyLoginSession(
-                  firebaseUser: user,
-                );
-            if (!mounted) return;
-            if (profile != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Registration successful!'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-              await navigateAfterLogin(
-                context: context,
-                user: user,
-                profile: profile,
-                loginPortal: 'doctor',
-              );
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Account created but profile could not be loaded. Please log in.',
-                  ),
-                  backgroundColor: Colors.orange,
-                ),
-              );
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => LoginScreen(userType: widget.userType),
-                ),
-              );
-            }
-          }
+          await FirebaseAuth.instance.signOut();
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Account successfully created! Please log in to continue.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => LoginScreen(userType: widget.userType),
+            ),
+          );
         } else if (requiresEmailVerificationPortal(widget.userType)) {
           final user = FirebaseAuth.instance.currentUser;
           if (user != null && !user.emailVerified) {
@@ -440,6 +416,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           padding: OrthoqSpacing.form,
           child: Form(
             key: _formKey,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -481,6 +458,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 TextFormField(
                   controller: _phoneNumberController,
                   keyboardType: TextInputType.phone,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(10),
+                  ],
                   decoration: OrthoqTheme.field(
                     labelText: 'Phone Number',
                     prefixText: '+60 ',

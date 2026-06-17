@@ -86,12 +86,27 @@ class ValidationUtils {
       return 'Please enter your phone number';
     }
 
-    final trimmed = normalizePhoneNumber(value);
-    if (trimmed.startsWith('0') || trimmed.startsWith('60')) {
-      return 'Start typing directly after the +60 prefix (e.g., 123456789)';
+    final digits = normalizePhoneNumber(value);
+
+    if (digits.startsWith('0') || digits.startsWith('60')) {
+      return 'Start typing directly after the +60 prefix';
     }
 
-    return validateMalaysianPhone('+60$trimmed');
+    if (digits.length < 9 || digits.length > 10) {
+      return 'Enter a valid Malaysian phone number (9-10 digits)';
+    }
+
+    if (RegExp(r'[a-zA-Z]').hasMatch(digits)) {
+      return 'Enter a valid Malaysian phone number (9-10 digits)';
+    }
+
+    // National mobile number after country code: 1[1-9] + 7–8 digits.
+    final nationalNumberRegex = RegExp(r'^1[1-9][0-9]{7,8}$');
+    if (!nationalNumberRegex.hasMatch(digits)) {
+      return 'Enter a valid Malaysian phone number (9-10 digits)';
+    }
+
+    return null;
   }
 
   /// Stores Malaysian numbers as `60XXXXXXXXX` (no plus sign).
