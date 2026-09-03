@@ -213,6 +213,7 @@ class AuthService {
     String? imageUrl,
     File? profileImageFile,
     String? doctorId,
+    String? officialDoctorId,
     String? staffId,
   }) async {
     try {
@@ -268,6 +269,7 @@ class AuthService {
           specialization: specialization,
           credentials: credentials,
           imageUrl: doctorImageUrl,
+          officialDoctorId: officialDoctorId?.trim(),
         );
       }
 

@@ -34,8 +34,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   
   // Doctor-specific fields
-  final _specializationController = TextEditingController();
+  final _doctorIdController = TextEditingController();
   final _credentialsController = TextEditingController();
+  final List<String> _specializations = const [
+    'Orthopaedic (Hand Surgeon)',
+    'Orthopaedic (Spine Surgery)',
+    'Orthopaedic (Foot & Ankle)',
+  ];
+  String? _selectedSpecialization;
   File? _pickedImageFile;
   final ImagePicker _imagePicker = ImagePicker();
   
@@ -59,8 +65,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _homeAddressController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _specializationController.dispose();
     _credentialsController.dispose();
+    _doctorIdController.dispose();
     _staffIdController.dispose();
     super.dispose();
   }
@@ -199,13 +205,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
         icNumber: normalizedIC,
         homeAddress: homeAddressTrimmed,
         role: role,
-        specialization: widget.userType == 'doctor' 
-            ? _specializationController.text.trim().isNotEmpty 
-                ? _specializationController.text.trim() 
-                : null
+        specialization: widget.userType == 'doctor'
+            ? _selectedSpecialization
             : null,
         credentials: widget.userType == 'doctor'
             ? _credentialsController.text.trim()
+            : null,
+        officialDoctorId: widget.userType == 'doctor'
+            ? _doctorIdController.text.trim()
             : null,
         profileImageFile:
             widget.userType == 'doctor' ? _pickedImageFile : null,
@@ -241,8 +248,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Account successfully created! Please log in to continue.'),
+              content: Text(
+                'Registration submitted! Your account is pending administrator '
+                'approval. You will be able to sign in once approved.',
+              ),
               backgroundColor: Colors.green,
+              duration: Duration(seconds: 6),
             ),
           );
           Navigator.pushReplacement(
@@ -437,7 +448,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: OrthoqSpacing.lg),
-                
+
+                if (widget.userType == 'doctor') ...[
+                  TextFormField(
+                    controller: _doctorIdController,
+                    keyboardType: TextInputType.text,
+                    textCapitalization: TextCapitalization.characters,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    decoration: OrthoqTheme.field(
+                      labelText: 'Doctor ID',
+                      prefixIcon: const Icon(Icons.badge),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter your official Doctor ID';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: OrthoqSpacing.md),
+                ],
+
                 // Full Name Field
                 TextFormField(
                   controller: _fullNameController,
@@ -526,16 +557,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 
                 // Doctor Specialization Field (only for doctors)
                 if (widget.userType == 'doctor') ...[
-                  TextFormField(
-                    controller: _specializationController,
+                  DropdownButtonFormField<String>(
+                    value: _selectedSpecialization,
                     decoration: OrthoqTheme.field(
                       labelText: 'Specialization',
-                      hintText: 'e.g., Orthopedic Surgeon',
-                      prefixIcon: const Icon(Icons.work),
+                      prefixIcon: const Icon(Icons.healing),
                     ),
+                    items: _specializations.map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    onChanged: _isLoading
+                        ? null
+                        : (newValue) {
+                            setState(() {
+                              _selectedSpecialization = newValue;
+                            });
+                          },
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter your specialization';
+                        return 'Please select your specialization';
                       }
                       return null;
                     },

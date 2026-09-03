@@ -8,6 +8,7 @@ import '../../theme/orthoq_navigation.dart';
 import '../auth/welcome_screen.dart';
 import 'admin_assign_staff_page.dart';
 import 'appointment_report_screen.dart';
+import 'admin_doctor_approvals_page.dart';
 import 'admin_doctor_list_page.dart';
 import 'admin_staff_list_page.dart';
 import 'admin_patient_list_page.dart';
@@ -116,6 +117,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         onDoctors: () {
           Navigator.pop(context);
           _openPage(const AdminDoctorListPage());
+        },
+        onDoctorApprovals: () {
+          Navigator.pop(context);
+          _openPage(const AdminDoctorApprovalsPage());
         },
         onPatientList: () {
           Navigator.pop(context);
@@ -360,6 +365,7 @@ class _AdminDrawer extends StatelessWidget {
     required this.onDashboard,
     required this.onStaffList,
     required this.onDoctors,
+    required this.onDoctorApprovals,
     required this.onPatientList,
     required this.onAssignStaff,
     required this.onReports,
@@ -371,6 +377,7 @@ class _AdminDrawer extends StatelessWidget {
   final VoidCallback onDashboard;
   final VoidCallback onStaffList;
   final VoidCallback onDoctors;
+  final VoidCallback onDoctorApprovals;
   final VoidCallback onPatientList;
   final VoidCallback onAssignStaff;
   final VoidCallback onReports;
@@ -412,6 +419,7 @@ class _AdminDrawer extends StatelessWidget {
           _DrawerTile(icon: Icons.dashboard_outlined, label: 'Dashboard', onTap: onDashboard),
           _DrawerTile(icon: Icons.groups, label: 'Staff List', onTap: onStaffList),
           _DrawerTile(icon: Icons.medical_services_outlined, label: 'Doctors List', onTap: onDoctors),
+          _DrawerTile(icon: Icons.how_to_reg_outlined, label: 'Doctor Registrations', onTap: onDoctorApprovals),
           _DrawerTile(icon: Icons.people_outline, label: 'Patient List', onTap: onPatientList),
           _DrawerTile(icon: Icons.assignment_ind_outlined, label: 'Assign Staff', onTap: onAssignStaff),
           _DrawerTile(icon: Icons.bar_chart, label: 'Reports', onTap: onReports),

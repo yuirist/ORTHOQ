@@ -108,6 +108,7 @@ class DoctorService {
         'phoneNumber': phoneNumber.trim(),
         'imageUrl': normalizedImage,
         'isActive': true,
+        'approvalStatus': DoctorModel.approvalApproved,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
@@ -147,6 +148,7 @@ class DoctorService {
         'Credentials': credentials.trim(),
         'hospital': 'Hospital Kajang',
         'isActive': true,
+        'approvalStatus': DoctorModel.approvalApproved,
         'userId': '',
         'email': '',
         'phoneNumber': '',
@@ -188,6 +190,7 @@ class DoctorService {
     String? specialization,
     String? credentials,
     String? imageUrl,
+    String? officialDoctorId,
   }) async {
     final docId = uid.trim();
     if (docId.isEmpty) {
@@ -202,10 +205,13 @@ class DoctorService {
           : imageUrl,
     );
 
+    final clinicDoctorId = officialDoctorId?.trim() ?? '';
+
     await _firestore.collection('doctors').doc(docId).set({
       'id': docId,
       'uid': docId,
       'userId': docId,
+      if (clinicDoctorId.isNotEmpty) 'doctorId': clinicDoctorId,
       'name': cleanName,
       'specialization': specialization?.trim() ?? '',
       'credentials': creds,
@@ -213,11 +219,66 @@ class DoctorService {
       'email': email.trim(),
       'phoneNumber': phoneNumber,
       'imageUrl': normalizedImage,
-      'isActive': true,
+      'isActive': false,
+      'approvalStatus': DoctorModel.approvalPending,
       'hospital': 'Hospital Kajang',
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
+  }
+
+  // Get doctors awaiting admin approval (self-registration).
+  Stream<List<DoctorModel>> getPendingDoctors() {
+    return _firestore
+        .collection('doctors')
+        .where('approvalStatus', isEqualTo: DoctorModel.approvalPending)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => DoctorModel.fromMap(doc.data(), doc.id))
+              .toList(),
+        );
+  }
+
+  /// Approves a pending doctor registration.
+  Future<void> approveDoctor({
+    required String doctorId,
+    required String reviewedBy,
+  }) async {
+    try {
+      await _firestore.collection('doctors').doc(doctorId).update({
+        'isActive': true,
+        'approvalStatus': DoctorModel.approvalApproved,
+        'reviewedAt': FieldValue.serverTimestamp(),
+        'reviewedBy': reviewedBy.trim(),
+        'rejectionReason': FieldValue.delete(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      throw 'Error approving doctor: $e';
+    }
+  }
+
+  /// Rejects a pending doctor registration.
+  Future<void> rejectDoctor({
+    required String doctorId,
+    required String reviewedBy,
+    String? rejectionReason,
+  }) async {
+    try {
+      final reason = rejectionReason?.trim() ?? '';
+      await _firestore.collection('doctors').doc(doctorId).update({
+        'isActive': false,
+        'approvalStatus': DoctorModel.approvalRejected,
+        'rejectionReason': reason.isEmpty ? 'Not approved by administrator.' : reason,
+        'reviewedAt': FieldValue.serverTimestamp(),
+        'reviewedBy': reviewedBy.trim(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      throw 'Error rejecting doctor: $e';
+    }
   }
 
   // Get all active doctors

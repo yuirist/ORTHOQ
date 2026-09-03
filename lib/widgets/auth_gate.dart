@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../screens/auth/email_verification_page.dart';
+import '../screens/auth/doctor_approval_gate.dart';
 import '../screens/auth/welcome_screen.dart';
 import '../theme/orthoq_colors.dart';
 import '../theme/orthoq_typography.dart';
@@ -34,6 +35,10 @@ Widget _routeAuthenticatedUser({
 
   if (requiresEmailVerification(normalizedRole)) {
     return EmailVerifiedGate(user: user, profile: profile);
+  }
+
+  if (normalizedRole == 'doctor') {
+    return DoctorApprovalGate(user: user, profile: profile);
   }
 
   final resolved = ensureUserProfile(

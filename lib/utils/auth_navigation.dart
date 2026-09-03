@@ -5,6 +5,7 @@ import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../theme/orthoq_colors.dart';
 import '../screens/admin/admin_home_screen.dart';
+import '../screens/auth/doctor_approval_gate.dart';
 import '../screens/doctor/doctor_home_screen.dart';
 import '../screens/patient/patient_home_screen.dart';
 import '../screens/staff/staff_home_screen.dart';
@@ -240,6 +241,20 @@ Future<void> navigateAfterLogin({
   );
 
   if (!context.mounted) return;
+
+  if (role == 'doctor') {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => DoctorApprovalGate(
+          user: user,
+          profile: resolved,
+        ),
+      ),
+      (route) => false,
+    );
+    return;
+  }
+
   Navigator.of(context).pushAndRemoveUntil(
     MaterialPageRoute(
       builder: (_) => homeScreenForRole(
