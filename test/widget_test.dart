@@ -12,6 +12,9 @@ import 'package:orthoq_app/main.dart';
 void main() {
   testWidgets('App builds welcome screen', (WidgetTester tester) async {
     await tester.pumpWidget(const OrthoQApp(firebaseInitialized: false));
-    expect(find.text('Patient Login'), findsOneWidget);
+    expect(find.text('Patient'), findsOneWidget);
+    expect(find.text('Doctor'), findsOneWidget);
+    expect(find.text('Staff'), findsOneWidget);
+    expect(find.text('Admin'), findsOneWidget);
   });
 }
