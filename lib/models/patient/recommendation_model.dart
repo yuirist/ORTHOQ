@@ -1,4 +1,4 @@
-import '../models/doctor_model.dart';
+import '../doctor/doctor_model.dart';
 
 /// Result of rule-based symptom analysis and Firestore doctor lookup.
 class SpecialistRecommendation {

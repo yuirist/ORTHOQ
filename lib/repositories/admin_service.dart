@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../models/appointment_model.dart';
-import '../models/user_model.dart';
+import '../models/appointment/appointment_model.dart';
+import '../models/common/user_model.dart';
 import 'appointment_service.dart';
 
 /// Clinic-wide metrics for the admin overview.

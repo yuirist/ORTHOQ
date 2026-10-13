@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
 
-import '../../models/doctor_model.dart';
-import '../../services/doctor_service.dart';
+import '../../models/doctor/doctor_model.dart';
+import '../../repositories/doctor_service.dart';
 
 /// Assign exactly three doctor document IDs to a staff user's `assignedDoctorIds`.
 class AdminAssignStaffPage extends StatefulWidget {

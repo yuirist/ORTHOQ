@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 /// OrthoQ staff calendars: **clinic window 8:00 AM–12:00 PM** with **15-minute** slots.

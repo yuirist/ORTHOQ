@@ -3,11 +3,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
-import 'screens/auth/welcome_screen.dart';
+import 'pages/auth/welcome_screen.dart';
 import 'widgets/auth_gate.dart';
 
 import 'firebase_options.dart';
-import 'theme/orthoq_theme.dart';
+import 'constants/orthoq_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

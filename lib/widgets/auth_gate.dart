@@ -2,13 +2,13 @@ import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../models/user_model.dart';
+import '../models/common/user_model.dart';
 import '../providers/auth_provider.dart';
-import '../screens/auth/email_verification_page.dart';
-import '../screens/auth/welcome_screen.dart';
-import '../theme/orthoq_colors.dart';
-import '../theme/orthoq_typography.dart';
-import '../utils/auth_navigation.dart';
+import '../pages/auth/email_verification_page.dart';
+import '../pages/auth/welcome_screen.dart';
+import '../constants/orthoq_colors.dart';
+import '../constants/orthoq_typography.dart';
+import '../helpers/auth_navigation.dart';
 
 const Duration _profileFetchTimeout = Duration(seconds: 15);
 const Duration _emailReloadTimeout = Duration(seconds: 10);

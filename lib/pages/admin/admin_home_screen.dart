@@ -1,10 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../../models/user_model.dart';
-import '../../services/admin_service.dart';
-import '../../theme/orthoq_colors.dart';
-import '../../theme/orthoq_navigation.dart';
+import '../../models/common/user_model.dart';
+import '../../repositories/admin_service.dart';
+import '../../constants/orthoq_colors.dart';
+import '../../constants/routes/orthoq_navigation.dart';
 import '../auth/welcome_screen.dart';
 import 'admin_assign_staff_page.dart';
 import 'appointment_report_screen.dart';

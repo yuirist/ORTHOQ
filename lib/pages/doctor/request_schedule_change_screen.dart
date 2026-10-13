@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
 import 'package:intl/intl.dart';
-import '../../services/appointment_service.dart';
-import '../../models/appointment_model.dart';
+import '../../repositories/appointment_service.dart';
+import '../../models/appointment/appointment_model.dart';
 
 class RequestScheduleChangeScreen extends StatefulWidget {
   final AppointmentModel appointment;

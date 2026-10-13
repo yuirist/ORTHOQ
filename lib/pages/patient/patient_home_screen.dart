@@ -1,15 +1,15 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
-import 'package:orthoq_app/theme/orthoq_navigation.dart';
-import 'package:orthoq_app/theme/orthoq_typography.dart';
-import 'package:orthoq_app/theme/orthoq_widgets.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
+import 'package:orthoq_app/constants/routes/orthoq_navigation.dart';
+import 'package:orthoq_app/constants/orthoq_typography.dart';
+import 'package:orthoq_app/widgets/orthoq_widgets.dart';
 
-import '../../models/user_model.dart';
+import '../../models/common/user_model.dart';
 import '../../providers/auth_provider.dart';
-import '../../services/appointment_service.dart';
-import '../../models/appointment_model.dart';
+import '../../repositories/appointment_service.dart';
+import '../../models/appointment/appointment_model.dart';
 import 'book_appointment_screen.dart';
 import 'my_appointments_screen.dart';
 import 'patient_profile_screen.dart';

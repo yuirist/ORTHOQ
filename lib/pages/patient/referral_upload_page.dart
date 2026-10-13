@@ -2,12 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../services/cloudinary_service.dart';
-import '../../services/email_service.dart';
-import '../../utils/patient_email_resolver.dart';
+import '../../repositories/cloudinary_service.dart';
+import '../../repositories/email_service.dart';
+import '../../helpers/patient_email_resolver.dart';
 import 'success_page.dart';
 
 class ReferralUploadPage extends StatefulWidget {

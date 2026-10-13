@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../models/doctor_model.dart';
-import '../../services/doctor_service.dart';
+import '../../models/doctor/doctor_model.dart';
+import '../../repositories/doctor_service.dart';
 
 class ManageDelaysPage extends StatefulWidget {
   const ManageDelaysPage({super.key});

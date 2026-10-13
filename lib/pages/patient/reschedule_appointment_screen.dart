@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../models/appointment_model.dart';
-import '../../utils/patient_email_resolver.dart';
+import '../../models/appointment/appointment_model.dart';
+import '../../helpers/patient_email_resolver.dart';
 import '../../widgets/slot_availability_checker.dart';
 
 class RescheduleAppointmentScreen extends StatefulWidget {

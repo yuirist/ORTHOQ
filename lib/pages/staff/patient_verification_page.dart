@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import '../../services/email_service.dart';
-import '../../utils/patient_email_resolver.dart';
-import '../../utils/referral_url_utils.dart';
-import '../../utils/staff_scope.dart';
+import '../../repositories/email_service.dart';
+import '../../helpers/patient_email_resolver.dart';
+import '../../helpers/referral_url_utils.dart';
+import '../../helpers/staff_scope.dart';
 import 'staff_scheduling_page.dart';
 import 'staff_appointment_calendar_mapper.dart';
 

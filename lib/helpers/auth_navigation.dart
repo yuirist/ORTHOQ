@@ -1,13 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../models/user_model.dart';
-import '../services/auth_service.dart';
-import '../theme/orthoq_colors.dart';
-import '../screens/admin/admin_home_screen.dart';
-import '../screens/doctor/doctor_home_screen.dart';
-import '../screens/patient/patient_home_screen.dart';
-import '../screens/staff/staff_home_screen.dart';
+import '../models/common/user_model.dart';
+import '../repositories/auth_service.dart';
+import '../constants/orthoq_colors.dart';
+import '../pages/admin/admin_home_screen.dart';
+import '../pages/doctor/doctor_home_screen.dart';
+import '../pages/patient/patient_home_screen.dart';
+import '../pages/staff/staff_home_screen.dart';
 
 /// Normalizes Firestore `role` values.
 String normalizeRole(String? role) {

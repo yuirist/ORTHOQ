@@ -1,9 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../../services/auth_service.dart';
-import '../../theme/orthoq_colors.dart';
-import '../../theme/orthoq_widgets.dart';
+import '../../repositories/auth_service.dart';
+import '../../constants/orthoq_colors.dart';
+import '../../widgets/orthoq_widgets.dart';
 import 'login_screen.dart';
 
 /// Email verification gate after registration or blocked login.

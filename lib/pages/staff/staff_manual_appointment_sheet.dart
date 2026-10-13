@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
 
-import '../../services/email_service.dart';
-import '../../utils/doctor_name_format.dart';
+import '../../repositories/email_service.dart';
+import '../../helpers/doctor_name_format.dart';
 
 /// Quick-add or reschedule form for staff on a doctor's calendar.
 /// Returns `true` when an appointment was saved successfully.

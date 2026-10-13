@@ -1,10 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-import '../../models/user_model.dart';
-import '../../services/admin_service.dart';
-import '../../theme/orthoq_colors.dart';
-import '../../theme/orthoq_widgets.dart';
+import '../../models/common/user_model.dart';
+import '../../repositories/admin_service.dart';
+import '../../constants/orthoq_colors.dart';
+import '../../widgets/orthoq_widgets.dart';
 
 class AdminPatientListPage extends StatelessWidget {
   const AdminPatientListPage({super.key});

@@ -1,8 +1,8 @@
 import 'package:intl/intl.dart';
 
-import '../data/orthoq_faq_knowledge.dart';
-import '../models/appointment_model.dart';
-import '../models/recommendation_model.dart';
+import '../constants/orthoq_faq_knowledge.dart';
+import '../models/appointment/appointment_model.dart';
+import '../models/patient/recommendation_model.dart';
 import 'appointment_service.dart';
 import 'doctor_recommendation_service.dart';
 import 'gemini_service.dart';

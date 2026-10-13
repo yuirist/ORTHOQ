@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/appointment_model.dart';
-import '../utils/validation_utils.dart';
+import '../models/appointment/appointment_model.dart';
+import '../helpers/validation_utils.dart';
 
 class AppointmentService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
-import '../../models/doctor_model.dart';
-import '../../services/doctor_service.dart';
+import '../../models/doctor/doctor_model.dart';
+import '../../repositories/doctor_service.dart';
 import '../../widgets/doctor_avatar.dart';
 import 'staff_manual_appointment_sheet.dart';
 

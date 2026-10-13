@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../models/user_model.dart';
-import '../../services/doctor_delay_notification_service.dart';
-import '../../theme/orthoq_colors.dart';
-import '../../theme/orthoq_widgets.dart';
+import '../../models/common/user_model.dart';
+import '../../repositories/doctor_delay_notification_service.dart';
+import '../../constants/orthoq_colors.dart';
+import '../../widgets/orthoq_widgets.dart';
 import 'delay_notifications_page.dart';
 import 'doctor_requests_page.dart';
 import 'patient_verification_page.dart';

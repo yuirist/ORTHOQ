@@ -1,8 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-import '../services/doctor_service.dart';
-import '../theme/orthoq_colors.dart';
+import '../repositories/doctor_service.dart';
+import '../constants/orthoq_colors.dart';
 
 /// Circular doctor photo with CachedNetworkImage and a safe fallback icon.
 class DoctorAvatar extends StatelessWidget {

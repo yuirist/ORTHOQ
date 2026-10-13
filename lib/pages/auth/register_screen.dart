@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
-import 'package:orthoq_app/theme/orthoq_theme.dart';
-import 'package:orthoq_app/theme/orthoq_widgets.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_theme.dart';
+import 'package:orthoq_app/widgets/orthoq_widgets.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -10,9 +10,9 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'email_verification_page.dart';
 import 'login_screen.dart';
-import '../../services/auth_service.dart';
-import '../../utils/auth_navigation.dart';
-import '../../utils/validation_utils.dart';
+import '../../repositories/auth_service.dart';
+import '../../helpers/auth_navigation.dart';
+import '../../helpers/validation_utils.dart';
 
 class RegisterScreen extends StatefulWidget {
   final String userType;

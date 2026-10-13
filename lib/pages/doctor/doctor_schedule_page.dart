@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
 import 'package:provider/provider.dart';
 
-import '../../models/user_model.dart';
+import '../../models/common/user_model.dart';
 import '../../providers/auth_provider.dart';
-import '../../services/doctor_service.dart';
-import '../../utils/doctor_name_format.dart';
+import '../../repositories/doctor_service.dart';
+import '../../helpers/doctor_name_format.dart';
 import 'doctor_appointment_schedule_view.dart';
 
 class _ResolvedDoctorSchedule {

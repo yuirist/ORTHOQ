@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../models/chat_message_model.dart';
+import '../models/patient/chat_message_model.dart';
 
 class ChatStorageService {
   ChatStorageService({FirebaseFirestore? firestore})

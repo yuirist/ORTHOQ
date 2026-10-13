@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
-import '../../models/doctor_model.dart';
-import '../../services/doctor_service.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
+import '../../models/doctor/doctor_model.dart';
+import '../../repositories/doctor_service.dart';
 import '../../widgets/doctor_avatar.dart';
 import 'patient_information_screen.dart';
 

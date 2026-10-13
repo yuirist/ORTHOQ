@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../models/doctor_model.dart';
-import '../../models/recommendation_model.dart';
-import '../../services/doctor_recommendation_service.dart';
-import '../../theme/orthoq_colors.dart';
-import '../../theme/orthoq_typography.dart';
-import '../../theme/orthoq_widgets.dart';
+import '../../models/doctor/doctor_model.dart';
+import '../../models/patient/recommendation_model.dart';
+import '../../repositories/doctor_recommendation_service.dart';
+import '../../constants/orthoq_colors.dart';
+import '../../constants/orthoq_typography.dart';
+import '../../widgets/orthoq_widgets.dart';
 import 'book_appointment_screen.dart';
 
 /// Symptom-based orthopaedic specialist recommendation screen.

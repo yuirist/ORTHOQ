@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../utils/firestore_date_utils.dart';
+import '../../helpers/firestore_date_utils.dart';
 
 class DoctorModel {
   final String id;

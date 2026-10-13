@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
 import 'package:intl/intl.dart';
-import '../../models/appointment_model.dart';
+import '../../models/appointment/appointment_model.dart';
 import 'reschedule_appointment_screen.dart';
 
 class AppointmentDetailsScreen extends StatelessWidget {

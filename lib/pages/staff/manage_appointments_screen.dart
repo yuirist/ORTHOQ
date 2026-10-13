@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
 import 'package:intl/intl.dart';
-import '../../services/appointment_service.dart';
-import '../../services/email_service.dart';
-import '../../services/notification_service.dart';
-import '../../models/appointment_model.dart';
-import '../../utils/patient_email_resolver.dart';
+import '../../repositories/appointment_service.dart';
+import '../../repositories/email_service.dart';
+import '../../repositories/notification_service.dart';
+import '../../models/appointment/appointment_model.dart';
+import '../../helpers/patient_email_resolver.dart';
 
 class ManageAppointmentsScreen extends StatefulWidget {
   final bool showPendingReschedules;

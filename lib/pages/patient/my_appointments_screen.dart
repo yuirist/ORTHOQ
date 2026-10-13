@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import '../../models/appointment_model.dart';
-import '../../utils/referral_url_utils.dart';
+import '../../models/appointment/appointment_model.dart';
+import '../../helpers/referral_url_utils.dart';
 import 'reschedule_appointment_screen.dart';
-import '../../services/appointment_service.dart';
-import '../../services/doctor_service.dart';
-import '../../services/notification_service.dart';
+import '../../repositories/appointment_service.dart';
+import '../../repositories/doctor_service.dart';
+import '../../repositories/notification_service.dart';
 
 bool _isHistoryAppointment(AppointmentModel appointment) {
   final status = appointment.status.toLowerCase();

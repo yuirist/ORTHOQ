@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
 
-import '../../models/user_model.dart';
+import '../../models/common/user_model.dart';
 
 class DoctorManagementPage extends StatefulWidget {
   const DoctorManagementPage({super.key, this.userProfile});

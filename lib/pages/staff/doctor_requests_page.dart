@@ -4,16 +4,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
-import 'package:orthoq_app/theme/orthoq_theme.dart';
-import 'package:orthoq_app/theme/orthoq_widgets.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_theme.dart';
+import 'package:orthoq_app/widgets/orthoq_widgets.dart';
 import 'package:provider/provider.dart';
-import '../../models/doctor_model.dart';
-import '../../models/user_model.dart';
+import '../../models/doctor/doctor_model.dart';
+import '../../models/common/user_model.dart';
 import '../../providers/auth_provider.dart';
-import '../../services/doctor_delay_notification_service.dart';
-import '../../services/doctor_service.dart';
-import '../../utils/staff_scope.dart';
+import '../../repositories/doctor_delay_notification_service.dart';
+import '../../repositories/doctor_service.dart';
+import '../../helpers/staff_scope.dart';
 import 'delay_notifications_page.dart';
 
 class DoctorRequestsPage extends StatefulWidget {

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../models/user_model.dart';
-import '../../services/admin_service.dart';
-import '../../theme/orthoq_colors.dart';
+import '../../models/common/user_model.dart';
+import '../../repositories/admin_service.dart';
+import '../../constants/orthoq_colors.dart';
 
 class AdminEditStaffScreen extends StatefulWidget {
   const AdminEditStaffScreen({super.key, required this.staff});

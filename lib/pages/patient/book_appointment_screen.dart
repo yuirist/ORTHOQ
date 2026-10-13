@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../services/doctor_service.dart';
+import '../../repositories/doctor_service.dart';
 import '../../providers/auth_provider.dart';
-import '../../models/doctor_model.dart';
+import '../../models/doctor/doctor_model.dart';
 import '../../widgets/doctor_avatar.dart';
 import '../../widgets/slot_availability_checker.dart';
-import '../../utils/validation_utils.dart';
+import '../../helpers/validation_utils.dart';
 import 'referral_upload_page.dart';
 import 'confirmation_page.dart';
 

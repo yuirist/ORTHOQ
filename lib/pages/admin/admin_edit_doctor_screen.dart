@@ -3,10 +3,10 @@ import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
 
-import '../../models/doctor_model.dart';
-import '../../services/doctor_service.dart';
+import '../../models/doctor/doctor_model.dart';
+import '../../repositories/doctor_service.dart';
 
 class AdminEditDoctorScreen extends StatefulWidget {
   final DoctorModel doctor;

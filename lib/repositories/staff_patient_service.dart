@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../models/notification_model.dart';
-import '../utils/firestore_date_utils.dart';
+import '../models/notification/notification_model.dart';
+import '../helpers/firestore_date_utils.dart';
 
 /// Patient row derived from appointments linked to a doctor.
 class StaffDoctorPatient {

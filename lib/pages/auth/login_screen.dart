@@ -1,19 +1,19 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../utils/validation_utils.dart';
+import '../../helpers/validation_utils.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
-import '../../services/auth_service.dart';
+import '../../repositories/auth_service.dart';
 import 'register_screen.dart';
 import 'email_verification_page.dart';
 import 'forgot_password_page.dart';
-import '../../theme/orthoq_colors.dart';
-import '../../theme/orthoq_theme.dart';
-import '../../theme/orthoq_widgets.dart';
-import '../../utils/auth_navigation.dart';
+import '../../constants/orthoq_colors.dart';
+import '../../constants/orthoq_theme.dart';
+import '../../widgets/orthoq_widgets.dart';
+import '../../helpers/auth_navigation.dart';
 
 class LoginScreen extends StatefulWidget {
   final String userType; // 'patient', 'doctor', 'staff', 'admin'

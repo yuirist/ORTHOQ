@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../providers/auth_provider.dart';
-import '../../services/appointment_service.dart';
-import '../../models/appointment_model.dart';
+import '../../repositories/appointment_service.dart';
+import '../../models/appointment/appointment_model.dart';
 import 'request_schedule_change_screen.dart';
 
 class DoctorAppointmentsScreen extends StatelessWidget {

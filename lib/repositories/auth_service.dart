@@ -4,8 +4,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'dart:io';
 
-import '../models/user_model.dart';
-import '../utils/doctor_name_format.dart';
+import '../models/common/user_model.dart';
+import '../helpers/doctor_name_format.dart';
 import 'cloudinary_service.dart';
 import 'doctor_service.dart';
 

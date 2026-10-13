@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../services/cloudinary_service.dart';
+import '../repositories/cloudinary_service.dart';
 
 /// Opens a referral letter URL (PDF or image) in an external viewer/browser.
 Future<void> openReferralLetterUrl(

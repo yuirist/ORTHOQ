@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
 
-import '../../models/doctor_model.dart';
+import '../../models/doctor/doctor_model.dart';
 import 'admin_report_preview_page.dart';
 import 'appointment_report_aggregator.dart';
 

@@ -1,4 +1,4 @@
-import '../../models/user_model.dart';
+import '../../models/common/user_model.dart';
 import 'admin_home_screen.dart';
 
 /// Legacy name for [AdminHomeScreen].

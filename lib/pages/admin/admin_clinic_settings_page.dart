@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/orthoq_colors.dart';
+import '../../constants/orthoq_colors.dart';
 
 /// Admin clinic configuration (placeholder for future settings).
 class AdminClinicSettingsPage extends StatelessWidget {

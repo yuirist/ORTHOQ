@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../data/symptom_keyword_data.dart';
-import '../models/doctor_model.dart';
-import '../models/recommendation_model.dart';
+import '../constants/symptom_keyword_data.dart';
+import '../models/doctor/doctor_model.dart';
+import '../models/patient/recommendation_model.dart';
 
 /// Rule-based AI service: keyword matching + Firestore doctor lookup.
 class DoctorRecommendationService {

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../services/doctor_service.dart';
-import '../../utils/validation_utils.dart';
+import '../../repositories/doctor_service.dart';
+import '../../helpers/validation_utils.dart';
 import 'package:uuid/uuid.dart';
 import 'book_appointment_screen.dart';
 

@@ -109,38 +109,25 @@ OrthoQ follows a **layered architecture** pattern:
 
 ```
 lib/
-├── models/              # Data models
-│   ├── user_model.dart
-│   ├── appointment_model.dart
-│   ├── doctor_model.dart
-│   └── notification_model.dart
-├── services/            # Business logic and API calls
-│   ├── auth_service.dart
-│   ├── appointment_service.dart
-│   ├── doctor_service.dart
-│   ├── storage_service.dart
-│   └── notification_service.dart
-├── providers/           # State management
-│   └── auth_provider.dart
-├── screens/             # UI screens
-│   ├── auth/
-│   │   ├── welcome_screen.dart
-│   │   ├── login_screen.dart
-│   │   └── register_screen.dart
-│   ├── patient/
-│   │   ├── patient_home_screen.dart
-│   │   ├── book_appointment_screen.dart
-│   │   ├── my_appointments_screen.dart
-│   │   ├── reschedule_appointment_screen.dart
-│   │   └── patient_profile_screen.dart
+├── constants/           # Colors, theme, routes, and static app data
+│   └── routes/
+├── helpers/             # Shared formatting, validation, and navigation helpers
+├── models/              # Data models, grouped by feature
+│   ├── appointment/
+│   ├── common/
 │   ├── doctor/
-│   │   ├── doctor_home_screen.dart
-│   │   ├── doctor_appointments_screen.dart
-│   │   └── request_schedule_change_screen.dart
+│   ├── notification/
+│   └── patient/
+├── pages/               # UI screens, grouped by role
+│   ├── admin/
+│   ├── auth/
+│   ├── doctor/
+│   ├── patient/
 │   └── staff/
-│       ├── staff_home_screen.dart
-│       └── manage_appointments_screen.dart
-└── main.dart           # App entry point
+├── providers/           # State management
+├── repositories/        # Firestore, auth, and other data access
+├── widgets/             # Shared UI widgets
+└── main.dart            # App entry point
 ```
 
 ## User Flows

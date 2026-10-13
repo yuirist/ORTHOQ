@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
-import '../../models/doctor_model.dart';
-import '../../utils/doctor_name_format.dart';
+import '../../models/doctor/doctor_model.dart';
+import '../../helpers/doctor_name_format.dart';
 import 'doctor_calendar_view.dart';
 import 'staff_appointment_calendar_mapper.dart';
 import 'staff_calendar_appointment_tile.dart';

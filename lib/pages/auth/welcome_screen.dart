@@ -1,6 +1,6 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
-import '../../theme/orthoq_theme.dart';
+import '../../constants/orthoq_theme.dart';
 import 'login_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {

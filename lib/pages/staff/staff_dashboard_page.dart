@@ -2,15 +2,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
 
-import '../../models/appointment_model.dart';
-import '../../models/doctor_model.dart';
-import '../../models/user_model.dart';
-import '../../services/appointment_service.dart';
-import '../../services/doctor_service.dart';
-import '../../utils/staff_scope.dart';
-import '../../utils/validation_utils.dart';
+import '../../models/appointment/appointment_model.dart';
+import '../../models/doctor/doctor_model.dart';
+import '../../models/common/user_model.dart';
+import '../../repositories/appointment_service.dart';
+import '../../repositories/doctor_service.dart';
+import '../../helpers/staff_scope.dart';
+import '../../helpers/validation_utils.dart';
 import '../../widgets/doctor_avatar.dart';
 import 'doctor_schedule_preview_card.dart';
 

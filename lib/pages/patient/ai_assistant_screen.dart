@@ -2,14 +2,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../data/orthoq_faq_knowledge.dart';
-import '../../models/ai_assistant_quick_action.dart';
-import '../../models/chat_message_model.dart';
-import '../../services/ai_assistant_service.dart';
-import '../../services/chat_storage_service.dart';
-import '../../services/gemini_service.dart';
-import '../../theme/orthoq_colors.dart';
-import '../../theme/orthoq_typography.dart';
+import '../../constants/orthoq_faq_knowledge.dart';
+import '../../models/patient/ai_assistant_quick_action.dart';
+import '../../models/patient/chat_message_model.dart';
+import '../../repositories/ai_assistant_service.dart';
+import '../../repositories/chat_storage_service.dart';
+import '../../repositories/gemini_service.dart';
+import '../../constants/orthoq_colors.dart';
+import '../../constants/orthoq_typography.dart';
 import 'specialist_recommendation_screen.dart';
 
 class AiAssistantScreen extends StatefulWidget {

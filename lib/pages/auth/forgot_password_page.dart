@@ -1,8 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
-import 'package:orthoq_app/theme/orthoq_theme.dart';
-import 'package:orthoq_app/theme/orthoq_widgets.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_theme.dart';
+import 'package:orthoq_app/widgets/orthoq_widgets.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});

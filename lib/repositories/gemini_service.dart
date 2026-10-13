@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:google_generative_ai/google_generative_ai.dart';
 
-import '../config/env_config.dart';
+import '../constants/env_config.dart';
 
 class GeminiService {
   GeminiService();

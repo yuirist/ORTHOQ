@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
-import 'package:orthoq_app/theme/orthoq_theme.dart';
-import 'package:orthoq_app/theme/orthoq_typography.dart';
-import 'package:orthoq_app/theme/orthoq_widgets.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_theme.dart';
+import 'package:orthoq_app/constants/orthoq_typography.dart';
+import 'package:orthoq_app/widgets/orthoq_widgets.dart';
 import 'patient_home_screen.dart';
 
 class SuccessPage extends StatelessWidget {

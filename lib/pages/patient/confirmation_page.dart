@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
-import '../../models/appointment_model.dart';
-import '../../services/appointment_service.dart';
-import '../../services/email_service.dart';
+import '../../models/appointment/appointment_model.dart';
+import '../../repositories/appointment_service.dart';
+import '../../repositories/email_service.dart';
 import '../../providers/auth_provider.dart';
-import '../../utils/patient_email_resolver.dart';
+import '../../helpers/patient_email_resolver.dart';
 import '../../widgets/slot_availability_checker.dart';
 import 'patient_home_screen.dart';
 

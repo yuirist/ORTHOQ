@@ -3,9 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 import '../firebase_options.dart';
-import '../models/doctor_model.dart';
-import '../models/user_model.dart';
-import '../utils/doctor_name_format.dart';
+import '../models/doctor/doctor_model.dart';
+import '../models/common/user_model.dart';
+import '../helpers/doctor_name_format.dart';
 
 class DoctorService {
   static const _secondaryAuthAppName = 'doctorAccountCreation';

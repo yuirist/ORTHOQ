@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../models/doctor_model.dart';
-import '../../services/doctor_service.dart';
-import '../../theme/orthoq_colors.dart';
-import '../../theme/orthoq_widgets.dart';
+import '../../models/doctor/doctor_model.dart';
+import '../../repositories/doctor_service.dart';
+import '../../constants/orthoq_colors.dart';
+import '../../widgets/orthoq_widgets.dart';
 import '../../widgets/doctor_avatar.dart';
-import '../../utils/doctor_name_format.dart';
+import '../../helpers/doctor_name_format.dart';
 import '../staff/doctor_calendar_view.dart';
 import 'add_doctor_screen.dart';
 import 'admin_edit_doctor_screen.dart';

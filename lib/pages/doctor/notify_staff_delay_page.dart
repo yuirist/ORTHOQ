@@ -1,12 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:orthoq_app/theme/orthoq_colors.dart';
+import 'package:orthoq_app/constants/orthoq_colors.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../services/doctor_service.dart';
-import '../../services/email_service.dart';
-import '../../utils/staff_email_resolver.dart';
+import '../../repositories/doctor_service.dart';
+import '../../repositories/email_service.dart';
+import '../../helpers/staff_email_resolver.dart';
 
 class NotifyStaffDelayPage extends StatefulWidget {
   const NotifyStaffDelayPage({super.key});

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'orthoq_colors.dart';
-import 'orthoq_theme.dart';
-import 'orthoq_typography.dart';
+import '../constants/orthoq_colors.dart';
+import '../constants/orthoq_theme.dart';
+import '../constants/orthoq_typography.dart';
 
 /// Consistent spacing scale for layouts.
 abstract final class OrthoqSpacing {
